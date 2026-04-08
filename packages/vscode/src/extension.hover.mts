@@ -6,6 +6,17 @@ import type { StitchWorkspace } from './extension.workspace.mjs';
 export class StitchHoverProvider implements vscode.HoverProvider {
   protected constructor(readonly provider: StitchWorkspace) {}
 
+  protected descriptionFromDefinition(item: any): string | undefined {
+    const def = item?.def;
+    const defFile = def?.file;
+    const defOffset = def?.start?.offset;
+    if (!defFile || typeof defOffset !== 'number' || typeof defFile.getJsdocAt !== 'function') {
+      return item?.description;
+    }
+    const jsdoc = defFile.getJsdocAt(defOffset);
+    return jsdoc?.description || item?.description;
+  }
+
   provideHover(
     document: vscode.TextDocument,
     position: vscode.Position,
@@ -17,8 +28,9 @@ export class StitchHoverProvider implements vscode.HoverProvider {
     const hoverContents = new vscode.MarkdownString();
     const codeBlocks = new Set<string>();
     const textBlocks = new Set<string>();
-    if (item.description) {
-      textBlocks.add(item.description);
+    const description = this.descriptionFromDefinition(item);
+    if (description) {
+      textBlocks.add(description);
     }
     if (item.type.type.length === 0) {
       codeBlocks.add('Any');

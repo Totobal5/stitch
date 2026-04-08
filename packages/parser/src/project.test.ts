@@ -118,9 +118,61 @@ describe('Project', function () {
     expect(changeRef.item.name).to.equal('Change');
     expect(changeRef.item.type.kind).to.equal('Function');
 
+    const playerAsset = project.getAssetByName('o_player');
+    ok(playerAsset && playerAsset.assetKind === 'objects');
+    const playerCreateFile = (playerAsset as Asset<'objects'>).gmlFilesArray.find(
+      (f) => f.name === 'Create_0',
+    );
+    ok(playerCreateFile, 'Could not find o_player Create_0');
+    const playerStartCall = 'fsm.Start("default");';
+    const playerStartCallStart = playerCreateFile!.content.indexOf(playerStartCall);
+    ok(playerStartCallStart >= 0, 'Could not find fsm.Start("default") in o_player Create_0');
+    const playerStartOffset = playerStartCallStart + 'fsm.'.length;
+    const playerStartRef = playerCreateFile!.getReferenceAt(playerStartOffset);
+    ok(playerStartRef, 'Could not resolve Start reference in o_player');
+    expect(playerStartRef.item.name).to.equal('Start');
+    expect(playerStartRef.item.parent?.name).to.equal('LpSM');
+
+    const originalPlayerCreateContent = playerCreateFile!.content;
+    const ambiguousStartContent = originalPlayerCreateContent.replace(
+      'fsm.Start("default");',
+      'if (true) fsm = new LpSMEx();\n\nfsm.Start("default");',
+    );
+    await playerCreateFile!.reload(ambiguousStartContent, { reloadDirty: true });
+    const ambiguousStartCallStart = playerCreateFile!.content.indexOf('fsm.Start("default");');
+    ok(ambiguousStartCallStart >= 0, 'Could not find Start call after ambiguous assignment');
+    const ambiguousStartOffset = ambiguousStartCallStart + 'fsm.'.length;
+    const ambiguousStartRef = playerCreateFile!.getReferenceAt(ambiguousStartOffset);
+    ok(ambiguousStartRef, 'Could not resolve Start in ambiguous LpSM/LpSMEx union');
+    expect(ambiguousStartRef.item.name).to.equal('Start');
+    expect(ambiguousStartRef.item.parent?.name).to.equal('LpSM');
+    await playerCreateFile!.reload(originalPlayerCreateContent, { reloadDirty: true });
+
     const lpsmAsset = project.getAssetByName('LpSM_SM');
     ok(lpsmAsset && lpsmAsset.assetKind === 'scripts');
     const lpsmFile = (lpsmAsset as Asset<'scripts'>).gmlFile;
+    const lpsmStartDef = 'static Start = function(_state)';
+    const lpsmStartDefStart = lpsmFile.content.indexOf(lpsmStartDef);
+    ok(lpsmStartDefStart >= 0, 'Could not find LpSM Start definition');
+    const lpsmStartNameOffset = lpsmStartDefStart + 'static '.length;
+    const lpsmStartDefRef = lpsmFile.getReferenceAt(lpsmStartNameOffset);
+    ok(lpsmStartDefRef, 'Could not resolve Start definition reference in LpSM_SM');
+    expect(lpsmStartDefRef.item.name).to.equal('Start');
+    expect(lpsmStartDefRef.item.parent?.name).to.equal('LpSM');
+
+    const lpsmExAsset = project.getAssetByName('LpSM_SM_EX');
+    ok(lpsmExAsset && lpsmExAsset.assetKind === 'scripts');
+    const lpsmExFile = (lpsmExAsset as Asset<'scripts'>).gmlFile;
+    const lpsmExStartDef = 'static Start = function(_state, _data = undefined)';
+    const lpsmExStartDefStart = lpsmExFile.content.indexOf(lpsmExStartDef);
+    ok(lpsmExStartDefStart >= 0, 'Could not find LpSMEx Start definition');
+    const lpsmExStartOffset = lpsmExStartDefStart + 'static '.length;
+    const lpsmExStartRef = lpsmExFile.getReferenceAt(lpsmExStartOffset);
+    ok(lpsmExStartRef, 'Could not resolve Start definition reference in LpSM_SM_EX');
+    expect(lpsmExStartRef.item.name).to.equal('Start');
+    expect(lpsmExStartRef.item.parent?.name).to.equal('LpSMEx');
+    expect(lpsmExStartRef.item).not.to.equal(lpsmStartDefRef.item);
+
     const onEnterAssignment = 'OnEnter =  _on_enter;';
     const assignmentStart = lpsmFile.content.indexOf(onEnterAssignment);
     ok(assignmentStart >= 0, 'Could not find OnEnter assignment in LpSM_SM');
@@ -136,6 +188,24 @@ describe('Project', function () {
     ok(onEnterParamRef, 'Could not resolve _on_enter parameter reference');
     expect(onEnterParamRef.item.name).to.equal('_on_enter');
     expect(onEnterParamRef.item.type.toFeatherString()).to.equal('Function');
+
+    const statesStrMatch = 'states_str = {}';
+    const statesStrStart = lpsmFile.content.indexOf(statesStrMatch);
+    ok(statesStrStart >= 0, 'Could not find states_str declaration in LpSM_SM');
+    const statesStrOffset = statesStrStart + statesStrMatch.indexOf('states_str');
+    const statesStrRef = lpsmFile.getReferenceAt(statesStrOffset);
+    ok(statesStrRef, 'Could not resolve states_str reference');
+    expect(statesStrRef.item.name).to.equal('states_str');
+    expect(statesStrRef.item.type.toFeatherString()).to.equal('Struct<Struct.__Lpss>');
+
+    const currentAssign = 'var _current = states_str[$ _key];';
+    const currentAssignStart = lpsmFile.content.indexOf(currentAssign);
+    ok(currentAssignStart >= 0, 'Could not find _current assignment in LpSM_SM');
+    const currentVarOffset = currentAssignStart + currentAssign.indexOf('_current');
+    const currentVarRef = lpsmFile.getReferenceAt(currentVarOffset);
+    ok(currentVarRef, 'Could not resolve _current reference');
+    expect(currentVarRef.item.name).to.equal('_current');
+    expect(currentVarRef.item.type.toFeatherString()).to.equal('Struct.__Lpss');
 
     // GameMaker-style: @param order is source-of-truth, even if names differ.
     const originalLpsmContent = lpsmFile.content;

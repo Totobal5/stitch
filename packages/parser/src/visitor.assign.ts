@@ -17,6 +17,7 @@ export interface AssignmentInfo {
   static?: boolean;
   instance?: boolean;
   local?: boolean;
+  excludeParents?: boolean;
   docs?: Docs;
   ctx: VisitorContext;
 }
@@ -44,7 +45,12 @@ export function assignVariable(
   //#endregion
 
   // Find the existing variable
-  let signifier = variable.container.getMember(variable.name);
+  let signifier = variable.container.getMember(variable.name, !!info.excludeParents);
+  if (signifier && info.excludeParents && signifier.parent !== variable.container) {
+    // `replaceMemberInChildren` can mirror inherited root members onto child maps.
+    // For override declarations we must ignore those and create a true child-owned member.
+    signifier = undefined;
+  }
   const isSelfOwned = !!signifier && !!variable.container.getMember(variable.name, true);
   let ref: Reference | undefined;
 
@@ -55,7 +61,16 @@ export function assignVariable(
 
     if (variable.container !== fullScope.global) {
       // Then we can add a new member
-      signifier = variable.container.addMember(variable.name);
+      const newMember = info.excludeParents
+        ? (() => {
+            const overrideMember = new Signifier(variable.container, variable.name);
+            overrideMember.override = true;
+            return overrideMember;
+          })()
+        : variable.name;
+      signifier = variable.container.addMember(newMember, {
+        override: !!info.excludeParents,
+      });
       if (signifier) {
         signifier.definedAt(variable.range);
         signifier.static = !!info.static;
@@ -79,6 +94,9 @@ export function assignVariable(
       );
     }
   } else {
+    if (info.excludeParents) {
+      signifier.override = true;
+    }
     // Add a reference to the item.
     ref = signifier.addRef(variable.range);
     // If this is the first time we've seen it, and it wouldn't have

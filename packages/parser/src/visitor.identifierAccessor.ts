@@ -198,7 +198,29 @@ function processNextAccessor(
         range: Range.fromCst(visitor.PROCESSOR.file, accessor.location!),
         ctx: lastAccessed.ctx,
       };
-      nextAccessed.types = allowedTypes.map((t) => t.items).filter((t) => !!t) as TypeStore[];
+      if (accessor.name === 'structAccessSuffix') {
+        const structItemTypes: TypeStore[] = [];
+        for (const structType of allowedTypes) {
+          if (structType.items?.hasTypes) {
+            structItemTypes.push(structType.items);
+            continue;
+          }
+          // Fallback for concrete structs without explicit `items`: infer from known member types.
+          // This keeps autocompletion useful for `struct[$ key]` access patterns.
+          const memberTypes = structType
+            .listMembers(true)
+            .flatMap((member) => member.type.type)
+            .filter((type) => !!type);
+          if (memberTypes.length) {
+            const memberStore = new TypeStore();
+            memberStore.type = memberTypes;
+            structItemTypes.push(memberStore);
+          }
+        }
+        nextAccessed.types = structItemTypes;
+      } else {
+        nextAccessed.types = allowedTypes.map((t) => t.items).filter((t) => !!t) as TypeStore[];
+      }
       // If there is a RHS, we can't create a variable from it but
       // do need to process it!
       if (lastAccessed.rhs) {
@@ -378,8 +400,24 @@ function processDotAccessor(
     return nextAccessed;
   }
 
+  const inheritanceDepth = (type: Type) => {
+    let depth = 0;
+    let current = type.extends;
+    while (current) {
+      depth++;
+      current = current.extends;
+    }
+    return depth;
+  };
+
   let dottableType = dottableTypes[0];
   if (dottableTypes.length > 1) {
+    const dotAccessor = accessor.children;
+    const propertyNamePreview = !isEmpty(dotAccessor.identifier[0].children)
+      ? identifierFrom(dotAccessor)?.name
+      : undefined;
+
+    let candidateTypes = [...dottableTypes];
     // We may have a union of valid types, so it's helpful to know
     // the subsequent accessor (if there is one) -- we can use it
     // to narrow down which type is likely intended.
@@ -388,8 +426,23 @@ function processDotAccessor(
         ? identifierFrom(nextAccessor.children.identifier)?.name
         : undefined;
     if (nextAccessorName) {
-      dottableType = dottableTypes.find((t) => t.getMember(nextAccessorName)) || dottableType;
+      const narrowed = candidateTypes.filter((t) => t.getMember(nextAccessorName));
+      if (narrowed.length) {
+        candidateTypes = narrowed;
+      }
     }
+
+    if (propertyNamePreview) {
+      const narrowed = candidateTypes.filter((t) => t.getMember(propertyNamePreview));
+      if (narrowed.length) {
+        candidateTypes = narrowed;
+      }
+    }
+
+    // If still ambiguous, prefer the least-derived (base) type.
+    dottableType = candidateTypes.reduce((best, candidate) =>
+      inheritanceDepth(candidate) < inheritanceDepth(best) ? candidate : best,
+    );
   }
 
   // Then we need to change self-scope to be inside

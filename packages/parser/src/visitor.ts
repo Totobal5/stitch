@@ -466,8 +466,13 @@ export class GmlSignifierVisitor extends GmlVisitorBase {
         excludeParents,
       })?.item as Signifier | undefined
     )?.parent as WithableType | undefined;
+    const fullScope = this.PROCESSOR.fullScope;
+    if (isStatic && !fullScope.selfIsGlobal) {
+      // Static declarations inside constructors should always attach to
+      // the current constructor self, not an inherited parent symbol.
+      container = fullScope.self as WithableType;
+    }
     if (!container) {
-      const fullScope = this.PROCESSOR.fullScope;
       // Add to the self-scope unless it's a static inside a non-constructor function, and if that scope is not global.
       const outerFunction = fullScope.self.signifier?.getTypeByKind('Function');
       container =
@@ -478,6 +483,7 @@ export class GmlSignifierVisitor extends GmlVisitorBase {
 
     return assignVariable(this, { name, range, container }, rhs, {
       static: isStatic,
+      excludeParents,
       docs,
       ctx,
     });

@@ -78,7 +78,14 @@ export function visitFunctionExpression(
   }
 
   // Get or create the function type. Use the existing type if there is one.
-  signifier?.describe(docs?.jsdoc.description);
+  // Prefer keeping existing descriptions from a different defining file,
+  // so derived constructors don't overwrite base docs on shared symbols.
+  if (signifier && docs?.jsdoc.description) {
+    const symbolOwnedByCurrentScope = signifier.parent === this.PROCESSOR.currentSelf;
+    if (symbolOwnedByCurrentScope) {
+      signifier.describe(docs.jsdoc.description);
+    }
+  }
   const functionType =
     signifier?.getTypeByKind('Function') ||
     getTypeOfKind(ctx.type, 'Function')?.derive() ||

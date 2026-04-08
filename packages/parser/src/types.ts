@@ -461,10 +461,10 @@ export class Type<T extends PrimitiveName = PrimitiveName> {
 
   removeMember(name: string) {
     const member = this.getMember(name, true);
-    if (!member) {
+    if (!member || !this._members) {
       return;
     }
-    this._members!.delete(name);
+    this._members.delete(name);
     // Flag all referencing files as dirty
     for (const ref of member.refs) {
       ref.file.dirty = true;
