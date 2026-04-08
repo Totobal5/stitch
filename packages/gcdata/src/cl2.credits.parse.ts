@@ -9,16 +9,9 @@ import {
 import { prepareParserHelpers } from './cl2.shared.parse.js';
 import { CreditsMote, creditsSchemaId } from './cl2.shared.types.js';
 import type { GameChanger } from './GameChanger.js';
-import {
-  bsArrayToArray,
-  createBsArrayKey,
-  updateBsArrayOrder,
-} from './helpers.js';
+import { bsArrayToArray, createBsArrayKey, updateBsArrayOrder } from './helpers.js';
 
-export function parseStringifiedCredits(
-  text: string,
-  packed: GameChanger,
-): CreditsUpdateResult {
+export function parseStringifiedCredits(text: string, packed: GameChanger): CreditsUpdateResult {
   const result: CreditsUpdateResult = {
     diagnostics: [],
     hovers: [],
@@ -31,12 +24,7 @@ export function parseStringifiedCredits(
     },
   };
 
-  const helpers = prepareParserHelpers(
-    text,
-    packed,
-    { schemaId: creditsSchemaId },
-    result,
-  );
+  const helpers = prepareParserHelpers(text, packed, { schemaId: creditsSchemaId }, result);
 
   let currentSection: CreditsUpdateResultSection | undefined = undefined;
   let currentRole: CreditsUpdateResultRole | undefined = undefined;
@@ -140,15 +128,9 @@ export async function updateChangesFromParsedCredits(
     // Collect what's currently in the mote so we can do some
     // lookups to minimize ID changes and identify stuff to delete
     /** SectionID:RoleID:PersonID:Name */
-    const existingSectionsNameLookup = new Map<
-      string,
-      Map<string, Map<string, string>>
-    >();
+    const existingSectionsNameLookup = new Map<string, Map<string, Map<string, string>>>();
     /** SectionID:RoleID:Name:PersonId */
-    const existingSectionsPersonIdLookup = new Map<
-      string,
-      Map<string, Map<string, string>>
-    >();
+    const existingSectionsPersonIdLookup = new Map<string, Map<string, Map<string, string>>>();
     /** SectiondId:RoleIds for single entry roles */
     const singleEntryRoleIdLookup = new Map<string, Set<string>>();
     for (const section of bsArrayToArray(moteBase.data.sections!)) {
@@ -169,23 +151,12 @@ export async function updateChangesFromParsedCredits(
         const roleId = role.id;
         existingSectionsNameLookup
           .get(sectionId)!
-          .set(
-            roleId,
-            existingSectionsNameLookup.get(sectionId)!.get(roleId) || new Map(),
-          );
+          .set(roleId, existingSectionsNameLookup.get(sectionId)!.get(roleId) || new Map());
         existingSectionsPersonIdLookup
           .get(sectionId)!
-          .set(
-            roleId,
-            existingSectionsPersonIdLookup.get(sectionId)!.get(roleId) ||
-              new Map(),
-          );
-        const nameLookup = existingSectionsNameLookup
-          .get(sectionId)!
-          .get(roleId)!;
-        const personIdLookup = existingSectionsPersonIdLookup
-          .get(sectionId)!
-          .get(roleId)!;
+          .set(roleId, existingSectionsPersonIdLookup.get(sectionId)!.get(roleId) || new Map());
+        const nameLookup = existingSectionsNameLookup.get(sectionId)!.get(roleId)!;
+        const personIdLookup = existingSectionsPersonIdLookup.get(sectionId)!.get(roleId)!;
         if (element.type === 'Single Entry') {
           const name = element.name.name;
           assert(name, 'Entry must have a name');
@@ -209,10 +180,7 @@ export async function updateChangesFromParsedCredits(
     for (const section of parsed.sections) {
       parsedIds.set(section.id, parsedIds.get(section.id) || new Map());
       const roleIds = parsedIds.get(section.id)!;
-      updateMote(
-        `data/sections/${section.id}/element/name/text`,
-        section.title,
-      );
+      updateMote(`data/sections/${section.id}/element/name/text`, section.title);
       const sectionExistedAlready = existingSectionsNameLookup.get(section.id);
 
       for (const role of section.roles) {
@@ -223,18 +191,11 @@ export async function updateChangesFromParsedCredits(
 
         // If this role was a single entry but is now a group,
         // then we need to do some work to convert it. (If it was a group but has a single entry just let it be.)
-        const wasSingleEntry = !!singleEntryRoleIdLookup
-          .get(section.id)
-          ?.has(role.id);
+        const wasSingleEntry = !!singleEntryRoleIdLookup.get(section.id)?.has(role.id);
         if (wasSingleEntry && role.names.length > 1) {
-          trace(
-            `Converting single entry role ${role.id} (${role.role}) to group`,
-          );
+          trace(`Converting single entry role ${role.id} (${role.role}) to group`);
           // Delete the entire role and replace it with a Group role
-          updateMote(
-            `data/sections/${section.id}/element/entries/${role.id}`,
-            null,
-          );
+          updateMote(`data/sections/${section.id}/element/entries/${role.id}`, null);
           updateMote(
             `data/sections/${section.id}/element/entries/${role.id}/element/type`,
             'Group',
@@ -255,10 +216,7 @@ export async function updateChangesFromParsedCredits(
               person.cjk,
             );
           }
-        } else if (
-          wasSingleEntry ||
-          (role.names.length === 1 && !roleExistedAlready)
-        ) {
+        } else if (wasSingleEntry || (role.names.length === 1 && !roleExistedAlready)) {
           trace(`Updating single-entry role ${role.id} (${role.role})`);
           // Then WAS a single entry OR the role didn't exist
           // but is being added as a single entry. So keep it
@@ -292,10 +250,8 @@ export async function updateChangesFromParsedCredits(
           for (const person of role.names) {
             // See if we already have an id matching this name
             const personId =
-              existingSectionsPersonIdLookup
-                .get(section.id)
-                ?.get(role.id)
-                ?.get(person.name) || createBsArrayKey();
+              existingSectionsPersonIdLookup.get(section.id)?.get(role.id)?.get(person.name) ||
+              createBsArrayKey();
             personIds.add(personId);
             person.id = personId;
             updateMote(
@@ -313,8 +269,7 @@ export async function updateChangesFromParsedCredits(
         // Upsert the role name. If it's one of a few special roles
         // that indicate NO role, then we want to ensure it's not set
         // instead. (Do this after the prior logic in case we first converted a single-entry group, otherwise we'd lose the change)
-        const isUntitledRole =
-          !role.role || role.role.match(/^(\?\?\?|none|na|undefined)$/i);
+        const isUntitledRole = !role.role || role.role.match(/^(\?\?\?|none|na|undefined)$/i);
         trace(`Updating role name ${role.id} with text "${role.role}"`);
         updateMote(
           `data/sections/${section.id}/element/entries/${role.id}/element/role/text`,
@@ -323,24 +278,15 @@ export async function updateChangesFromParsedCredits(
       }
     }
     // Remove any content that is no longer present
-    for (const [
-      sectionId,
-      existingRoles,
-    ] of existingSectionsNameLookup.entries()) {
+    for (const [sectionId, existingRoles] of existingSectionsNameLookup.entries()) {
       const parsedRoles = parsedIds.get(sectionId);
       if (!parsedRoles) {
         updateMote(`data/sections/${sectionId}`, null);
       } else {
         // Delete any leftover roles
-        for (const [
-          existingRoleId,
-          existingPeople,
-        ] of existingRoles.entries()) {
+        for (const [existingRoleId, existingPeople] of existingRoles.entries()) {
           if (!parsedRoles.has(existingRoleId)) {
-            updateMote(
-              `data/sections/${sectionId}/element/entries/${existingRoleId}`,
-              null,
-            );
+            updateMote(`data/sections/${sectionId}/element/entries/${existingRoleId}`, null);
           } else {
             // Delete any leftover people
             for (const existingPersonId of existingPeople.keys()) {
@@ -385,12 +331,8 @@ export async function updateChangesFromParsedCredits(
             let person = role.element?.names?.[p.id];
             if (!person) {
               const workingRole =
-                moteWorking.data.sections?.[s.id!]?.element?.entries?.[r.id!]
-                  ?.element;
-              assert(
-                workingRole?.type === 'Group',
-                'Base data element must be a group',
-              );
+                moteWorking.data.sections?.[s.id!]?.element?.entries?.[r.id!]?.element;
+              assert(workingRole?.type === 'Group', 'Base data element must be a group');
               person = workingRole.names?.[p.id];
               assert(person, `Person ${p.name} not found in section ${s.id}`);
               delete person.order;
@@ -412,10 +354,7 @@ export async function updateChangesFromParsedCredits(
       trace(`Updating section ${section.id}`);
       updateMote(`data/sections/${section.id}/order`, section.order);
       for (const role of section.roles) {
-        updateMote(
-          `data/sections/${section.id}/element/entries/${role.id}/order`,
-          role.order,
-        );
+        updateMote(`data/sections/${section.id}/element/entries/${role.id}/order`, role.order);
         for (const person of role.people) {
           updateMote(
             `data/sections/${section.id}/element/entries/${role.id}/element/names/${person.id}/order`,

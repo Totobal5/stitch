@@ -64,11 +64,7 @@ export namespace StitchEvents {
   }
   export interface AssetChanged {
     name: 'asset-changed';
-    payload: [
-      sprite: Asset,
-      type: 'change' | 'create' | 'delete',
-      path: vscode.Uri,
-    ];
+    payload: [sprite: Asset, type: 'change' | 'create' | 'delete', path: vscode.Uri];
   }
   export interface ProjectChanged {
     name: 'project-changed';

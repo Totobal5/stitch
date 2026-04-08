@@ -1,9 +1,4 @@
-import {
-  Asset,
-  Code,
-  getEventFromFilename,
-  isAssetOfKind,
-} from '@bscotch/gml-parser';
+import { Asset, Code, getEventFromFilename, isAssetOfKind } from '@bscotch/gml-parser';
 import vscode from 'vscode';
 import { stitchEvents } from './events.mjs';
 import type { StitchWorkspace } from './extension.workspace.mjs';
@@ -166,19 +161,15 @@ export class ObjectSpriteItem extends StitchTreeItemBase<'asset-sprites'> {
   }
 }
 
-export class GameMakerInspectorProvider
-  implements vscode.TreeDataProvider<InspectorItem>
-{
+export class GameMakerInspectorProvider implements vscode.TreeDataProvider<InspectorItem> {
   asset: Asset<'objects'> | undefined;
   view!: vscode.TreeView<InspectorItem>;
-  private _onDidChangeTreeData: vscode.EventEmitter<
-    InspectorItem | undefined | null | void
-  > = new vscode.EventEmitter<InspectorItem | undefined | null | void>();
+  private _onDidChangeTreeData: vscode.EventEmitter<InspectorItem | undefined | null | void> =
+    new vscode.EventEmitter<InspectorItem | undefined | null | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  private _onDidCollapseElement: vscode.EventEmitter<
-    InspectorItem | undefined | null | void
-  > = new vscode.EventEmitter<InspectorItem | undefined | null | void>();
+  private _onDidCollapseElement: vscode.EventEmitter<InspectorItem | undefined | null | void> =
+    new vscode.EventEmitter<InspectorItem | undefined | null | void>();
   readonly onDidCollapseElement = this._onDidCollapseElement.event;
 
   constructor(readonly provider: StitchWorkspace) {}
@@ -191,9 +182,7 @@ export class GameMakerInspectorProvider
     return element;
   }
 
-  getChildren(
-    element?: InspectorItem | undefined,
-  ): InspectorItem[] | undefined {
+  getChildren(element?: InspectorItem | undefined): InspectorItem[] | undefined {
     if (!this.asset) {
       return;
     }
@@ -230,11 +219,9 @@ export class GameMakerInspectorProvider
   }
 
   static getChildrenAsTreeItems(asset: Asset<'objects'>) {
-    return asset.children
-      .sort(createSorter({ sortByField: 'name' }))
-      .map((child) => {
-        return new ObjectItem(child, 'children');
-      });
+    return asset.children.sort(createSorter({ sortByField: 'name' })).map((child) => {
+      return new ObjectItem(child, 'children');
+    });
   }
 
   rebuild() {
@@ -253,9 +240,7 @@ export class GameMakerInspectorProvider
     this.view = vscode.window.createTreeView('bscotch-stitch-inspector', {
       treeDataProvider: this,
     });
-    const activeEditorMonitor = vscode.window.onDidChangeActiveTextEditor(() =>
-      this.rebuild(),
-    );
+    const activeEditorMonitor = vscode.window.onDidChangeActiveTextEditor(() => this.rebuild());
 
     this.rebuild();
 

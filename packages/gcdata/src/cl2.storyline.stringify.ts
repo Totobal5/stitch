@@ -2,10 +2,7 @@ import { StorylineMote } from './cl2.shared.types.js';
 import type { GameChanger } from './GameChanger.js';
 import { bsArrayToArray, toArrayTag } from './helpers.js';
 
-export function stringifyStoryline(
-  mote: StorylineMote,
-  packed: GameChanger,
-): string {
+export function stringifyStoryline(mote: StorylineMote, packed: GameChanger): string {
   // METADATA
   const blocks: string[] = [
     `Name: ${packed.working.getMoteName(mote)}`,

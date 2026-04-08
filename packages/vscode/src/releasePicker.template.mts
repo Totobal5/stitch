@@ -1,7 +1,4 @@
-import type {
-  Channel,
-  GameMakerReleaseWithNotes,
-} from '@bscotch/gamemaker-releases';
+import type { Channel, GameMakerReleaseWithNotes } from '@bscotch/gamemaker-releases';
 import type { GameMakerProject } from './extension.project.mjs';
 import { html } from './lib.mjs';
 
@@ -148,10 +145,7 @@ const script = html`
   </script>
 `;
 
-function compileRelease(
-  release: GameMakerReleaseWithNotes,
-  projects: GameMakerProject[],
-) {
+function compileRelease(release: GameMakerReleaseWithNotes, projects: GameMakerProject[]) {
   const releaseDate = new Date(release.ide.publishedAt).toLocaleDateString();
   const releaseDateIso = new Date(release.ide.publishedAt).toISOString();
 
@@ -175,8 +169,7 @@ function compileRelease(
     ? html`<a
         role="button"
         class="use-button"
-        onclick="vscode.postMessage({type: 'setVersion', version: '${release.ide
-          .version}'})"
+        onclick="vscode.postMessage({type: 'setVersion', version: '${release.ide.version}'})"
       >
         Use this version
       </a>`
@@ -186,8 +179,7 @@ function compileRelease(
     <article class="release ${release.channel}">
       <header>
         <h2 class="ide-version" data-channel="${release.channel}">
-          ${projectsUsingThisVersion.length ? '🌟' : ''} ${release.ide.version}
-          (IDE)
+          ${projectsUsingThisVersion.length ? '🌟' : ''} ${release.ide.version} (IDE)
         </h2>
         <h3 class="runtime-version" data-channel="${release.channel}">
           ${release.runtime.version} (Runtime)
@@ -216,8 +208,8 @@ export function compile(
         <h1>GameMaker Version Picker</h1>
         <p>
           <i>
-            These release notes are automatically compiled from the public
-            GameMaker release notes. They may be incomplete or contain errors.
+            These release notes are automatically compiled from the public GameMaker release notes.
+            They may be incomplete or contain errors.
           </i>
         </p>
         <section class="channels">
@@ -233,15 +225,11 @@ export function compile(
             class="reset"
             aria-label="GameMaker Release channels (specified in preferences) and their color-coding in this view."
           >
-            ${channels.map(
-              (channel) => html`<li data-channel="${channel}">${channel}</li>`,
-            )}
+            ${channels.map((channel) => html`<li data-channel="${channel}">${channel}</li>`)}
           </ol>
         </section>
         <ol class="releases reset">
-          ${releases.map(
-            (release) => html`<li>${compileRelease(release, projects)}</li>`,
-          )}
+          ${releases.map((release) => html`<li>${compileRelease(release, projects)}</li>`)}
         </ol>
       </body>
       ${script}

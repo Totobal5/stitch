@@ -322,25 +322,17 @@ export type GameMakerCliCommand<W extends GameMakerCliWorker> = {`;
 const buildTargets = [];
 for (const [worker, commands] of Object.entries(workerCommands)) {
   types += `${worker}: `;
-  const isBuildTarget = commonBuildCommands.every((command) =>
-    commands.includes(command),
-  );
+  const isBuildTarget = commonBuildCommands.every((command) => commands.includes(command));
   if (isBuildTarget) {
     buildTargets.push(worker);
     // Then remove the common commands
-    const additionalCommands = commands.filter(
-      (command) => !commonBuildCommands.includes(command),
-    );
-    types += `${stringUnion(
-      additionalCommands,
-    )} | GameMakerCliBuildCommand ;\n`;
+    const additionalCommands = commands.filter((command) => !commonBuildCommands.includes(command));
+    types += `${stringUnion(additionalCommands)} | GameMakerCliBuildCommand ;\n`;
   } else {
     types += `${stringUnion(commands)};\n`;
   }
 }
-types += `\n}[W];\n\nexport type GameMakerCliBuildWorker = ${stringUnion(
-  buildTargets,
-)};\n\n`;
+types += `\n}[W];\n\nexport type GameMakerCliBuildWorker = ${stringUnion(buildTargets)};\n\n`;
 
 // Parse the options
 types += 'export interface GameMakerCliOptions {\n';
@@ -355,18 +347,13 @@ for (let l = 0; l <= optionsLines.length; l++) {
     continue;
   }
   const descriptionInfo = parseOptionDescription(line, optionsLines[l + 1]);
-  ok(
-    descriptionInfo,
-    `Could not parse description for option ${optionNameInfo}`,
-  );
+  ok(descriptionInfo, `Could not parse description for option ${optionNameInfo}`);
 
   types += undent`
     /**
      * ${descriptionInfo.description}
      */`;
-  types += `\n  ${optionNameInfo.name}: ${
-    optionNameInfo.isFlag ? 'boolean' : 'string'
-  };\n`;
+  types += `\n  ${optionNameInfo.name}: ${optionNameInfo.isFlag ? 'boolean' : 'string'};\n`;
 
   l += descriptionInfo.skip;
 }
@@ -398,8 +385,8 @@ function parseOptionName(line) {
  * @param {string|undefined} secondLine
  */
 function parseOptionDescription(firstLine, secondLine) {
-  const [firstLineMatch, secondLineMatch] = [firstLine, secondLine || ''].map(
-    (line) => line.match(/\s+([^-\s].+)/),
+  const [firstLineMatch, secondLineMatch] = [firstLine, secondLine || ''].map((line) =>
+    line.match(/\s+([^-\s].+)/),
   );
   if (firstLineMatch) {
     return {

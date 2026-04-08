@@ -42,6 +42,7 @@ export async function activateStitchExtension(
   ctx: vscode.ExtensionContext,
 ) {
   info('Activating extension...');
+  info(`Stitch extension v${ctx.extension.packageJSON.version as string}`);
   stitchConfig.context = ctx;
 
   const t = Timer.start();
@@ -100,10 +101,7 @@ export async function activateStitchExtension(
       const path = pathyFromUri(projectUri);
       const yypName = path.name;
       const folderName = path.up().name;
-      return (
-        allowed.includes(yypName.toLowerCase()) ||
-        allowed.includes(folderName.toLowerCase())
-      );
+      return allowed.includes(yypName.toLowerCase()) || allowed.includes(folderName.toLowerCase());
     });
   }
   yypFiles = prefiltered.length ? prefiltered : yypFiles;
@@ -117,8 +115,7 @@ export async function activateStitchExtension(
         uri: yyp,
       })),
       {
-        title:
-          'Stitch: Multiple GameMaker projects found! Choose a project to load.',
+        title: 'Stitch: Multiple GameMaker projects found! Choose a project to load.',
       },
     );
     if (!chosen) yypFiles.length = 0;
@@ -129,10 +126,7 @@ export async function activateStitchExtension(
     info('Loading project', yypFile);
     const pt = Timer.start();
     try {
-      await workspace.loadProject(
-        yypFile,
-        workspace.emitDiagnostics.bind(workspace),
-      );
+      await workspace.loadProject(yypFile, workspace.emitDiagnostics.bind(workspace));
       pt.seconds('Loaded project in');
       // Add watcher paths
       const projectFolder = pathyFromUri(yypFile).up();
@@ -152,9 +146,7 @@ export async function activateStitchExtension(
       showErrorMessage(message);
     }
   }
-  const watchers = toWatch.map((pattern) =>
-    vscode.workspace.createFileSystemWatcher(pattern),
-  );
+  const watchers = toWatch.map((pattern) => vscode.workspace.createFileSystemWatcher(pattern));
 
   const treeProvider = new GameMakerTreeProvider(workspace);
   const inspectorProvider = new GameMakerInspectorProvider(workspace);
@@ -167,9 +159,7 @@ export async function activateStitchExtension(
     //   }
     //   const code = provider.getGmlFile(editor.document);
     // }),
-    vscode.workspace.onDidChangeTextDocument((event) =>
-      workspace.onChangeDoc(event),
-    ),
+    vscode.workspace.onDidChangeTextDocument((event) => workspace.onChangeDoc(event)),
     // vscode.workspace.onDidOpenTextDocument((event) => {
     //   // provider.onChangeDoc(event),
     // }),
@@ -206,10 +196,7 @@ export async function activateStitchExtension(
     ...StitchReferenceProvider.register(workspace),
     ...StitchLocationsProvider.register(workspace),
     vscode.languages.registerSignatureHelpProvider('gml', workspace, '(', ','),
-    vscode.languages.registerDocumentFormattingEditProvider(
-      'yy',
-      new StitchYyFormatProvider(),
-    ),
+    vscode.languages.registerDocumentFormattingEditProvider('yy', new StitchYyFormatProvider()),
     registerCommand('stitch.assets.delete', (what) => {
       // Convert the incoming argument to an Asset, then emit the event
       let asset: Asset | undefined;
@@ -245,125 +232,101 @@ export async function activateStitchExtension(
       stitchEvents.emit('code-file-deleted', code);
     }),
     registerCommand('stitch.types.copy', createCopyAsTypeCallback(workspace)),
-    registerCommand(
-      'stitch.types.copyAsJsdocSelf',
-      createCopyAsJsdocSelfCallback(workspace),
-    ),
-    registerCommand(
-      'stitch.types.copyAsJsdocType',
-      createCopyAsJsdocTypeCallback(workspace),
-    ),
-    registerCommand(
-      'stitch.run',
-      async (uriOrFolder: string[] | GameMakerFolder) => {
-        const project = findProject(workspace, uriOrFolder);
-        if (!project) {
-          void showErrorMessage('No project found to run!');
-          return;
-        }
-        let lastConfig: any = ctx.workspaceState.get('lastRunConfig');
-        const isValidConfig =
-          typeof lastConfig === 'object' &&
-          'compiler' in lastConfig &&
-          'config' in lastConfig;
-        if (!isValidConfig) {
-          lastConfig = undefined;
-        }
-        try {
-          await project.run(lastConfig);
-        } catch (err) {
-          void showErrorMessage(err as Error);
-        }
-      },
-    ),
-    registerCommand(
-      'stitch.stop',
-      (uriOrFolder: string[] | GameMakerFolder) => {
-        const project = findProject(workspace, uriOrFolder);
-        if (!project) {
-          void showErrorMessage('No project found to run!');
-          return;
-        }
-        project.kill();
-      },
-    ),
-    registerCommand(
-      'stitch.run.noDefaults',
-      async (uriOrFolder: string[] | GameMakerFolder) => {
-        const project = findProject(workspace, uriOrFolder);
-        if (!project) {
-          void showErrorMessage('No project found to run!');
-          return;
-        }
-        // QuickPick to select the config
-        const configs = project.configs.sort(
-          createSorter({
-            first: [stitchConfig.runConfigDefault || '', 'Default'],
-          }),
-        );
-        const chosenConfig = await vscode.window.showQuickPick(configs, {
-          title: 'Select a config',
-        });
-        if (!chosenConfig) return;
+    registerCommand('stitch.types.copyAsJsdocSelf', createCopyAsJsdocSelfCallback(workspace)),
+    registerCommand('stitch.types.copyAsJsdocType', createCopyAsJsdocTypeCallback(workspace)),
+    registerCommand('stitch.run', async (uriOrFolder: string[] | GameMakerFolder) => {
+      const project = findProject(workspace, uriOrFolder);
+      if (!project) {
+        void showErrorMessage('No project found to run!');
+        return;
+      }
+      let lastConfig: any = ctx.workspaceState.get('lastRunConfig');
+      const isValidConfig =
+        typeof lastConfig === 'object' && 'compiler' in lastConfig && 'config' in lastConfig;
+      if (!isValidConfig) {
+        lastConfig = undefined;
+      }
+      try {
+        await project.run(lastConfig);
+      } catch (err) {
+        void showErrorMessage(err as Error);
+      }
+    }),
+    registerCommand('stitch.stop', (uriOrFolder: string[] | GameMakerFolder) => {
+      const project = findProject(workspace, uriOrFolder);
+      if (!project) {
+        void showErrorMessage('No project found to run!');
+        return;
+      }
+      project.kill();
+    }),
+    registerCommand('stitch.run.noDefaults', async (uriOrFolder: string[] | GameMakerFolder) => {
+      const project = findProject(workspace, uriOrFolder);
+      if (!project) {
+        void showErrorMessage('No project found to run!');
+        return;
+      }
+      // QuickPick to select the config
+      const configs = project.configs.sort(
+        createSorter({
+          first: [stitchConfig.runConfigDefault || '', 'Default'],
+        }),
+      );
+      const chosenConfig = await vscode.window.showQuickPick(configs, {
+        title: 'Select a config',
+      });
+      if (!chosenConfig) return;
 
-        // QuickPick to select the compiler
-        const compilers = literal(['vm', 'yyc']).sort(
-          createSorter({ first: [stitchConfig.runCompilerDefault] }),
-        );
-        const chosenCompiler = await vscode.window.showQuickPick(compilers, {
-          title: 'Select a compiler',
-        });
-        if (!chosenCompiler) return;
+      // QuickPick to select the compiler
+      const compilers = literal(['vm', 'yyc']).sort(
+        createSorter({ first: [stitchConfig.runCompilerDefault] }),
+      );
+      const chosenCompiler = await vscode.window.showQuickPick(compilers, {
+        title: 'Select a compiler',
+      });
+      if (!chosenCompiler) return;
 
-        ctx.workspaceState.update('lastRunConfig', {
+      ctx.workspaceState.update('lastRunConfig', {
+        compiler: chosenCompiler as any,
+        config: chosenConfig,
+      });
+
+      const when = await vscode.window.showQuickPick(
+        [
+          { label: 'Run Now', now: true, picked: true },
+          {
+            label: 'Run Later',
+            now: false,
+            detail: 'All future runs will use the new target until you change it again.',
+          },
+        ],
+        {
+          title: 'Target Updated! Run now?',
+        },
+      );
+      if (when?.now) {
+        await project.run({
           compiler: chosenCompiler as any,
           config: chosenConfig,
         });
-
-        const when = await vscode.window.showQuickPick(
-          [
-            { label: 'Run Now', now: true, picked: true },
-            {
-              label: 'Run Later',
-              now: false,
-              detail:
-                'All future runs will use the new target until you change it again.',
-            },
-          ],
-          {
-            title: 'Target Updated! Run now?',
-          },
-        );
-        if (when?.now) {
-          await project.run({
-            compiler: chosenCompiler as any,
-            config: chosenConfig,
-          });
-        }
-      },
-    ),
-    registerCommand(
-      'stitch.clean',
-      (uriOrFolder: string[] | GameMakerFolder) => {
-        const project = findProject(workspace, uriOrFolder);
-        if (!project) {
-          void showErrorMessage('No project found to run!');
-          return;
-        }
-        project.run({ clean: true });
-      },
-    ),
-    registerCommand(
-      'stitch.openIde',
-      async (uriOrFolder: string[] | GameMakerFolder) => {
-        const project = findProject(workspace, uriOrFolder);
-        if (!project) {
-          void showErrorMessage('No project found to open!');
-          return;
-        }
-        await project.openInIde();
-      },
-    ),
+      }
+    }),
+    registerCommand('stitch.clean', (uriOrFolder: string[] | GameMakerFolder) => {
+      const project = findProject(workspace, uriOrFolder);
+      if (!project) {
+        void showErrorMessage('No project found to run!');
+        return;
+      }
+      project.run({ clean: true });
+    }),
+    registerCommand('stitch.openIde', async (uriOrFolder: string[] | GameMakerFolder) => {
+      const project = findProject(workspace, uriOrFolder);
+      if (!project) {
+        void showErrorMessage('No project found to open!');
+        return;
+      }
+      await project.openInIde();
+    }),
     registerCommand('stitch.newProject', async () => {
       await workspace.createNewProject();
     }),
@@ -371,23 +334,15 @@ export async function activateStitchExtension(
     workspace.signatureHelpStatus,
     vscode.window.onDidChangeTextEditorSelection((e) => {
       // Update the 'when' clause for the 'stitch.selectionIs(Native|Sprite|Sound)' contexts
-      const ref = workspace.getRefFromSelection(
-        e.textEditor.document,
-        e.selections,
-      );
+      const ref = workspace.getRefFromSelection(e.textEditor.document, e.selections);
       if (!ref) return;
       const asset = getAssetFromRef(ref);
 
       // Skip 'event_inherited' since we want to be able to
       // go-to-def on it to trace the inheritance chain.
-      const isNative =
-        !!ref.item?.native && ref.item.name !== 'event_inherited';
+      const isNative = !!ref.item?.native && ref.item.name !== 'event_inherited';
 
-      void vscode.commands.executeCommand(
-        'setContext',
-        'stitch.selectionIsNative',
-        isNative,
-      );
+      void vscode.commands.executeCommand('setContext', 'stitch.selectionIsNative', isNative);
       void vscode.commands.executeCommand(
         'setContext',
         'stitch.selectionIsSprite',
@@ -419,11 +374,7 @@ export async function activateStitchExtension(
       }
       // Get the signature helper.
       const signatureHelp = swallowThrown(
-        () =>
-          workspace.provideSignatureHelp(
-            e.textEditor.document,
-            e.selections[0].start,
-          )!,
+        () => workspace.provideSignatureHelp(e.textEditor.document, e.selections[0].start)!,
       );
       if (!signatureHelp) {
         return;
@@ -438,10 +389,7 @@ export async function activateStitchExtension(
       }
       const asString = `${name}(${signature.parameters
         .map((p, i) => {
-          if (
-            typeof p.label === 'string' &&
-            i === signatureHelp.activeParameter
-          ) {
+          if (typeof p.label === 'string' && i === signatureHelp.activeParameter) {
             return p.label.toUpperCase();
           }
           return p.label;

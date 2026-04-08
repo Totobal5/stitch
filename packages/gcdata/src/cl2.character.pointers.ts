@@ -1,5 +1,6 @@
 export type CharacterMoteDataPointer = `data/${CharacterMotePointer}`;
-export type CharacterMotePointer = ``
+export type CharacterMotePointer =
+  | ``
   | `back_horn`
   | `background_info/brief`
   | `background_info/notes/${string}/element`

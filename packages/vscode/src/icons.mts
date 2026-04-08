@@ -64,16 +64,12 @@ export function getBaseIcon(icon: string) {
 
 /** Get a custom Stitch icon from disk (via `images/files/`) */
 export function getFileIcon(icon: FileIcon) {
-  return vscode.Uri.file(
-    path.join(__dirname, '..', 'images', 'files', icon + '.svg'),
-  );
+  return vscode.Uri.file(path.join(__dirname, '..', 'images', 'files', icon + '.svg'));
 }
 
 /** Get a custom Stitch GameMaker icon (via `images/gm/`) */
 export function getGameMakerIcon(icon: GameMakerIcon | (string & {})) {
-  return vscode.Uri.file(
-    path.join(__dirname, '..', 'images', 'gm', icon + '.svg'),
-  );
+  return vscode.Uri.file(path.join(__dirname, '..', 'images', 'gm', icon + '.svg'));
 }
 
 export function getObjectEventIcon(eventName: string) {
@@ -107,9 +103,7 @@ export function getObjectEventIcon(eventName: string) {
     icon = 'keyboard';
   }
   if (icon) {
-    return vscode.Uri.file(
-      path.join(__dirname, '..', 'images', 'gm', 'obj', icon + '.svg'),
-    );
+    return vscode.Uri.file(path.join(__dirname, '..', 'images', 'gm', 'obj', icon + '.svg'));
   }
   return getGameMakerIcon('scripts');
 }

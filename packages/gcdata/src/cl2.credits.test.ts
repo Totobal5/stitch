@@ -14,9 +14,7 @@ describe('Cl2 Credits', function () {
     // Find a quest that gives items
     const [credits] = listCredits(packed.working);
 
-    await pathy(`tmp.${creditsSchemaId}`).write(
-      stringifyCredits(credits, packed),
-    );
+    await pathy(`tmp.${creditsSchemaId}`).write(stringifyCredits(credits, packed));
   });
 
   it('can convert credits to text and back without error', async function () {

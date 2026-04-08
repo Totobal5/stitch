@@ -33,8 +33,7 @@ const functionJsdocJs = `
 
 describe('JSDocs', function () {
   it('can parse Feather typestrings', function () {
-    const complexType =
-      'Array<string OR Array<Real>> or Struct.Hello or Id.Map<String,Real>';
+    const complexType = 'Array<string OR Array<Real>> or Struct.Hello or Id.Map<String,Real>';
     const parsed = parseFeatherTypeString(complexType);
     expect(parsed.kind).to.equal('union');
     expect(parsed.types).to.have.lengthOf(3);
@@ -49,9 +48,7 @@ describe('JSDocs', function () {
     expect(parsed.types[0].of?.types[1].of?.kind).to.equal('union');
     expect(parsed.types[0].of?.types[1].of?.types).to.have.lengthOf(1);
     expect(parsed.types[0].of?.types[1].of?.types[0].kind).to.equal('type');
-    expect(parsed.types[0].of?.types[1].of?.types[0].name.content).to.equal(
-      'Real',
-    );
+    expect(parsed.types[0].of?.types[1].of?.types[0].name.content).to.equal('Real');
     expect(parsed.types[1].kind).to.equal('type');
     expect(parsed.types[1].name.content).to.equal('Struct.Hello');
     expect(parsed.types[2].kind).to.equal('type');
@@ -74,9 +71,7 @@ describe('JSDocs', function () {
     expect(parsed.params).to.have.lengthOf(5);
     expect(parsed.params![0].name?.content).to.equal('first');
     expect(parsed.params![0].type?.content).to.equal('String');
-    expect(parsed.params![0].description).to.equal(
-      'This is the first parameter',
-    );
+    expect(parsed.params![0].description).to.equal('This is the first parameter');
     expect(parsed.params![1].name?.content).to.equal('second');
     expect(parsed.params![1].type?.content).to.equal('Real');
     expect(parsed.params![1].description).to.equal(
@@ -85,15 +80,11 @@ describe('JSDocs', function () {
     expect(parsed.params![2].name?.content).to.equal('third');
     expect(parsed.params![2].type?.content).to.equal('Struct');
     expect(parsed.params![2].optional).to.equal(true);
-    expect(parsed.params![2].description).to.equal(
-      'This parameter is optional',
-    );
+    expect(parsed.params![2].description).to.equal('This parameter is optional');
     expect(parsed.params![3].name?.content).to.equal('fourth');
     expect(parsed.params![3].type?.content).to.equal('Struct');
     expect(parsed.params![3].optional).to.equal(true);
-    expect(parsed.params![3].description).to.equal(
-      'This is optional and has a default value',
-    );
+    expect(parsed.params![3].description).to.equal('This is optional and has a default value');
     expect(parsed.params![4].name?.content).to.equal('...');
     expect(parsed.params![4].type?.content).to.equal('Bool');
     expect(parsed.params![4].optional).to.equal(true);
@@ -112,9 +103,7 @@ describe('JSDocs', function () {
     expect(parsed.params).to.have.lengthOf(5);
     expect(parsed.params![0].name?.content).to.equal('first');
     expect(parsed.params![0].type?.content).to.equal('String');
-    expect(parsed.params![0].description).to.equal(
-      'This is the first parameter',
-    );
+    expect(parsed.params![0].description).to.equal('This is the first parameter');
     expect(parsed.params![1].name?.content).to.equal('second');
     expect(parsed.params![1].type?.content).to.equal('Real');
     expect(parsed.params![1].description).to.equal(
@@ -123,15 +112,11 @@ describe('JSDocs', function () {
     expect(parsed.params![2].name?.content).to.equal('third');
     expect(parsed.params![2].type?.content).to.equal('Struct');
     expect(parsed.params![2].optional).to.equal(true);
-    expect(parsed.params![2].description).to.equal(
-      'This parameter is optional',
-    );
+    expect(parsed.params![2].description).to.equal('This parameter is optional');
     expect(parsed.params![3].name?.content).to.equal('fourth');
     expect(parsed.params![3].type?.content).to.equal('Struct');
     expect(parsed.params![3].optional).to.equal(true);
-    expect(parsed.params![3].description).to.equal(
-      'This is optional and has a default value',
-    );
+    expect(parsed.params![3].description).to.equal('This is optional and has a default value');
     expect(parsed.params![4].name?.content).to.equal('...');
     expect(parsed.params![4].type?.content).to.equal('Bool');
     expect(parsed.params![4].optional).to.equal(true);

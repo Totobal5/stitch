@@ -14,12 +14,8 @@ describe.skip('Scripts', function () {
   it('can create a new script and update it', async () => {
     // Create a new script by sticking a random integer after a prefix
     const scriptName = `test_script_${Math.floor(Math.random() * 1000)}`;
-    expect(
-      (await addScript(yypPath, scriptName, 'var first=true;')).result,
-    ).to.equal('created');
+    expect((await addScript(yypPath, scriptName, 'var first=true;')).result).to.equal('created');
     expect((await addScript(yypPath, scriptName)).result).to.equal('noop');
-    expect(
-      (await addScript(yypPath, scriptName, 'var second=true;')).result,
-    ).to.equal('updated');
+    expect((await addScript(yypPath, scriptName, 'var second=true;')).result).to.equal('updated');
   });
 });

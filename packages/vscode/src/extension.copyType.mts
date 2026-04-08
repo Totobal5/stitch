@@ -18,9 +18,7 @@ export function createCopyAsJsdocSelfCallback(provider: StitchWorkspace) {
       copyToClipboard(`/// @self ${type}`);
     } else if (type) {
       // Notify the user that this type is not a self-type
-      vscode.window.showInformationMessage(
-        `Type "${type}" cannot be used as a context type.`,
-      );
+      vscode.window.showInformationMessage(`Type "${type}" cannot be used as a context type.`);
     }
   };
 }

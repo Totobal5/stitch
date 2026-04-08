@@ -13,12 +13,7 @@ import { assertInternalClaim, assertLoudly } from './assert.mjs';
 import { diagnostics } from './diagnostics.mjs';
 import { crashlandsEvents } from './events.mjs';
 import { logger } from './log.mjs';
-import {
-  filterRanges,
-  getCursorPosition,
-  parseGameChangerUri,
-  range,
-} from './quests.util.mjs';
+import { filterRanges, getCursorPosition, parseGameChangerUri, range } from './quests.util.mjs';
 import { unknownWordError } from './unknownWordError.mjs';
 import type { CrashlandsWorkspace } from './workspace.mjs';
 
@@ -33,9 +28,7 @@ export class QuestDocument {
   parseResults: QuestUpdateResult | undefined;
 
   get document(): vscode.TextDocument | undefined {
-    return vscode.workspace.textDocuments.find(
-      (doc) => doc.uri.toString() === this.uri.toString(),
-    );
+    return vscode.workspace.textDocuments.find((doc) => doc.uri.toString() === this.uri.toString());
   }
 
   get moteId() {
@@ -47,12 +40,9 @@ export class QuestDocument {
   }
 
   getAutoCompleteItems(position: vscode.Position): vscode.CompletionItem[] {
-    const matchingAutocompletes = filterRanges(
-      this.parseResults?.completions ?? [],
-      {
-        includesPosition: position,
-      },
-    );
+    const matchingAutocompletes = filterRanges(this.parseResults?.completions ?? [], {
+      includesPosition: position,
+    });
     // Get the character before the position. If it's an '@' then
     // we want to display ALL motes as options if we didn't get a list
     // of mote autocompletes. That way the user can still get completion
@@ -76,8 +66,7 @@ export class QuestDocument {
             const name = this.packed.working.getMoteName(o)!;
             const item = new vscode.CompletionItem(name);
             item.detail = this.packed.working.getSchema(o.schema_id)?.title;
-            item.insertText =
-              o.schema_id === 'cl2_emoji' ? name : `${name}@${o.id}`;
+            item.insertText = o.schema_id === 'cl2_emoji' ? name : `${name}@${o.id}`;
             item.kind =
               o.schema_id === 'cl2_emoji'
                 ? vscode.CompletionItemKind.User
@@ -143,10 +132,7 @@ export class QuestDocument {
         return [];
       })
       .flat();
-    if (
-      isAtTrigger &&
-      !completes.find((c) => c.kind === vscode.CompletionItemKind.Class)
-    ) {
+    if (isAtTrigger && !completes.find((c) => c.kind === vscode.CompletionItemKind.Class)) {
       completes.push(
         ...this.packed.working.listMotes().map((mote) => {
           const name = this.packed.working.getMoteName(mote)!;
@@ -157,10 +143,7 @@ export class QuestDocument {
           // These need to delete the '@' character that triggered the autocomplete
           item.additionalTextEdits = [
             vscode.TextEdit.delete(
-              new vscode.Range(
-                position.translate(0, -1),
-                position.translate(0, 0),
-              ),
+              new vscode.Range(position.translate(0, -1), position.translate(0, 0)),
             ),
           ];
           return item;
@@ -234,16 +217,9 @@ export class QuestDocument {
   /** Save the last-parsed content to the changes file */
   async save(content: string) {
     this.parse(content);
-    assertLoudly(
-      this.parseResults?.diagnostics.length === 0,
-      'Cannot save a quest with errors.',
-    );
+    assertLoudly(this.parseResults?.diagnostics.length === 0, 'Cannot save a quest with errors.');
     const nameBefore = this.packed.working.getMoteName(this.mote);
-    await updateChangesFromParsedQuest(
-      this.parseResults.parsed,
-      this.mote.id,
-      this.packed,
-    );
+    await updateChangesFromParsedQuest(this.parseResults.parsed, this.mote.id, this.packed);
     const nameAfter = this.packed.working.getMoteName(this.mote);
     if (nameAfter != nameBefore) {
       crashlandsEvents.emit('mote-name-changed', {
@@ -274,12 +250,7 @@ export class QuestDocument {
 
       // Update diagnostics
       const issues = this.parseResults.diagnostics.map(
-        (d) =>
-          new vscode.Diagnostic(
-            range(d),
-            d.message,
-            vscode.DiagnosticSeverity.Error,
-          ),
+        (d) => new vscode.Diagnostic(range(d), d.message, vscode.DiagnosticSeverity.Error),
       );
       for (const word of this.parseResults.words) {
         if (word.valid) continue;

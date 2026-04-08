@@ -13,9 +13,7 @@ export class SymbolProvider implements vscode.WorkspaceSymbolProvider {
         if (!hasEditor(mote)) {
           return;
         }
-        const name = `${this.workspace.packed.working.getMoteName(mote)!} (${
-          mote.id
-        })`;
+        const name = `${this.workspace.packed.working.getMoteName(mote)!} (${mote.id})`;
         const symbol = new vscode.SymbolInformation(
           name,
           isQuestMote(mote)

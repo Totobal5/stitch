@@ -16,9 +16,7 @@ export const newSoundDefaultsSchema = z.object({
   mono: z
     .boolean()
     .optional()
-    .describe(
-      'Whether to default new sounds to mono. When not set, the default is stereo.',
-    ),
+    .describe('Whether to default new sounds to mono. When not set, the default is stereo.'),
 });
 
 export type GameConsoleLineStyle = z.infer<typeof gameConsoleLineStyleSchema>;
@@ -29,10 +27,7 @@ export const gameConsoleLineStyleSchema = z.looseObject({
     .describe(
       "Base style to apply to the matching line (e.g. 'color: #808080; font-weight: bold;')",
     ),
-  description: z
-    .string()
-    .optional()
-    .describe('A description of the rule, for debugging purposes.'),
+  description: z.string().optional().describe('A description of the rule, for debugging purposes.'),
   pattern: z
     .string()
     .describe(
@@ -41,9 +36,7 @@ export const gameConsoleLineStyleSchema = z.looseObject({
   caseSensitive: z
     .boolean()
     .optional()
-    .describe(
-      'If true, the pattern will be treated as case-sensitive. Default is false.',
-    ),
+    .describe('If true, the pattern will be treated as case-sensitive. Default is false.'),
   styles: z
     .record(z.string(), z.string())
     .optional()
@@ -58,9 +51,7 @@ export const gameConsoleStyleSchema = z
     base: z
       .string()
       .optional()
-      .describe(
-        "Base style to apply to all lines, as a CSS string (e.g. 'color: #808080')",
-      ),
+      .describe("Base style to apply to all lines, as a CSS string (e.g. 'color: #808080')"),
     lines: z
       .array(gameConsoleLineStyleSchema)
       .optional()
@@ -68,9 +59,7 @@ export const gameConsoleStyleSchema = z
         "An array of style rules to apply to lines of the game's STDOUT/STDERR. The first matching rule is used for a given line.",
       ),
   })
-  .describe(
-    "Styling rules for the game's STDOUT/STDERR for compatible runners",
-  );
+  .describe("Styling rules for the game's STDOUT/STDERR for compatible runners");
 
 export type StitchConfig = z.infer<typeof stitchConfigSchema>;
 export const stitchConfigSchema = z
@@ -97,9 +86,7 @@ export const stitchConfigSchema = z
     newSpriteRules: z
       .looseObject({ allowedNames })
       .optional()
-      .describe(
-        'Rules for creating new sprite resources, followed by supported Stitch utilities.',
-      ),
+      .describe('Rules for creating new sprite resources, followed by supported Stitch utilities.'),
     newSoundRules: z
       .looseObject({
         allowedNames,
@@ -111,9 +98,7 @@ export const stitchConfigSchema = z
           ),
       })
       .optional()
-      .describe(
-        'Rules for creating new sound resources, followed by supported Stitch utilities.',
-      ),
+      .describe('Rules for creating new sound resources, followed by supported Stitch utilities.'),
     gameConsoleStyle: gameConsoleStyleSchema.optional(),
   })
   .describe(

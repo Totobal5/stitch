@@ -4,10 +4,7 @@ import { KnownTypesMap } from './types.feather.js';
 import { Type, TypeStore } from './types.js';
 import { PrimitiveName } from './types.primitives.js';
 
-export function isTypeOfKind<T extends PrimitiveName>(
-  item: any,
-  kind: T,
-): item is Type<T> {
+export function isTypeOfKind<T extends PrimitiveName>(item: any, kind: T): item is Type<T> {
   return isTypeInstance(item) && item.kind === kind;
 }
 
@@ -36,9 +33,7 @@ export function getTypeOfKind<T extends PrimitiveName>(
   if (!from) return undefined;
   const types = getTypes(from);
   const kinds = arrayWrapped(kind) as T[];
-  return types.find((t) => kinds.includes(t.kind as any)) as
-    | Type<T>
-    | undefined;
+  return types.find((t) => kinds.includes(t.kind as any)) as Type<T> | undefined;
 }
 
 export function getTypesOfKind<T extends PrimitiveName>(
@@ -109,9 +104,7 @@ export function narrows(
   const narrowTypes = getTypes(narrowType);
   const broadTypes = getTypes(broadType);
   // All "narrow" types must be a subtype of at least one "broad" type
-  return narrowTypes.every((narrow) =>
-    broadTypes.some((broad) => narrowsType(narrow, broad)),
-  );
+  return narrowTypes.every((narrow) => broadTypes.some((broad) => narrowsType(narrow, broad)));
 }
 
 /**
@@ -177,10 +170,7 @@ function narrowsType(narrowType: Type, broadType: Type): boolean {
  * if maintaining reference links is essential this function should
  * not be used.
  */
-export function normalizeType(
-  inferred: Typeable,
-  knownTypes: KnownTypesMap,
-): TypeStore {
+export function normalizeType(inferred: Typeable, knownTypes: KnownTypesMap): TypeStore {
   const normalized = new TypeStore();
   type: for (const type of getTypes(inferred)) {
     if (type.kind === 'EnumMember') {
@@ -194,19 +184,13 @@ export function normalizeType(
       ] as const) {
         if (type.kind !== utilityKind) continue;
         if (!type.items?.type.length) {
-          normalized.addType(
-            knownTypes.get(defaultItemKind) || new Type(defaultItemKind),
-          );
+          normalized.addType(knownTypes.get(defaultItemKind) || new Type(defaultItemKind));
         }
         for (const itemType of getTypes(type.items || [])) {
           // Try to convert the type.
-          const name = itemType.name
-            ? `${defaultItemKind}.${itemType.name}`
-            : defaultItemKind;
+          const name = itemType.name ? `${defaultItemKind}.${itemType.name}` : defaultItemKind;
           let type =
-            knownTypes.get(name) ||
-            knownTypes.get(defaultItemKind) ||
-            new Type(defaultItemKind);
+            knownTypes.get(name) || knownTypes.get(defaultItemKind) || new Type(defaultItemKind);
           if (itemType.isGeneric) {
             // Then extend the type to allow having a generic without mutating the original
             type = type.derive().genericize().named(itemType.name);
@@ -270,12 +254,7 @@ export function updateGenericsMap(
         }
         // Repeat on contained types, if there are any
         if (inferredType.items?.hasTypes && expectedType.items?.hasTypes) {
-          updateGenericsMap(
-            expectedType.items,
-            inferredType.items,
-            knownTypes,
-            generics,
-          );
+          updateGenericsMap(expectedType.items, inferredType.items, knownTypes, generics);
         }
       }
     }
@@ -311,4 +290,39 @@ export function replaceGenerics(
     replacedTypes.type = replacedTypes.type.filter((t) => t.kind !== 'Any');
   }
   return replacedTypes;
+}
+
+/**
+ * Removes `Undefined` from a union of types if other, more specific types exist.
+ * This is useful for parameters documented with a type (e.g., `@param {Function}`)
+ * that are optional, where the documented type should be prioritized in hovers/autocompletion.
+ *
+ * Examples:
+ * - `[Function, Undefined]` → `[Function]`
+ * - `[String, Real, Undefined]` → `[String, Real]`
+ * - `[Undefined]` → `[Undefined]` (no change, avoid removing only type)
+ * - `[Function]` → `[Function]` (no change, already specific)
+ */
+export function prioritizeNonUndefinedTypes(types: Type[]): Type[] {
+  if (!types.length) return types;
+  const hasNonUndefinedType = types.some((t) => t.kind !== 'Undefined');
+  if (hasNonUndefinedType) {
+    return types.filter((t) => t.kind !== 'Undefined');
+  }
+  // If only Undefined exists, keep it
+  return types;
+}
+
+/**
+ * Removes `Undefined` from a TypeStore if other, more specific types exist.
+ * Modifies the TypeStore in place and returns it for chaining.
+ */
+export function prioritizeNonUndefinedInTypeStore(typeStore: TypeStore): TypeStore {
+  if (typeStore.type.length > 1) {
+    const hasNonUndefinedType = typeStore.type.some((t) => t.kind !== 'Undefined');
+    if (hasNonUndefinedType) {
+      typeStore.type = typeStore.type.filter((t) => t.kind !== 'Undefined');
+    }
+  }
+  return typeStore;
 }

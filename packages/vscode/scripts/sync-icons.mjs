@@ -25,10 +25,7 @@ for (const folder of sourceFolders) {
     if (!file.hasExtension('svg')) {
       continue;
     }
-    const name =
-      folder === 'files'
-        ? file.name
-        : `${folder}/${file.name}`.replace(/[_/\\]+/g, '-');
+    const name = folder === 'files' ? file.name : `${folder}/${file.name}`.replace(/[_/\\]+/g, '-');
     types.push(file.name);
     theme.iconDefinitions[name] = {
       iconPath: `./${folder}/${file.basename}`,
@@ -38,8 +35,8 @@ for (const folder of sourceFolders) {
     folder === 'files'
       ? 'FileIcon'
       : folder === 'gm'
-      ? 'GameMakerIcon'
-      : 'GameMakerObjectEventIcon';
+        ? 'GameMakerIcon'
+        : 'GameMakerObjectEventIcon';
   typesStrings.push(`export type ${typeName} = '${types.join("' | '")}'`);
 }
 

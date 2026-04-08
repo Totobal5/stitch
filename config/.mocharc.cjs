@@ -2,8 +2,8 @@ const reporter =
   process.env.MOCHA_REPORTER === 'vscode-problem-matcher'
     ? __dirname + '/mochaMatcherReporter.cjs'
     : process.env.MOCHA_REPORTER === 'detailed'
-    ? __dirname + '/detailedReporter.cjs'
-    : 'spec';
+      ? __dirname + '/detailedReporter.cjs'
+      : 'spec';
 
 /** @type {import('mocha').MochaOptions} */
 module.exports = {

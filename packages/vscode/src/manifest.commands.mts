@@ -553,9 +553,7 @@ export function canShowInPalette(commandName: CommandName): boolean {
   return command[$showInPalette]!;
 }
 
-export function asEditorContextMenuEntry(
-  commandName: CommandName,
-): MenuItem | undefined {
+export function asEditorContextMenuEntry(commandName: CommandName): MenuItem | undefined {
   const command = commands[commandName] as ManifestCommand;
   if (!($showInEditorContextMenu in command)) return;
   return {
@@ -565,9 +563,7 @@ export function asEditorContextMenuEntry(
   };
 }
 
-export function asViewTitleEntry(
-  commandName: CommandName,
-): MenuItem | undefined {
+export function asViewTitleEntry(commandName: CommandName): MenuItem | undefined {
   const command = commands[commandName] as ManifestCommand;
   if (!($showInViewTitle in command)) return;
   return {
@@ -577,9 +573,7 @@ export function asViewTitleEntry(
   };
 }
 
-export function asViewItemContextMenuEntry(
-  commandName: CommandName,
-): MenuItem[] | undefined {
+export function asViewItemContextMenuEntry(commandName: CommandName): MenuItem[] | undefined {
   const command = commands[commandName];
   if (!($showInViewItemContextMenu in command)) return;
   const entries = arrayWrapped(command[$showInViewItemContextMenu]);

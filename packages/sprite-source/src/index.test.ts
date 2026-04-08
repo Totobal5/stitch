@@ -150,11 +150,7 @@ async function initializeStaging() {
   // Make a bunch of copies of sprites and spines
   // in the staging folder.
   for (const org of sandboxStagingOrg) {
-    const source = org.spine
-      ? sampleSpine
-      : org.invalid
-        ? sampleInvalidSprite
-        : sampleSprite;
+    const source = org.spine ? sampleSpine : org.invalid ? sampleInvalidSprite : sampleSprite;
     const target = sandboxStaging.join(org.path);
     await source.path.copy(target);
   }
@@ -265,10 +261,7 @@ describe('Sprite Sources', function () {
         const size = await getPngSize(target.join('subimage-1.png'));
         if (entry.expect.cropped) {
           assert(size.width < sampleSprite.size.width, `${target} not cropped`);
-          assert(
-            size.height < sampleSprite.size.height,
-            `${target} not cropped`,
-          );
+          assert(size.height < sampleSprite.size.height, `${target} not cropped`);
         } else {
           assert(size.width === sampleSprite.size.width, `${target} cropped`);
           assert(size.height === sampleSprite.size.height, `${target} cropped`);

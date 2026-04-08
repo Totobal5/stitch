@@ -900,7 +900,7 @@
 
 ### Fixes
 
-- Resolved misc.  jank
+- Resolved misc. jank
 - Resolved JSDoc return types not being consumed
 - Some built-in GML constants were being treated as unknown identifiers
 

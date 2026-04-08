@@ -6,7 +6,7 @@ The projects in the Stitch monorepo are all designed to solve problems we face a
 
 We already have an infinite list of features and fixes for our own use cases, so we don't have the bandwidth to build (or maintain) stuff that we don't need.
 
-That said, sometimes things are surprisingly easy to address, and other times people suggest features that we hadn't even realized we *also* wanted! So if there is a feature or fix that you'd like to see in one of the Stitch projects, please [submit an Issue](https://github.com/bscotch/stitch/issues). Just be ready for us to say, "Sorry, we don't have the bandwidth for that!"
+That said, sometimes things are surprisingly easy to address, and other times people suggest features that we hadn't even realized we _also_ wanted! So if there is a feature or fix that you'd like to see in one of the Stitch projects, please [submit an Issue](https://github.com/bscotch/stitch/issues). Just be ready for us to say, "Sorry, we don't have the bandwidth for that!"
 
 ## Contributing your own features and fixes
 
@@ -70,9 +70,9 @@ This provides a few benefits:
 
 This repo uses [pnpm](https://pnpm.io/) for handling builds, both of which accept "filters" to limit operations to a subset of projects, and both of which understand the relationships between projects so that things happen in the right order.
 
-> 📝 While you *can* open the repo root in your IDE to work on Stitch projects, you'll tend to get better tooling results by opening project folders in separate IDE windows!
+> 📝 While you _can_ open the repo root in your IDE to work on Stitch projects, you'll tend to get better tooling results by opening project folders in separate IDE windows!
 
-To get *all* Stitch projects ready for development, from the repo root run:
+To get _all_ Stitch projects ready for development, from the repo root run:
 
 - `npm run setup:pnpm` (if you have Node 16+ installed and don't already have pnpm installed)
 - `pnpm install` (install all external dependencies for all projects)

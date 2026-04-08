@@ -21,9 +21,7 @@ const yyExtensionConstantSchema = z.object({
   hidden: z.boolean().default(false),
   value: z
     .string()
-    .describe(
-      'The raw text value of the macro. Must be parsed as code to get the actual value.',
-    ),
+    .describe('The raw text value of the macro. Must be parsed as code to get the actual value.'),
 });
 
 export type YyExtensionFunction = z.infer<typeof yyExtensionFunctionSchema>;
@@ -35,9 +33,7 @@ const yyExtensionFunctionSchema = z.object({
   documentation: z.string().default(''),
   argCount: z.number().default(0),
   args: z.array(yyExtensionValueTypeSchema).default([]),
-  help: z
-    .string()
-    .describe('The function signature as a string, manually provided.'),
+  help: z.string().describe('The function signature as a string, manually provided.'),
   hidden: z.boolean().default(false),
   kind: z.number().default(4),
   returnType: yyExtensionValueTypeSchema,

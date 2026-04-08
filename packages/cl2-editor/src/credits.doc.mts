@@ -12,11 +12,7 @@ import { assertInternalClaim, assertLoudly } from './assert.mjs';
 import { diagnostics } from './diagnostics.mjs';
 import { crashlandsEvents } from './events.mjs';
 import { logger } from './log.mjs';
-import {
-  getCursorPosition,
-  parseGameChangerUri,
-  range,
-} from './quests.util.mjs';
+import { getCursorPosition, parseGameChangerUri, range } from './quests.util.mjs';
 import { unknownWordError } from './unknownWordError.mjs';
 import type { CrashlandsWorkspace } from './workspace.mjs';
 
@@ -31,9 +27,7 @@ export class CreditsDocument {
   parseResults: CreditsUpdateResult | undefined;
 
   get document(): vscode.TextDocument | undefined {
-    return vscode.workspace.textDocuments.find(
-      (doc) => doc.uri.toString() === this.uri.toString(),
-    );
+    return vscode.workspace.textDocuments.find((doc) => doc.uri.toString() === this.uri.toString());
   }
 
   get moteId() {
@@ -66,16 +60,9 @@ export class CreditsDocument {
   /** Save the last-parsed content to the changes file */
   async save(content: string) {
     this.parse(content);
-    assertLoudly(
-      this.parseResults?.diagnostics.length === 0,
-      'Cannot save a quest with errors.',
-    );
+    assertLoudly(this.parseResults?.diagnostics.length === 0, 'Cannot save a quest with errors.');
     const nameBefore = this.packed.working.getMoteName(this.mote);
-    await updateChangesFromParsedCredits(
-      this.parseResults.parsed,
-      this.mote.id,
-      this.packed,
-    );
+    await updateChangesFromParsedCredits(this.parseResults.parsed, this.mote.id, this.packed);
     const nameAfter = this.packed.working.getMoteName(this.mote);
     if (nameAfter != nameBefore) {
       crashlandsEvents.emit('mote-name-changed', {
@@ -104,12 +91,7 @@ export class CreditsDocument {
 
       // Update diagnostics
       const issues = this.parseResults.diagnostics.map(
-        (d) =>
-          new vscode.Diagnostic(
-            range(d),
-            d.message,
-            vscode.DiagnosticSeverity.Error,
-          ),
+        (d) => new vscode.Diagnostic(range(d), d.message, vscode.DiagnosticSeverity.Error),
       );
       for (const word of this.parseResults.words) {
         if (word.valid) continue;

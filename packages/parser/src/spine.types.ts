@@ -10,13 +10,7 @@ export interface SpineJson<
   slots: SpineSlot<SlotName, BoneName, AttachmentName>[];
   skins: SpineSkin<SlotName, AttachmentName>[];
   events: SpineEvents<EventName>;
-  animations: SpineAnimations<
-    AnimationName,
-    SlotName,
-    BoneName,
-    EventName,
-    AttachmentName
-  >;
+  animations: SpineAnimations<AnimationName, SlotName, BoneName, EventName, AttachmentName>;
 }
 
 type SpineEvents<EventName extends string = string> = {
@@ -55,10 +49,7 @@ interface SpineSlot<
   attachment: AttachmentName;
 }
 
-interface SpineSkin<
-  SlotName extends string = string,
-  AttachmentName extends string = string,
-> {
+interface SpineSkin<SlotName extends string = string, AttachmentName extends string = string> {
   name: string;
   attachments: {
     [Slot in SlotName]?: {
@@ -85,12 +76,7 @@ type SpineAnimations<
   EventName extends string = string,
   AttachmentName extends string = string,
 > = {
-  [name in AnimationName]: SpineAnimation<
-    SlotName,
-    BoneName,
-    EventName,
-    AttachmentName
-  >;
+  [name in AnimationName]: SpineAnimation<SlotName, BoneName, EventName, AttachmentName>;
 };
 
 export interface SpineAnimation<

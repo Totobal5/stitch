@@ -64,15 +64,9 @@ xdescribe('GameMakerLauncher', function () {
     // (Downloads and installs can take a while)
     this.timeout(1000 * 60 * 10);
     console.log('Installing IDE', sampleProjectCompatibleIde, '...');
-    const installedVersion = await GameMakerIde.install(
-      sampleProjectCompatibleIde,
-    );
+    const installedVersion = await GameMakerIde.install(sampleProjectCompatibleIde);
     expect(installedVersion.version).to.equal(sampleProjectCompatibleIde);
-    expect(
-      await GameMakerIde.cachedIdeDirectory(
-        sampleProjectCompatibleIde,
-      ).exists(),
-    ).to.be.true;
+    expect(await GameMakerIde.cachedIdeDirectory(sampleProjectCompatibleIde).exists()).to.be.true;
   });
 
   it('can install a Runtime version', async function () {
@@ -100,11 +94,7 @@ xdescribe('GameMakerLauncher', function () {
   it('can run a project with a given Runtime', async function () {
     // Requires running a project, which could take a little time
     this.timeout(1000 * 60 * 2);
-    console.log(
-      'Running project with runtime version',
-      sampleProjectCompatibleRuntime,
-      '...',
-    );
+    console.log('Running project with runtime version', sampleProjectCompatibleRuntime, '...');
     const runnerResults = await GameMakerLauncher.runProject(
       {
         project: sampleProjectPath,
@@ -112,8 +102,7 @@ xdescribe('GameMakerLauncher', function () {
       sampleProjectCompatibleRuntime,
     );
     expect(runnerResults.compileSucceeded, 'Should have compiled').to.be.true;
-    expect(runnerResults.runnerSucceeded, 'Should have run without error').to.be
-      .true;
+    expect(runnerResults.runnerSucceeded, 'Should have run without error').to.be.true;
   });
 
   it('can open a project with a given IDE and inferred Runtime version', async function () {
@@ -133,8 +122,7 @@ xdescribe('GameMakerLauncher', function () {
         name: 'hasCorrectVersions',
       },
     ]);
-    expect(hasCorrectVersions, 'Opened IDE should have used correct versions')
-      .to.be.true;
+    expect(hasCorrectVersions, 'Opened IDE should have used correct versions').to.be.true;
     opener.close();
   });
 
@@ -156,8 +144,7 @@ xdescribe('GameMakerLauncher', function () {
         name: 'hasCorrectVersions',
       },
     ]);
-    expect(hasCorrectVersions, 'Opened IDE should have used correct versions')
-      .to.be.true;
+    expect(hasCorrectVersions, 'Opened IDE should have used correct versions').to.be.true;
     opener.close();
   });
 });

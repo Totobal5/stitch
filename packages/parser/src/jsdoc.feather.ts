@@ -63,8 +63,7 @@ export function parseFeatherTypeString(typeString: string): FeatherTypeUnion {
   if (typeString.match(/^\s*[<[]/)) {
     const parts = typeString.match(/^(\s*[<[])(.*)([>\]]\s*)$/);
     if (parts) {
-      typeString =
-        ' '.repeat(parts[1].length) + parts[2] + ' '.repeat(parts[3].length);
+      typeString = ' '.repeat(parts[1].length) + parts[2] + ' '.repeat(parts[3].length);
     }
   }
 
@@ -165,9 +164,7 @@ export function typeToFeatherString(type: Type): string {
   }
   // Arrays etc can contain items of a type) {
   if (type.items?.type.length) {
-    return `${type.kind}<${type.items.type
-      .map((t) => t.toFeatherString())
-      .join('|')}>`;
+    return `${type.kind}<${type.items.type.map((t) => t.toFeatherString()).join('|')}>`;
   }
   return type.kind;
 }

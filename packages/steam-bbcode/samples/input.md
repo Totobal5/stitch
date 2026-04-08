@@ -1,18 +1,22 @@
 # H1 Heading
+
 ## H2 Heading
+
 ### H3 Heading
 
 Steam only supports h1-h3, the rest should just be bold.
 
 #### H4 Heading
+
 ##### H5 Heading
+
 ###### H6 Heading
 
 Some **Bold text**
 
-Some *Italic text*
+Some _Italic text_
 
-A [Link](https://example.com "With a title")
+A [Link](https://example.com 'With a title')
 
 Some ~~Strikethrough text~~
 

@@ -35,7 +35,7 @@ A signifier reference links to the signifier being referenced and the location w
 
 Macros make parsing difficult since their values do not necessarily need be complete expressions.
 
-Stitch takes a strongly opinionated stance on macros to make static analysis less complicated: macros are only allowed to map to valid *expressions*, so that they can be used as if they are variables.
+Stitch takes a strongly opinionated stance on macros to make static analysis less complicated: macros are only allowed to map to valid _expressions_, so that they can be used as if they are variables.
 
 ## Types
 
@@ -72,7 +72,7 @@ Feather's type system is not documented and has limited expressivity. Our curren
   - `Real | String`
   - `Array<String | Id.Instance>`
 
-Feather is primarily used as a type *inference* toolset, rather than an explicit type system. For example, Feather only supports explicitly typing through JSDocs for function definitions.
+Feather is primarily used as a type _inference_ toolset, rather than an explicit type system. For example, Feather only supports explicitly typing through JSDocs for function definitions.
 
 ### Stitch Type System
 
@@ -89,7 +89,7 @@ The Stitch type system is designed to be a superset of the Feather type system, 
 - Unions have full support, instead of falling back to a general "Mixed" type.
 - Structs can be used as a container type, e.g. `Struct<Real>` is a valid type that indicates a struct whose values are all of type `Real`.
 - Stitch will ingest types with a variety of syntaxes, since Feather seems to allow a range as well. They will all be normalized to a single syntax for internal representation, computed hovertext, etc. For example:
-  - Unions can be created with `|` (standard), `,`, or ` OR ` separators
+  - Unions can be created with `|` (standard), `,`, or `OR` separators
   - Container content can be wrapped in `<>` (standard) or `[]` brackets
 - Stitch will support additional JSDoc keywords, enabling explicit typing of any signifier rather than only functions
 - Stitch will perform minimal type inference, requiring that the developer explicitly add type information wherever there is a conflict.
@@ -108,11 +108,10 @@ How Stitch uses JSDocs:
 
 ## Accessors
 
-Accessors are operators that allow us to access a member of a container (e.g. a struct, array, or other data structure). Accessors and function calls are practically very similar, in that they essentially "return" a value and that value *could* be another data structure/function which could also have an accessor applied to it.
+Accessors are operators that allow us to access a member of a container (e.g. a struct, array, or other data structure). Accessors and function calls are practically very similar, in that they essentially "return" a value and that value _could_ be another data structure/function which could also have an accessor applied to it.
 
 In essence, accessors create chainable in-line scope changes.
 
 For example, `one.two[$"three"].four().five` creates a series of implied inline scope changes after each accessor. `one.` changes the self scope to `one`, `two` must be a member of `one`, etc.
 
 Collectively, I refer to these as "accessor suffixes".
-

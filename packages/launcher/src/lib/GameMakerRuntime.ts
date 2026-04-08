@@ -4,15 +4,8 @@ import {
   executeGameMakerBuildCommand,
   executeGameMakerRuntimeInstallCommand,
 } from './GameMakerRuntime.command.js';
-import type {
-  GameMakerBuildOptions,
-  GameMakerRunOptions,
-} from './GameMakerRuntime.types.js';
-import {
-  listInstalledRuntimes,
-  type Logger,
-  sortByDateField,
-} from './utility.js';
+import type { GameMakerBuildOptions, GameMakerRunOptions } from './GameMakerRuntime.types.js';
+import { listInstalledRuntimes, type Logger, sortByDateField } from './utility.js';
 export * from './GameMakerRuntime.command.js';
 
 export class GameMakerRuntime extends GameMakerComponent {
@@ -35,9 +28,7 @@ export class GameMakerRuntime extends GameMakerComponent {
     return await executeGameMakerRuntimeInstallCommand(this, newVersion);
   }
 
-  static async listInstalled(options?: {
-    logger?: Logger;
-  }): Promise<GameMakerRuntime[]> {
+  static async listInstalled(options?: { logger?: Logger }): Promise<GameMakerRuntime[]> {
     // Get the runtime versions that SHOULD be installable
     // for cross-checking and for identifying which channel
     // a runtime is from.
@@ -49,16 +40,12 @@ export class GameMakerRuntime extends GameMakerComponent {
     });
     const runtimes: GameMakerRuntime[] = [];
     for (const runtime of installedRuntimes) {
-      const version = releases.find(
-        (v) => v.runtime.version === runtime.version,
-      );
+      const version = releases.find((v) => v.runtime.version === runtime.version);
       runtimes.push(
         new GameMakerRuntime({
           ...runtime,
           channel: version?.channel,
-          publishedAt: version?.runtime.publishedAt
-            ? new Date(version.publishedAt)
-            : undefined,
+          publishedAt: version?.runtime.publishedAt ? new Date(version.publishedAt) : undefined,
           feedUrl: version?.runtime.feedUrl,
         }),
       );

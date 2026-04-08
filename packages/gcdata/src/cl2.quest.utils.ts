@@ -1,35 +1,21 @@
 import type { Gcdata } from './GameChanger.js';
 import { assert } from './assert.js';
 import { Crashlands2 } from './cl2.types.auto.js';
-import type {
-  BschemaBsArrayElement,
-  BschemaEnum,
-  BschemaMoteId,
-  BschemaObject,
-} from './types.js';
+import type { BschemaBsArrayElement, BschemaEnum, BschemaMoteId, BschemaObject } from './types.js';
 import { resolvePointerInSchema } from './util.js';
 
 export function getMoteLists(packed: Gcdata) {
   const allowedSpeakers = getAllowedSpeakers(packed);
-  assert(
-    allowedSpeakers.length > 0,
-    'Should have at least one allowed speaker mote',
-  );
+  assert(allowedSpeakers.length > 0, 'Should have at least one allowed speaker mote');
 
   const allowedGivers = getAllowedGivers(packed);
-  assert(
-    allowedGivers.length > 0,
-    'Should have at least one allowed giver mote',
-  );
+  assert(allowedGivers.length > 0, 'Should have at least one allowed giver mote');
 
   const storylines =
-    packed.listMotesBySchema<Crashlands2.Schemas['cl2_storyline']>(
-      'cl2_storyline',
-    );
+    packed.listMotesBySchema<Crashlands2.Schemas['cl2_storyline']>('cl2_storyline');
   assert(storylines.length > 0, 'Should have at least one storyline mote');
 
-  const quests =
-    packed.listMotesBySchema<Crashlands2.Schemas['cl2_quest']>('cl2_quest');
+  const quests = packed.listMotesBySchema<Crashlands2.Schemas['cl2_quest']>('cl2_quest');
   assert(quests.length > 0, 'Should have at least one quest mote');
 
   return {
@@ -60,9 +46,7 @@ function getAllowedSpeakers(packed: Gcdata) {
     } as any,
     packed,
   ) as BschemaMoteId;
-  return packed.listMotesBySchema(
-    ...speakerSubchema.formatProperties!.allowSchemas!,
-  );
+  return packed.listMotesBySchema(...speakerSubchema.formatProperties!.allowSchemas!);
 }
 
 export function getRequirementQuestStatuses(packed: Gcdata): string[] {
@@ -148,9 +132,7 @@ function getAllowedGivers(packed: Gcdata) {
     } as any,
     packed,
   ) as BschemaMoteId;
-  return packed.listMotesBySchema(
-    ...giverSubchema.formatProperties!.allowSchemas!,
-  );
+  return packed.listMotesBySchema(...giverSubchema.formatProperties!.allowSchemas!);
 }
 
 export function isEmoteMoment<T extends Crashlands2.QuestMoment>(

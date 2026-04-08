@@ -87,9 +87,9 @@ export class TypeStore<T extends PrimitiveName = PrimitiveName> extends Flags {
   }
 
   toFeatherString(): string {
-    const typeStrings = [
-      ...new Set(this.type.map((t) => t.toFeatherString())),
-    ].sort((a, b) => a.localeCompare(b));
+    const typeStrings = [...new Set(this.type.map((t) => t.toFeatherString()))].sort((a, b) =>
+      a.localeCompare(b),
+    );
     return typeStrings.join('|') || 'Any';
   }
 }
@@ -184,10 +184,7 @@ export class Type<T extends PrimitiveName = PrimitiveName> {
     return this._kind;
   }
   set kind(newKind: PrimitiveName) {
-    ok(
-      this._kind === 'Unknown' || this._kind === newKind,
-      'Cannot change type kind',
-    );
+    ok(this._kind === 'Unknown' || this._kind === newKind, 'Cannot change type kind');
     this._kind = newKind as T;
   }
 
@@ -269,9 +266,7 @@ export class Type<T extends PrimitiveName = PrimitiveName> {
     // Get the subset of local members that are parameters,
     // and sort them by their index.
     const params =
-      this.local
-        ?.listMembers(true)
-        .filter((m) => m.parameter && typeof m.idx === 'number') || [];
+      this.local?.listMembers(true).filter((m) => m.parameter && typeof m.idx === 'number') || [];
     // Instead of sorting by index, we want to guarantee that the index positions
     // *actually match*.
     const sorted = Array(params.length);
@@ -301,8 +296,7 @@ export class Type<T extends PrimitiveName = PrimitiveName> {
     },
   ): Signifier {
     assert(this.isFunction, `Cannot add param to ${this.kind} type`);
-    const name =
-      typeof nameOrParam === 'string' ? nameOrParam : nameOrParam.name;
+    const name = typeof nameOrParam === 'string' ? nameOrParam : nameOrParam.name;
     let param = this.local?.getMember(name, true);
     const existingAtThisIndex = this.getParameter(idx);
 
@@ -310,10 +304,7 @@ export class Type<T extends PrimitiveName = PrimitiveName> {
     if (!param) {
       this.local ||= Type.Struct;
       param = this.local.addMember(nameOrParam)!;
-      assert(
-        param.parent === this.local,
-        'Param incorrectly added -- has the wrong parent',
-      );
+      assert(param.parent === this.local, 'Param incorrectly added -- has the wrong parent');
     }
 
     // Handle positional conflicts. If there is a param at this index already,
@@ -346,9 +337,7 @@ export class Type<T extends PrimitiveName = PrimitiveName> {
     if (excludeParents || !this.extends) {
       return this._members?.size || 0;
     }
-    return (
-      (this._members?.size || 0) + this.extends.totalMembers(excludeParents)
-    );
+    return (this._members?.size || 0) + this.extends.totalMembers(excludeParents);
   }
 
   listMembers(excludeParents = false): Signifier[] {

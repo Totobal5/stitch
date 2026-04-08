@@ -13,10 +13,7 @@ describe('Cl2 Quests', function () {
     assert(packed, 'Packed data should be loaded');
 
     // Find a quest that gives items
-    const quests =
-      packed.working.listMotesBySchema<Crashlands2.Schemas['cl2_quest']>(
-        'cl2_quest',
-      );
+    const quests = packed.working.listMotesBySchema<Crashlands2.Schemas['cl2_quest']>('cl2_quest');
     const quest = quests.find(
       (q) =>
         (bsArrayToArray(q.data.quest_start_moments!).find(
@@ -46,10 +43,7 @@ describe('Cl2 Quests', function () {
     this.timeout(20000);
     const packed = await GameChanger.from('Crashlands2');
     assert(packed, 'Packed data should be loaded');
-    const quests =
-      packed.working.listMotesBySchema<Crashlands2.Schemas['cl2_quest']>(
-        'cl2_quest',
-      );
+    const quests = packed.working.listMotesBySchema<Crashlands2.Schemas['cl2_quest']>('cl2_quest');
     for (const quest of quests) {
       const asText = stringifyQuest(quest, packed);
       const results = parseStringifiedQuest(asText, packed);

@@ -80,9 +80,7 @@ export async function importAssets(
     for (const asset of newMissingAssets) {
       derivedImports.set(asset.name, asset);
     }
-    const newMissingDeps = newMissingAssets
-      .map((a) => sourceDeps.get(a)!)
-      .flat() as Dependency[];
+    const newMissingDeps = newMissingAssets.map((a) => sourceDeps.get(a)!).flat() as Dependency[];
 
     // Find the *newly* missing deps from this new list
     newMissingAssets = updateMissingDeps(
@@ -107,10 +105,7 @@ export async function importAssets(
 
   // By default, missing deps should cause an error
   const { onMissingDependency } = options;
-  if (
-    missingDeps.size &&
-    (!onMissingDependency || onMissingDependency === 'error')
-  ) {
+  if (missingDeps.size && (!onMissingDependency || onMissingDependency === 'error')) {
     await logFile.write({
       missing: missingDeps,
     });
@@ -132,8 +127,7 @@ export async function importAssets(
 
   const newAssets: Asset[] = [];
   for (const [name, asset] of derivedImports) {
-    const skip =
-      onMissingDependency !== 'include' && !intendedImports.has(asset.name);
+    const skip = onMissingDependency !== 'include' && !intendedImports.has(asset.name);
     if (skip) {
       summary.skipped.push(asset.name);
       continue;
@@ -148,9 +142,7 @@ export async function importAssets(
           : folder.replace(sourceFolder + '/', targetFolder + '/');
     }
     // Copy over the asset files
-    const targetDir = targetProject.dir.join(
-      asset.dir.relativeFrom(sourceProject.dir),
-    );
+    const targetDir = targetProject.dir.join(asset.dir.relativeFrom(sourceProject.dir));
 
     waits.push(
       targetDir
@@ -183,9 +175,7 @@ export async function importAssets(
           return existingAsset;
         })
         .catch((err) => {
-          summary.errors.push(
-            `Failed to import asset ${asset.name}: ${err.message}`,
-          );
+          summary.errors.push(`Failed to import asset ${asset.name}: ${err.message}`);
         }),
     );
   }
@@ -273,8 +263,7 @@ function updateMissingDeps(
       // For simplicity, just see if any global entity with the
       // same name exists (could check types in the future).
       const existsInTarget =
-        targetProject.self.getMember(dep.signifier) ||
-        targetProject.getAssetByName(dep.signifier);
+        targetProject.self.getMember(dep.signifier) || targetProject.getAssetByName(dep.signifier);
       if (!existsInTarget) {
         addMissingDep(dep);
       }

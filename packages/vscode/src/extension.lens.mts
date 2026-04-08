@@ -5,9 +5,7 @@ import type { StitchWorkspace } from './extension.workspace.mjs';
 
 export class StitchLensProvider implements vscode.CodeLensProvider {
   protected constructor(readonly workspace: StitchWorkspace) {}
-  provideCodeLenses(
-    document: vscode.TextDocument,
-  ): vscode.ProviderResult<vscode.CodeLens[]> {
+  provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
     const matchingAsset = this.workspace.getAsset(document);
     if (!matchingAsset) return [];
     // Put these on the top line
@@ -34,26 +32,21 @@ export class StitchLensProvider implements vscode.CodeLensProvider {
         );
       }
     } else if (isAssetOfKind(matchingAsset, 'shaders')) {
-      for (const [idx, fileKind] of (
-        ['fragment', 'vertex'] as const
-      ).entries()) {
+      for (const [idx, fileKind] of (['fragment', 'vertex'] as const).entries()) {
         lenses.push(
           new vscode.CodeLens(topLine, {
             command: 'vscode.open',
             title: `${idx === 0 ? '$(go-to-file) ' : ''}${
               fileKind === 'fragment' ? 'Fragment' : 'Vertex'
             }`,
-            arguments: [
-              vscode.Uri.file(matchingAsset.shaderPaths?.[fileKind]?.absolute),
-            ],
+            arguments: [vscode.Uri.file(matchingAsset.shaderPaths?.[fileKind]?.absolute)],
           }),
         );
       }
     } else {
       let path: Pathy | undefined;
       if (matchingAsset.gmlFile || matchingAsset.shaderPaths?.fragment)
-        path =
-          matchingAsset.gmlFile?.path || matchingAsset.shaderPaths?.fragment;
+        path = matchingAsset.gmlFile?.path || matchingAsset.shaderPaths?.fragment;
       else if (isAssetOfKind(matchingAsset, 'sounds'))
         path = matchingAsset.dir.join(matchingAsset.yy.soundFile);
       if (path) {

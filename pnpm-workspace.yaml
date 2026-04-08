@@ -1,4 +1,4 @@
 packages:
-  - "packages/*"
-  - "packages/vscode/webviews"
-  - "packages/vscode/shared"
+  - 'packages/*'
+  - 'packages/vscode/webviews'
+  - 'packages/vscode/shared'

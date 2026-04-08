@@ -34,15 +34,9 @@ const elements = {
   height: /** @type {HTMLElement} */ (document.querySelector('.dim.height')),
   xorigin: /** @type {HTMLElement} */ (document.querySelector('.origin.x')),
   yorigin: /** @type {HTMLElement} */ (document.querySelector('.origin.y')),
-  player: /** @type {HTMLElement} */ (
-    document.querySelector('#player-container')
-  ),
-  animationsList: /** @type {HTMLUListElement} */ (
-    document.querySelector('ul.animations')
-  ),
-  slotsList: /** @type {HTMLUListElement} */ (
-    document.querySelector('ul.slots')
-  ),
+  player: /** @type {HTMLElement} */ (document.querySelector('#player-container')),
+  animationsList: /** @type {HTMLUListElement} */ (document.querySelector('ul.animations')),
+  slotsList: /** @type {HTMLUListElement} */ (document.querySelector('ul.slots')),
 };
 
 // Initial & static data

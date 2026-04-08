@@ -11,10 +11,7 @@ export async function ensureGroups(
   names: string[],
 ): Promise<{ result: 'created' | 'noop' }> {
   let result: 'created' | 'noop' = 'noop';
-  assert(
-    yypPath.endsWith('.yyp'),
-    'First argument must be a path to a .yyp file',
-  );
+  assert(yypPath.endsWith('.yyp'), 'First argument must be a path to a .yyp file');
   names = [...new Set(names)]; // ensure uniqueness
 
   const yyp = await Yy.read(yypPath, 'project');

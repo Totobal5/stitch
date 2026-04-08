@@ -4,8 +4,8 @@
   "name": "GameMaker Metadata",
   "patterns": [
     {
-        "name": "source.yyp",
-        "include": "source.json"
+      "name": "source.yyp",
+      "include": "source.json"
     }
   ],
   "repository": {},

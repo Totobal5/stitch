@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "bscotch-stitch-vscode@*"
+      - 'bscotch-stitch-vscode@*'
 
 permissions:
   contents: write

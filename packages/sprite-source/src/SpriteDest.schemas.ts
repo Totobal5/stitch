@@ -38,9 +38,7 @@ const spriteDestSourceSchema = z.looseObject({
   prefix: z
     .string()
     .optional()
-    .describe(
-      'Prefix to add to the sprite name when adding to the project as a sprite asset.',
-    ),
+    .describe('Prefix to add to the sprite name when adding to the project as a sprite asset.'),
 });
 
 const schemaFilename = 'stitch.sprite-imports.schema.json';

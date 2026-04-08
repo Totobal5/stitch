@@ -27,9 +27,7 @@ export class StorylineDocument {
   parseResults: StorylineUpdateResult | undefined;
 
   get document(): vscode.TextDocument | undefined {
-    return vscode.workspace.textDocuments.find(
-      (doc) => doc.uri.toString() === this.uri.toString(),
-    );
+    return vscode.workspace.textDocuments.find((doc) => doc.uri.toString() === this.uri.toString());
   }
 
   get moteId() {
@@ -41,12 +39,9 @@ export class StorylineDocument {
   }
 
   getAutoCompleteItems(position: vscode.Position): vscode.CompletionItem[] {
-    const matchingAutocompletes = filterRanges(
-      this.parseResults?.completions ?? [],
-      {
-        includesPosition: position,
-      },
-    );
+    const matchingAutocompletes = filterRanges(this.parseResults?.completions ?? [], {
+      includesPosition: position,
+    });
 
     const completes = matchingAutocompletes
       .map((c) => {
@@ -86,16 +81,9 @@ export class StorylineDocument {
   /** Save the last-parsed content to the changes file */
   async save(content: string) {
     this.parse(content);
-    assertLoudly(
-      this.parseResults?.diagnostics.length === 0,
-      'Cannot save a quest with errors.',
-    );
+    assertLoudly(this.parseResults?.diagnostics.length === 0, 'Cannot save a quest with errors.');
     const nameBefore = this.packed.working.getMoteName(this.mote);
-    await updateChangesFromParsedStoryline(
-      this.parseResults.parsed,
-      this.mote.id,
-      this.packed,
-    );
+    await updateChangesFromParsedStoryline(this.parseResults.parsed, this.mote.id, this.packed);
     const nameAfter = this.packed.working.getMoteName(this.mote);
     if (nameAfter != nameBefore) {
       crashlandsEvents.emit('mote-name-changed', {
@@ -126,12 +114,7 @@ export class StorylineDocument {
 
       // Update diagnostics
       const issues = this.parseResults.diagnostics.map(
-        (d) =>
-          new vscode.Diagnostic(
-            range(d),
-            d.message,
-            vscode.DiagnosticSeverity.Error,
-          ),
+        (d) => new vscode.Diagnostic(range(d), d.message, vscode.DiagnosticSeverity.Error),
       );
       for (const word of this.parseResults.words) {
         if (word.valid) continue;
@@ -155,10 +138,7 @@ export class StorylineDocument {
     assertInternalClaim(moteId, 'Expected a storyline mote id');
     const mote = workspace.packed.working.getMote(moteId);
     assertInternalClaim(mote, `No storyline mote found with id ${moteId}`);
-    assertInternalClaim(
-      isStorylineMote(mote),
-      'Only storylines are supported.',
-    );
+    assertInternalClaim(isStorylineMote(mote), 'Only storylines are supported.');
     const doc = new StorylineDocument(uri, workspace.packed);
     this.cache.set(uri.toString(), doc);
     doc.parse();

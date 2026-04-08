@@ -1,10 +1,7 @@
 import { Pathy } from '@bscotch/pathy';
 import vscode from 'vscode';
 
-export async function showErrorMessage<T extends string>(
-  message: string | Error,
-  ...items: T[]
-) {
+export async function showErrorMessage<T extends string>(message: string | Error, ...items: T[]) {
   return await vscode.window.showErrorMessage(
     typeof message === 'string' ? message : message.message,
     ...items,
@@ -53,9 +50,7 @@ export class Logger {
       }
       if (isObject && arg instanceof Pathy) {
         // Log the path relative to the workspace root
-        return arg.relativeFrom(
-          vscode.workspace.workspaceFolders![0].uri.fsPath,
-        );
+        return arg.relativeFrom(vscode.workspace.workspaceFolders![0].uri.fsPath);
       }
       if (isObject && arg instanceof Error) {
         return stringifyError(arg, true);
@@ -132,13 +127,9 @@ export class Timer {
 
 function stringifyError(error: Error, includeStack = false, indent = 0) {
   const indentation = '  '.repeat(indent);
-  const lines = [
-    `${indentation}${indent === 0 ? 'ERROR' : 'CAUSE'}: ${error.message}`,
-  ];
+  const lines = [`${indentation}${indent === 0 ? 'ERROR' : 'CAUSE'}: ${error.message}`];
   if (includeStack && error.stack) {
-    lines.push(
-      ...error.stack.split(/[\r\n]/).map((line) => `${indentation}${line}`),
-    );
+    lines.push(...error.stack.split(/[\r\n]/).map((line) => `${indentation}${line}`));
   }
   if (error.cause && error.cause instanceof Error) {
     lines.push(stringifyError(error.cause, includeStack, indent + 1));

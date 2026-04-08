@@ -13,6 +13,128 @@ export type KnownTypesMap = Map<string, Type>;
 export type GenericsMap = Record<string, Type[]>;
 export type KnownOrGenerics = KnownTypesMap | GenericsMap;
 
+function splitTopLevel(input: string, separator: string): string[] {
+  const parts: string[] = [];
+  let current = '';
+  let parenDepth = 0;
+  let angleDepth = 0;
+  let squareDepth = 0;
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+    if (char === '(') parenDepth++;
+    if (char === ')') parenDepth = Math.max(0, parenDepth - 1);
+    if (char === '<') angleDepth++;
+    if (char === '>') angleDepth = Math.max(0, angleDepth - 1);
+    if (char === '[') squareDepth++;
+    if (char === ']') squareDepth = Math.max(0, squareDepth - 1);
+
+    if (char === separator && parenDepth === 0 && angleDepth === 0 && squareDepth === 0) {
+      parts.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  if (current.trim()) {
+    parts.push(current.trim());
+  }
+  return parts;
+}
+
+function findTopLevelColon(input: string): number {
+  let parenDepth = 0;
+  let angleDepth = 0;
+  let squareDepth = 0;
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+    if (char === '(') parenDepth++;
+    if (char === ')') parenDepth = Math.max(0, parenDepth - 1);
+    if (char === '<') angleDepth++;
+    if (char === '>') angleDepth = Math.max(0, angleDepth - 1);
+    if (char === '[') squareDepth++;
+    if (char === ']') squareDepth = Math.max(0, squareDepth - 1);
+    if (char === ':' && parenDepth === 0 && angleDepth === 0 && squareDepth === 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function typeFromFunctionSignatureString(
+  typeString: string,
+  knownTypes: KnownTypesMap | KnownOrGenerics[],
+  addMissing: boolean,
+): Type[] | undefined {
+  const trimmed = typeString.trim();
+  if (!/^Function\s*\(/i.test(trimmed)) {
+    return;
+  }
+
+  const functionPrefixMatch = trimmed.match(/^Function\s*/i);
+  if (!functionPrefixMatch) {
+    return;
+  }
+  const openParenIndex = functionPrefixMatch[0].length;
+  if (trimmed[openParenIndex] !== '(') {
+    return;
+  }
+
+  let closeParenIndex = -1;
+  let depth = 0;
+  for (let i = openParenIndex; i < trimmed.length; i++) {
+    const char = trimmed[i];
+    if (char === '(') depth++;
+    if (char === ')') {
+      depth--;
+      if (depth === 0) {
+        closeParenIndex = i;
+        break;
+      }
+    }
+  }
+  if (closeParenIndex < 0) {
+    return;
+  }
+
+  const paramsSection = trimmed.slice(openParenIndex + 1, closeParenIndex).trim();
+  const afterParams = trimmed.slice(closeParenIndex + 1).trim();
+  let returnTypeSection = '';
+  if (afterParams) {
+    if (!afterParams.startsWith(':')) {
+      return;
+    }
+    returnTypeSection = afterParams.slice(1).trim();
+  }
+
+  const functionType = new Type('Function');
+  const paramSpecs = paramsSection ? splitTopLevel(paramsSection, ',') : [];
+  for (let i = 0; i < paramSpecs.length; i++) {
+    const paramSpec = paramSpecs[i];
+    if (!paramSpec) continue;
+
+    const colonIndex = findTopLevelColon(paramSpec);
+    let paramName = `arg${i}`;
+    let paramTypeSpec = paramSpec;
+    if (colonIndex >= 0) {
+      const maybeName = paramSpec.slice(0, colonIndex).trim();
+      const maybeType = paramSpec.slice(colonIndex + 1).trim();
+      if (maybeName.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/)) {
+        paramName = maybeName;
+      }
+      paramTypeSpec = maybeType || 'Any';
+    }
+
+    const param = functionType.addParameter(i, paramName);
+    param.setType(typeFromFeatherString(paramTypeSpec, knownTypes, addMissing));
+  }
+
+  if (returnTypeSection) {
+    functionType.setReturnType(typeFromFeatherString(returnTypeSection, knownTypes, addMissing));
+  }
+
+  return [functionType];
+}
+
 function findInKnownOrGenerics(
   identifier: string,
   knownTypes: KnownTypesMap | KnownOrGenerics[],
@@ -37,6 +159,10 @@ export function typeFromFeatherString(
   knownTypes: KnownTypesMap | KnownOrGenerics[],
   addMissing: boolean,
 ): Type[] {
+  const functionSignatureType = typeFromFunctionSignatureString(typeString, knownTypes, addMissing);
+  if (functionSignatureType) {
+    return functionSignatureType;
+  }
   const parsed = parseFeatherTypeString(typeString);
   return typeFromParsedFeatherString(parsed, knownTypes, addMissing);
 }
@@ -57,14 +183,9 @@ export function typeFromIdentifier(
   addMissing: boolean,
   __isRootRequest = true,
 ): Type {
-  ok(
-    identifier.match(/^[A-Z][A-Z0-9._]*$/i),
-    `Invalid type name ${identifier}`,
-  );
+  ok(identifier.match(/^[A-Z_][A-Z0-9._]*$/i), `Invalid type name ${identifier}`);
   const normalizedName = identifier?.toLocaleLowerCase?.();
-  const isObjectType = ['asset.gmobject', 'id.instance'].includes(
-    normalizedName as any,
-  );
+  const isObjectType = ['asset.gmobject', 'id.instance'].includes(normalizedName as any);
 
   const knownType = findInKnownOrGenerics(identifier, knownTypes)?.[0];
   if (knownType && isObjectType) {
@@ -74,9 +195,7 @@ export function typeFromIdentifier(
     return knownType;
   }
 
-  const primitiveType = primitiveNames.find(
-    (n) => n?.toLocaleLowerCase?.() === normalizedName,
-  );
+  const primitiveType = primitiveNames.find((n) => n?.toLocaleLowerCase?.() === normalizedName);
   if (primitiveType) {
     return new Type(primitiveType);
   }
@@ -90,14 +209,19 @@ export function typeFromIdentifier(
       const derivedTyped = type.derive().named(nameParts.join('.'));
       // Types should only be auto-added when loading the native spec
       if (addMissing) {
-        const map = arrayWrapped(knownTypes).find(
-          (collection) => collection instanceof Map,
-        ) as KnownTypesMap | undefined;
+        const map = arrayWrapped(knownTypes).find((collection) => collection instanceof Map) as
+          | KnownTypesMap
+          | undefined;
         map?.set(identifier, derivedTyped);
       }
       return derivedTyped;
     }
     return type;
+  }
+  if (identifier.match(/^[a-z_][a-z0-9_]*$/i)) {
+    // Bare user-defined identifiers (e.g. __scribble_class_element)
+    // are most commonly struct-like custom types in project docs.
+    return new Type('Struct').named(identifier);
   }
   return new Type('Undefined');
 }
@@ -110,25 +234,15 @@ export function typeFromParsedJsdocs(
   if (jsdoc.kind === 'description') {
     // Then we have no type info.
     return [];
-  } else if (
-    ['type', 'instancevar', 'globalvar', 'localvar'].includes(jsdoc.kind)
-  ) {
+  } else if (['type', 'instancevar', 'globalvar', 'localvar'].includes(jsdoc.kind)) {
     // Then this was purely a type annotation. Create the type and
     // add any metadata.
-    return typeFromFeatherString(
-      jsdoc.type?.content || 'Any',
-      knownTypes,
-      addMissing,
-    );
+    return typeFromFeatherString(jsdoc.type?.content || 'Any', knownTypes, addMissing);
   } else if (jsdoc.kind === 'self') {
     // The self-type could be a function, in which case
     // we want to use its "self" as the type instead of
     // the function itself.
-    const matchingType = typeFromFeatherString(
-      jsdoc.self?.content || 'Any',
-      knownTypes,
-      addMissing,
-    )
+    const matchingType = typeFromFeatherString(jsdoc.self?.content || 'Any', knownTypes, addMissing)
       .map((t) => (t.kind === 'Function' ? t.self : t))
       .filter((x) => !!x) as Type[];
     return matchingType;
@@ -167,11 +281,7 @@ export function typeFromParsedJsdocs(
       const member = type.addParameter(i, param.name!.content);
       if (param.type) {
         member.setType(
-          typeFromFeatherString(
-            param.type.content,
-            [knownTypes, generics],
-            addMissing,
-          ),
+          typeFromFeatherString(param.type.content, [knownTypes, generics], addMissing),
         );
       }
       i++;
@@ -191,11 +301,7 @@ export function typeFromParsedFeatherString(
     const identifier = node.name;
     let type = typeFromIdentifier(identifier.content, knownTypes, addMissing);
     if (node.of) {
-      const subtypes = typeFromParsedFeatherString(
-        node.of,
-        knownTypes,
-        addMissing,
-      );
+      const subtypes = typeFromParsedFeatherString(node.of, knownTypes, addMissing);
       // Then we need to create a new type instead of mutating
       // the one we found.
       type = type.derive();
@@ -217,11 +323,7 @@ export function typeFromParsedFeatherString(
     }
     const types: Type[] = [];
     for (const child of unionOf) {
-      const subtype = typeFromParsedFeatherString(
-        child,
-        knownTypes,
-        addMissing,
-      );
+      const subtype = typeFromParsedFeatherString(child, knownTypes, addMissing);
       types.push(...subtype);
     }
     return types;

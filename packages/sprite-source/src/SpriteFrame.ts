@@ -24,11 +24,8 @@ export class SpriteFrame {
   }
 
   async updateCache(cache: SpriteSummary) {
-    const lastChanged = (
-      await statSafe(this.path, retryOptions)
-    ).mtime.getTime();
-    const needsUpdate =
-      (cache.frames[this.path.relative]?.changed || 0) !== lastChanged;
+    const lastChanged = (await statSafe(this.path, retryOptions)).mtime.getTime();
+    const needsUpdate = (cache.frames[this.path.relative]?.changed || 0) !== lastChanged;
     if (!needsUpdate) return cache.frames[this.path.relative];
     const [size] = await Promise.all([this.getSize()]);
     cache.frames[this.path.relative] = {
@@ -65,11 +62,8 @@ export class SpriteFrame {
       return this._masks[alphaKey];
     }
     const image = await this.getImage();
-    const threshold =
-      foregroundMinAlphaFraction || 1 / Math.pow(2, image.bitDepth);
-    this._masks[alphaKey] = image
-      .getChannel(image.channels - 1)
-      .mask({ threshold });
+    const threshold = foregroundMinAlphaFraction || 1 / Math.pow(2, image.bitDepth);
+    this._masks[alphaKey] = image.getChannel(image.channels - 1).mask({ threshold });
     return this._masks[alphaKey];
   }
 
@@ -136,9 +130,7 @@ export class SpriteFrame {
     // Invert to get the background pixels that need to be adjusted
     // Set the color of those pixels to the the color of the nearest foreground, and the alpha
     // to something very low so that it mostly isn't visible but won't be treated as background downstream
-    const foreground = await this.getForegroundMask(
-      (bleedMaxAlpha + 1) / maxPixelValue,
-    );
+    const foreground = await this.getForegroundMask((bleedMaxAlpha + 1) / maxPixelValue);
     const expandedForeground = foreground.dilate({
       kernel: [
         [1, 1, 1],
@@ -148,8 +140,7 @@ export class SpriteFrame {
     });
 
     const isInForeground = (x: number, y: number) => foreground.getBitXY(x, y);
-    const isInExpandedForeground = (x: number, y: number) =>
-      expandedForeground.getBitXY(x, y);
+    const isInExpandedForeground = (x: number, y: number) => expandedForeground.getBitXY(x, y);
     const isInOutline = (x: number, y: number) =>
       isInExpandedForeground(x, y) && !isInForeground(x, y);
 
@@ -173,9 +164,7 @@ export class SpriteFrame {
           }
           if (neighbors.length) {
             // average the colors
-            const colorSamples: number[][] = transparentBlackPixel.map(
-              () => [],
-            );
+            const colorSamples: number[][] = transparentBlackPixel.map(() => []);
             for (const neighbor of neighbors) {
               for (let channel = 0; channel < img.channels; channel++) {
                 colorSamples[channel].push(neighbor[channel]);
@@ -184,16 +173,11 @@ export class SpriteFrame {
             const newColor = colorSamples.map((sample, idx) => {
               if (idx == img.channels - 1) {
                 // Alpha should be 2% or half the min neighboring alpha
-                const minAlpha = sample.reduce(
-                  (min, value) => Math.min(min, value),
-                  Infinity,
-                );
+                const minAlpha = sample.reduce((min, value) => Math.min(min, value), Infinity);
                 return Math.ceil(Math.min(minAlpha * 0.5, bleedMaxAlpha));
               } else {
                 // Use the average color
-                return Math.round(
-                  sample.reduce((sum, value) => sum + value, 0) / sample.length,
-                );
+                return Math.round(sample.reduce((sum, value) => sum + value, 0) / sample.length);
               }
             });
             img.setPixelXY(x, y, newColor);

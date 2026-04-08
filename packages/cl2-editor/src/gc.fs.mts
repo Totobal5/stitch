@@ -98,10 +98,7 @@ export class GameChangerFs implements vscode.FileSystemProvider {
     }
     await doc.save(content.toString());
   }
-  delete(
-    uri: vscode.Uri,
-    options: { readonly recursive: boolean },
-  ): void | Thenable<void> {
+  delete(uri: vscode.Uri, options: { readonly recursive: boolean }): void | Thenable<void> {
     throw new Error('Delete not implemented.');
   }
   rename(
@@ -141,14 +138,9 @@ export class GameChangerFs implements vscode.FileSystemProvider {
         created: new Date(b.date),
         lastOpened: new Date(b.lastOpened || b.date),
         checksum: b.checksum,
-        filePath: GameChangerFs.backupsDir.join(
-          moteId,
-          `${b.checksum}.${b.schema}`,
-        ),
+        filePath: GameChangerFs.backupsDir.join(moteId, `${b.checksum}.${b.schema}`),
       })) || [];
-    const exist = await Promise.all(
-      backupsInfo.map((b) => b.filePath.exists()),
-    );
+    const exist = await Promise.all(backupsInfo.map((b) => b.filePath.exists()));
     // Clean up missing backups
     for (let i = backups.length - 1; i >= 0; i--) {
       if (exist[i]) continue;
@@ -165,9 +157,7 @@ export class GameChangerFs implements vscode.FileSystemProvider {
     this.backups = await indexFile.read({ fallback: { motes: {} } });
     if (!this.backups) {
       // SHOULD NOT HAPPEN!
-      logger.error(
-        '(Impossible outcome.) Could not load backups index. Using empty index.',
-      );
+      logger.error('(Impossible outcome.) Could not load backups index. Using empty index.');
       this.backups = { motes: {} };
       return;
     }
@@ -198,9 +188,7 @@ export class GameChangerFs implements vscode.FileSystemProvider {
       // Remove the backup files
       for (const backup of deleted) {
         logger.log('Deleting old backup', backup);
-        await GameChangerFs.backupsDir
-          .join(moteId, `${backup.checksum}.${backup.schema}`)
-          .delete();
+        await GameChangerFs.backupsDir.join(moteId, `${backup.checksum}.${backup.schema}`).delete();
       }
 
       this.backups.motes[moteId] = uniqueBackups;
@@ -208,10 +196,7 @@ export class GameChangerFs implements vscode.FileSystemProvider {
     await this.saveBackupsIndex();
   }
   protected async saveBackupsIndex() {
-    assertLoudly(
-      this.backups,
-      'Could not save backups index. Index not loaded.',
-    );
+    assertLoudly(this.backups, 'Could not save backups index. Index not loaded.');
     const indexFile = GameChangerFs.backupsDir.join<BackupsIndex>('index.json');
     await indexFile.write(this.backups);
   }
@@ -225,14 +210,9 @@ export class GameChangerFs implements vscode.FileSystemProvider {
         this.saveBackupCalls.delete(moteId);
         const dir = GameChangerFs.backupsDir.join(moteId);
         await dir.ensureDir();
-        assertLoudly(
-          this.backups,
-          'Could not create backup! Backups index not loaded.',
-        );
+        assertLoudly(this.backups, 'Could not create backup! Backups index not loaded.');
         const checksum = computeChecksum(content).slice(0, 8);
-        await dir
-          .join(`${checksum}.${schemaId}`)
-          .write(content, { serialize: false });
+        await dir.join(`${checksum}.${schemaId}`).write(content, { serialize: false });
         this.backups.motes[moteId] ||= [];
         // Does the backup already exist?
         const backupIndex = this.backups.motes[moteId].findIndex(
@@ -261,9 +241,7 @@ export class GameChangerFs implements vscode.FileSystemProvider {
     await provider.loadBackupsIndex();
 
     crashlandsEvents.on('mote-updated', (uri) => {
-      const doc = vscode.workspace.textDocuments.find(
-        (d) => d.uri.toString() === uri.toString(),
-      );
+      const doc = vscode.workspace.textDocuments.find((d) => d.uri.toString() === uri.toString());
       const moteDoc = provider.getMoteDoc(uri);
       if (!moteDoc) {
         warn("Couldn't find mote doc for", uri.toString());
@@ -276,11 +254,7 @@ export class GameChangerFs implements vscode.FileSystemProvider {
             moteDoc.parse(text);
             if (!moteDoc.parseResults?.diagnostics.length) {
               // Create a backup
-              provider.createBackup(
-                moteDoc.mote.id,
-                moteDoc.mote.schema_id,
-                text,
-              );
+              provider.createBackup(moteDoc.mote.id, moteDoc.mote.schema_id, text);
             }
           }, crashlandsConfig.parseDelay),
         );
@@ -293,56 +267,47 @@ export class GameChangerFs implements vscode.FileSystemProvider {
         isCaseSensitive: true,
         isReadonly: false,
       }),
-      vscode.commands.registerCommand(
-        'crashlands.quests.enter',
-        (mods?: { shift?: boolean }) => {
-          const doc = provider.getActiveMoteDoc();
-          if (doc && 'onEnter' in doc && typeof doc.onEnter === 'function') {
-            doc?.onEnter(mods?.shift);
-          }
-        },
-      ),
-      vscode.commands.registerCommand(
-        'crashlands.editor.backup.restore',
-        async () => {
-          const uri = vscode.window.activeTextEditor?.document.uri;
-          if (!uri) {
-            return;
-          }
-          const moteDoc = provider.getMoteDoc(uri);
-          const backups = await provider.listBackups(moteDoc.mote.id);
-          assertLoudly(backups.length, 'No backups found.');
+      vscode.commands.registerCommand('crashlands.quests.enter', (mods?: { shift?: boolean }) => {
+        const doc = provider.getActiveMoteDoc();
+        if (doc && 'onEnter' in doc && typeof doc.onEnter === 'function') {
+          doc?.onEnter(mods?.shift);
+        }
+      }),
+      vscode.commands.registerCommand('crashlands.editor.backup.restore', async () => {
+        const uri = vscode.window.activeTextEditor?.document.uri;
+        if (!uri) {
+          return;
+        }
+        const moteDoc = provider.getMoteDoc(uri);
+        const backups = await provider.listBackups(moteDoc.mote.id);
+        assertLoudly(backups.length, 'No backups found.');
 
-          const backup = await vscode.window.showQuickPick(
-            backups.map((b) => ({
-              label: `Created: ${b.created.toLocaleString()} | Restored: ${b.lastOpened.toLocaleString()}`,
-              moteId: b.moteId,
-              checksum: b.checksum,
-              filePath: b.filePath,
-            })),
-            {
-              placeHolder: 'Select a backup to restore',
-            },
-          );
-          if (!backup) {
-            return;
-          }
-          const content = (await backup.filePath.read({
-            parse: false,
-          })) as string;
-          let edit = new vscode.WorkspaceEdit();
-          let range = moteDoc.document?.validateRange(
-            new vscode.Range(0, 0, Number.MAX_VALUE, Number.MAX_VALUE),
-          );
-          assertLoudly(
-            range,
-            'Could not replace the document with the backup.',
-          );
-          edit.replace(moteDoc.uri, range, content);
-          vscode.workspace.applyEdit(edit);
-          await provider.updateBackupLastOpened(backup.moteId, backup.checksum);
-        },
-      ),
+        const backup = await vscode.window.showQuickPick(
+          backups.map((b) => ({
+            label: `Created: ${b.created.toLocaleString()} | Restored: ${b.lastOpened.toLocaleString()}`,
+            moteId: b.moteId,
+            checksum: b.checksum,
+            filePath: b.filePath,
+          })),
+          {
+            placeHolder: 'Select a backup to restore',
+          },
+        );
+        if (!backup) {
+          return;
+        }
+        const content = (await backup.filePath.read({
+          parse: false,
+        })) as string;
+        let edit = new vscode.WorkspaceEdit();
+        let range = moteDoc.document?.validateRange(
+          new vscode.Range(0, 0, Number.MAX_VALUE, Number.MAX_VALUE),
+        );
+        assertLoudly(range, 'Could not replace the document with the backup.');
+        edit.replace(moteDoc.uri, range, content);
+        vscode.workspace.applyEdit(edit);
+        await provider.updateBackupLastOpened(backup.moteId, backup.checksum);
+      }),
     ];
   }
 

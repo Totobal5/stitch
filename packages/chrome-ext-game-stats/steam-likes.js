@@ -32,8 +32,7 @@ async function addButtons() {
   const asJson = JSON.stringify(likes).replace(/"/g, '&quot;');
   const copyAsCsv = "navigator.clipboard.writeText('" + asCsv + "')";
   const copyAsJson = "navigator.clipboard.writeText('" + asJson + "')";
-  const copyAsTsv =
-    "navigator.clipboard.writeText('" + asCsv.replace(/,/g, '\\t') + "')";
+  const copyAsTsv = "navigator.clipboard.writeText('" + asCsv.replace(/,/g, '\\t') + "')";
 
   const tabEl = document.querySelector('#myTab');
   assert(tabEl, 'Could not find #myTab');

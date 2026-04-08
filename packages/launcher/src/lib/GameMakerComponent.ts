@@ -196,14 +196,9 @@ export class GameMakerComponent {
     searchOptions?.logger?.log(`Found ${releases.length} releases...`);
     const release = releases.find((release) => {
       if (searchOptions.ideVersion) {
-        return (
-          release.ide.version === cleanVersionString(searchOptions.ideVersion)
-        );
+        return release.ide.version === cleanVersionString(searchOptions.ideVersion);
       } else if (searchOptions.runtimeVersion) {
-        return (
-          release.runtime.version ===
-          cleanVersionString(searchOptions.runtimeVersion)
-        );
+        return release.runtime.version === cleanVersionString(searchOptions.runtimeVersion);
       }
       return false;
     });
@@ -230,9 +225,7 @@ export class GameMakerComponent {
    * Ensure that all official runtime feeds are available to the user
    * by adding missing feeds to the appropriate GameMaker configs.
    */
-  static async ensureOfficialRuntimeFeeds(
-    channels: Channel[] = ['lts', 'stable', 'beta'],
-  ) {
+  static async ensureOfficialRuntimeFeeds(channels: Channel[] = ['lts', 'stable', 'beta']) {
     const feedConfigs: RuntimeFeedsFile = [];
     const runtimeUrls = runtimeFeedUrls();
     for (const channel of channels) {

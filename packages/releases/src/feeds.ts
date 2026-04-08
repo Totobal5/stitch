@@ -41,10 +41,7 @@ export async function computeReleasesSummaryWithNotes(
       runtime,
     });
   }
-  withNotes.sort(
-    (a, b) =>
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
+  withNotes.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   return z.array(gameMakerReleaseWithNotesSchema).parse(withNotes);
 }
 
@@ -69,19 +66,14 @@ export async function computeReleasesSummary(): Promise<GameMakerRelease[]> {
       runtime,
     });
   }
-  releases.sort(
-    (a, b) =>
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
+  releases.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   return z.array(gameMakerReleaseSchema).parse(releases);
 }
 
 async function listArtifacts(type: ArtifactType): Promise<GameMakerArtifact[]> {
   const entries: GameMakerArtifact[] = [];
   const urls = type === 'ide' ? ideFeedUrls() : runtimeFeedUrls();
-  const feeds = await Promise.all(
-    channels.map((channel) => downloadRssFeed(urls[channel])),
-  );
+  const feeds = await Promise.all(channels.map((channel) => downloadRssFeed(urls[channel])));
   for (let i = 0; i < channels.length; i++) {
     const channel = channels[i];
     const feed = feeds[i];
@@ -100,9 +92,6 @@ async function listArtifacts(type: ArtifactType): Promise<GameMakerArtifact[]> {
       );
     }
   }
-  entries.sort(
-    (a, b) =>
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
+  entries.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   return entries;
 }

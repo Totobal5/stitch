@@ -18,9 +18,7 @@ export interface ManifestCommand {
   enablement?: string;
   [$showInPalette]?: boolean;
   [$showInViewTitle]?: ManifestCommandMenuEntry;
-  [$showInViewItemContextMenu]?:
-    | ManifestCommandMenuEntry
-    | ManifestCommandMenuEntry[];
+  [$showInViewItemContextMenu]?: ManifestCommandMenuEntry | ManifestCommandMenuEntry[];
   [$showInEditorContextMenu]?: ManifestCommandMenuEntry;
 }
 
@@ -38,11 +36,7 @@ export interface ManifestViewContainer {
   icon: './images/stitch-logo-mono.svg';
 }
 
-export type MenuItemGroup = `${
-  | 'navigation'
-  | 'inline'
-  | '1_stitch'
-  | '7_modification'}@${number}`;
+export type MenuItemGroup = `${'navigation' | 'inline' | '1_stitch' | '7_modification'}@${number}`;
 
 export interface MenuItem {
   command: CommandName;

@@ -20,10 +20,7 @@ describe('Modules', function () {
     const o_object_deps = deps.get(o_object);
     assert(o_object_deps, 'o_object deps not found');
     assert(o_object_deps.length > 0, 'o_object has no deps');
-    assert(
-      o_object_deps[0].requiredBy.name === 'o_object',
-      'o_object deps are wrong',
-    );
+    assert(o_object_deps[0].requiredBy.name === 'o_object', 'o_object deps are wrong');
   });
 
   it('can perform a simple import', async function () {

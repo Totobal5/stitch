@@ -21,10 +21,9 @@ export function isChatMote(mote: any): mote is Mote<NpcData> {
   return mote.schema_id === chatSchemaId;
 }
 
-export interface ChatUpdateResult
-  extends ParserResult<{
-    moments: ParsedMoment[];
-  }> {}
+export interface ChatUpdateResult extends ParserResult<{
+  moments: ParsedMoment[];
+}> {}
 
 export interface ParsedMoment {
   id: string | undefined;

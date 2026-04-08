@@ -1099,7 +1099,7 @@
 
 ### Fixes
 
-- Resolved misc.  jank
+- Resolved misc. jank
 
 ## 0.25.0 (2023-06-15)
 

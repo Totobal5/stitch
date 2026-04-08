@@ -36,9 +36,7 @@ export class StitchHoverProvider implements vscode.HoverProvider {
       }
       // If it's a sprite, add preview images
       const sprite =
-        type.kind === 'Asset.GMSprite' &&
-        item.name &&
-        this.provider.getAsset(document, item.name);
+        type.kind === 'Asset.GMSprite' && item.name && this.provider.getAsset(document, item.name);
       if (sprite) {
         hoverContents.isTrusted = true;
         assertUserClaim(sprite.dir, 'Sprite must have a directory');
@@ -47,9 +45,7 @@ export class StitchHoverProvider implements vscode.HoverProvider {
         const yy = sprite.yy as YySprite;
         let images = '';
         for (const frame of yy.frames) {
-          const framePath = vscode.Uri.file(
-            sprite.dir.join(`${frame.name}.png`).absolute,
-          );
+          const framePath = vscode.Uri.file(sprite.dir.join(`${frame.name}.png`).absolute);
           images += `![Sprite subimage](${framePath})`;
         }
         textBlocks.add(images);

@@ -1,10 +1,7 @@
 import { Pathy } from '@bscotch/pathy';
 import vscode from 'vscode';
 
-export async function showErrorMessage<T extends string>(
-  message: string | Error,
-  ...items: T[]
-) {
+export async function showErrorMessage<T extends string>(message: string | Error, ...items: T[]) {
   return await vscode.window.showErrorMessage(
     typeof message === 'string' ? message : message.message,
     ...items,
@@ -23,10 +20,7 @@ export class Logger {
     readonly prefix?: string,
   ) {
     if (!Logger.outputChannels.has(channel)) {
-      Logger.outputChannels.set(
-        channel,
-        vscode.window.createOutputChannel(channel, 'stitch-logs'),
-      );
+      Logger.outputChannels.set(channel, vscode.window.createOutputChannel(channel, 'stitch-logs'));
     }
   }
 
@@ -53,19 +47,12 @@ export class Logger {
       }
       if (isObject && arg instanceof Pathy) {
         // Log the path relative to the workspace root
-        return arg.relativeFrom(
-          vscode.workspace.workspaceFolders![0].uri.fsPath,
-        );
+        return arg.relativeFrom(vscode.workspace.workspaceFolders![0].uri.fsPath);
       }
       if (isObject && arg instanceof Error) {
         return stringifyError(arg, true);
       }
-      if (isObject && arg.toString() === '[object Object]') {
-        try {
-          return JSON.stringify(arg);
-        } catch {}
-      }
-      return arg;
+      return formatLogArg(arg);
     });
     const components = [type.toUpperCase(), timestamp];
     if (this.prefix) {
@@ -102,6 +89,63 @@ export class Logger {
   }
 }
 
+const maxLogArgLength = 280;
+
+function formatLogArg(arg: unknown): string {
+  if (typeof arg === 'string') {
+    return truncateMiddle(arg, maxLogArgLength);
+  }
+
+  if (isTokenLikeArg(arg)) {
+    const tokenType = typeof arg.tokenType?.name === 'string' ? arg.tokenType.name : 'Unknown';
+    const image = typeof arg.image === 'string' ? arg.image : String(arg.image ?? '');
+    const startLine = Number.isFinite(arg.startLine) ? arg.startLine : '?';
+    const startColumn = Number.isFinite(arg.startColumn) ? arg.startColumn : '?';
+    return `{ token: ${tokenType}, image: ${JSON.stringify(image)}, at: ${startLine}:${startColumn} }`;
+  }
+
+  if (arg && typeof arg === 'object') {
+    try {
+      return truncateMiddle(JSON.stringify(arg), maxLogArgLength);
+    } catch {
+      return '[Unserializable Object]';
+    }
+  }
+
+  return String(arg);
+}
+
+function truncateMiddle(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+  const partLength = Math.max(8, Math.floor((maxLength - 7) / 2));
+  return `${value.slice(0, partLength)} ... ${value.slice(-partLength)}`;
+}
+
+function isTokenLikeArg(arg: unknown): arg is {
+  image?: unknown;
+  startLine?: number;
+  startColumn?: number;
+  tokenType?: { name?: unknown };
+} {
+  if (!arg || typeof arg !== 'object') {
+    return false;
+  }
+  const tokenArg = arg as {
+    image?: unknown;
+    startLine?: unknown;
+    startColumn?: unknown;
+    tokenType?: { name?: unknown };
+  };
+  return (
+    'image' in tokenArg &&
+    'startLine' in tokenArg &&
+    'startColumn' in tokenArg &&
+    typeof tokenArg.tokenType?.name === 'string'
+  );
+}
+
 export const logger = new Logger('Stitch');
 
 export function info(...args: any[]) {
@@ -132,13 +176,9 @@ export class Timer {
 
 function stringifyError(error: Error, includeStack = false, indent = 0) {
   const indentation = '  '.repeat(indent);
-  const lines = [
-    `${indentation}${indent === 0 ? 'ERROR' : 'CAUSE'}: ${error.message}`,
-  ];
+  const lines = [`${indentation}${indent === 0 ? 'ERROR' : 'CAUSE'}: ${error.message}`];
   if (includeStack && error.stack) {
-    lines.push(
-      ...error.stack.split(/[\r\n]/).map((line) => `${indentation}${line}`),
-    );
+    lines.push(...error.stack.split(/[\r\n]/).map((line) => `${indentation}${line}`));
   }
   if (error.cause && error.cause instanceof Error) {
     lines.push(stringifyError(error.cause, includeStack, indent + 1));
@@ -149,11 +189,7 @@ function stringifyError(error: Error, includeStack = false, indent = 0) {
 export function getErrorMessage(error: unknown): string {
   let combinedMessage = '';
   if (error instanceof Error) {
-    if (
-      'message' in error &&
-      typeof error.message === 'string' &&
-      error.message.length
-    ) {
+    if ('message' in error && typeof error.message === 'string' && error.message.length) {
       combinedMessage = error.message;
     }
     if ('cause' in error && error.cause instanceof Error) {

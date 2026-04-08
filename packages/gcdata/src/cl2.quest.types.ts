@@ -90,23 +90,22 @@ type ParsedRequirement = ParsedRequirementQuest | ParsedRequirementOther;
 export type QuestMomentsLabel = `quest_${'start' | 'end'}_moments`;
 export type QuestRequirementsLabel = `quest_${'start' | 'end'}_requirements`;
 
-export interface QuestUpdateResult
-  extends ParserResult<
-    {
-      /** The moteId for the storyline */
-      storyline?: string;
-      /** The moteId for the quest giver */
-      quest_giver?: string;
-      /** The moteId for the quest receiver */
-      quest_receiver?: string;
-      clues: ParsedClue[];
-      quest_start_log?: string;
-    } & {
-      [K in QuestMomentsLabel]: ParsedMoment[];
-    } & {
-      [K in QuestRequirementsLabel]: ParsedRequirement[];
-    }
-  > {}
+export interface QuestUpdateResult extends ParserResult<
+  {
+    /** The moteId for the storyline */
+    storyline?: string;
+    /** The moteId for the quest giver */
+    quest_giver?: string;
+    /** The moteId for the quest receiver */
+    quest_receiver?: string;
+    clues: ParsedClue[];
+    quest_start_log?: string;
+  } & {
+    [K in QuestMomentsLabel]: ParsedMoment[];
+  } & {
+    [K in QuestRequirementsLabel]: ParsedRequirement[];
+  }
+> {}
 
 export type Section = (typeof sections)[number];
 export const sections = ['start moments', 'end moments'] as const;

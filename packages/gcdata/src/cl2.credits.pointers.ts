@@ -1,5 +1,6 @@
 export type CreditsMoteDataPointer = `data/${CreditsMotePointer}`;
-export type CreditsMotePointer = ``
+export type CreditsMotePointer =
+  | ``
   | `name`
   | `sections/${string}/element/entries/${string}/element/name/name`
   | `sections/${string}/element/entries/${string}/element/name/use_cjk`

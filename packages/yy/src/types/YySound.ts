@@ -104,9 +104,7 @@ export const yySoundSchemaV2 = z.looseObject({
   '%Name': z.string(),
   audioGroupId: audioGroupIdSchema,
   bitDepth: soundBitDepthSchema.default(1),
-  channelFormat: soundChannelSchema
-    .default(1)
-    .describe("Previously called 'type'"),
+  channelFormat: soundChannelSchema.default(1).describe("Previously called 'type'"),
   compression: soundCompressionSchema.default(0),
   compressionQuality: z.number().default(4),
   ConfigValues: configValuesSchema,

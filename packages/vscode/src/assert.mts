@@ -54,10 +54,10 @@ export function logThrown<A extends any[], T extends (...args: A) => any>(
  * and rethrow. Useful for debugging since
  * VSCode swallows error messages.
  */
-export async function logThrownAsync<
-  A extends any[],
-  T extends (...args: A) => Promise<any>,
->(fn: T, ...args: A): Promise<ReturnType<T>> {
+export async function logThrownAsync<A extends any[], T extends (...args: A) => Promise<any>>(
+  fn: T,
+  ...args: A
+): Promise<ReturnType<T>> {
   try {
     return await fn(...args);
   } catch (err) {
@@ -78,10 +78,7 @@ export function swallowThrown<A extends any[], T extends (...args: A) => any>(
   return;
 }
 
-export function assertInternalClaim(
-  condition: any,
-  message: string,
-): asserts condition {
+export function assertInternalClaim(condition: any, message: string): asserts condition {
   if (!condition) {
     const err = new StitchVscodeUserError(message, assertInternalClaim);
     // VSCode swallows error messages, so we need to log them
@@ -90,10 +87,7 @@ export function assertInternalClaim(
   }
 }
 
-export function assertUserClaim(
-  condition: any,
-  message: string,
-): asserts condition {
+export function assertUserClaim(condition: any, message: string): asserts condition {
   if (!condition) {
     const err = new StitchVscodeUserError(message, assertUserClaim);
     // VSCode swallows error messages, so we need to log them
@@ -106,20 +100,17 @@ export function assertUserClaim(
  * Assert a claim and, if it fails, both throw an error
  * and show the error in vscode.
  */
-export function assertLoudly(
-  condition: any,
-  message: string,
-): asserts condition {
+export function assertLoudly(condition: any, message: string): asserts condition {
   if (!condition) {
     showErrorMessage(message);
     throw new Error(message);
   }
 }
 
-export async function loudlyLogThrownAsync<
-  A extends any[],
-  T extends (...args: A) => Promise<any>,
->(fn: T, ...args: A): Promise<ReturnType<T>> {
+export async function loudlyLogThrownAsync<A extends any[], T extends (...args: A) => Promise<any>>(
+  fn: T,
+  ...args: A
+): Promise<ReturnType<T>> {
   try {
     return await fn(...args);
   } catch (err) {

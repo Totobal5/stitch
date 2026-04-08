@@ -45,8 +45,7 @@ export function assignVariable(
 
   // Find the existing variable
   let signifier = variable.container.getMember(variable.name);
-  const isSelfOwned =
-    !!signifier && !!variable.container.getMember(variable.name, true);
+  const isSelfOwned = !!signifier && !!variable.container.getMember(variable.name, true);
   let ref: Reference | undefined;
 
   // Add the variable if missing
@@ -122,9 +121,7 @@ export function assignVariable(
     if (signifier && (!signifier.isTyped || wasUndeclared || forceOverride)) {
       if (info.docs) {
         signifier.describe(info.docs.jsdoc.description);
-        signifier.setType(
-          info.docs.type.length ? info.docs.type : inferredType,
-        );
+        signifier.setType(info.docs.type.length ? info.docs.type : inferredType);
       } else if (inferredType) {
         signifier.setType(inferredType);
       }

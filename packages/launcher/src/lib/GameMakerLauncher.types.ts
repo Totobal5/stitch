@@ -96,9 +96,7 @@ export const gameMakerUserDataSchema = z.looseObject({
   deviceID: z.string().optional(),
   login: z
     .string()
-    .describe(
-      "The user's email address. The 'name' part is used as the local username",
-    )
+    .describe("The user's email address. The 'name' part is used as the local username")
     .optional(),
   userID: z
     .string()

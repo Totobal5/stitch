@@ -1,15 +1,7 @@
 export type WithablePrimitiveName = (typeof withableTypes)[number];
-export const withableTypes = [
-  'Struct',
-  'Asset.GMObject',
-  'Id.Instance',
-] as const;
+export const withableTypes = ['Struct', 'Asset.GMObject', 'Id.Instance'] as const;
 
-export const utilityTypes = [
-  'InstanceType',
-  'ObjectType',
-  'StaticType',
-] as const;
+export const utilityTypes = ['InstanceType', 'ObjectType', 'StaticType'] as const;
 
 export const withableTypesLower = withableTypes.map((t) =>
   t.toLowerCase(),

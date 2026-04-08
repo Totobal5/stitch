@@ -11,11 +11,7 @@ import {
 } from './cl2.shared.types.js';
 import { StorylineMoteDataPointer } from './cl2.storyline.pointers.js';
 import type { GameChanger } from './GameChanger.js';
-import {
-  bsArrayToArray,
-  createBsArrayKey,
-  updateBsArrayOrder,
-} from './helpers.js';
+import { bsArrayToArray, createBsArrayKey, updateBsArrayOrder } from './helpers.js';
 import { ParsedLineItem } from './types.editor.js';
 import { checkWords, includes } from './util.js';
 
@@ -31,9 +27,7 @@ export function prepareParserHelpers(
   result: ParserResult<any>,
 ) {
   /** Terms from the glossary for use in autocompletes */
-  const glossaryTerms = (packed.glossary?.relevantTerms() || []).map(
-    (t) => t.text,
-  );
+  const glossaryTerms = (packed.glossary?.relevantTerms() || []).map((t) => t.text);
 
   const checkSpelling = (item: ParsedLineItem<any> | undefined) => {
     if (!item || !options.checkSpelling || !packed.glossary) return;
@@ -73,11 +67,7 @@ export function prepareParserHelpers(
       // Then this is likely the result of uncommenting something
       // that was commented out, resulting in a line that starts with
       // the comment's array tag. Provide a deletion edit!
-      parsedLine = parseIfMatch(
-        `^${arrayTagPattern} +(?<text>.*)$`,
-        currentLine,
-        lineRange.start,
-      );
+      parsedLine = parseIfMatch(`^${arrayTagPattern} +(?<text>.*)$`, currentLine, lineRange.start);
       if (parsedLine) {
         result.edits.push({
           start: lineRange.start,
@@ -101,15 +91,10 @@ export function prepareParserHelpers(
       !!currentLine.match(new RegExp(arrayTagPattern));
 
     // Ensure the array tag. It goes right after the label or indicator.
-    if (
-      lineIsArrayItem(currentLine, options.schemaId) &&
-      !parsedLine._hadArrayTag
-    ) {
+    if (lineIsArrayItem(currentLine, options.schemaId) && !parsedLine._hadArrayTag) {
       const arrayTag = createBsArrayKey();
       const start =
-        parsedLine.indicator?.end ||
-        parsedLine.label?.end! ||
-        parsedLine.labelGroup?.end!;
+        parsedLine.indicator?.end || parsedLine.label?.end! || parsedLine.labelGroup?.end!;
       result.edits.push({
         start,
         end: start,
@@ -154,8 +139,8 @@ export function prepareParserHelpers(
     }
     const emoji = emojis.find(
       (e) =>
-        packed.working.getMoteName(e)?.toLowerCase() ===
-          name?.trim().toLowerCase() || e.id === name?.trim(),
+        packed.working.getMoteName(e)?.toLowerCase() === name?.trim().toLowerCase() ||
+        e.id === name?.trim(),
     );
     return emoji?.id;
   };
@@ -263,9 +248,7 @@ export function updateWipChangesFromParsed(
     updateMote(`data/wip/notes/${comment.id}/element/text`, comment.text);
   }
   // Remove deleted comments
-  for (const existingComment of bsArrayToArray(
-    baseMote?.data.wip?.notes || {},
-  )) {
+  for (const existingComment of bsArrayToArray(baseMote?.data.wip?.notes || {})) {
     if (!parsedComments.find((c) => c.id === existingComment.id)) {
       trace(`Deleting comment ${existingComment.id}`);
       updateMote(`data/wip/notes/${existingComment.id}`, null);

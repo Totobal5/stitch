@@ -1,5 +1,6 @@
 export type ChatMoteDataPointer = `data/${ChatMotePointer}`;
-export type ChatMotePointer = ``
+export type ChatMotePointer =
+  | ``
   | `moments/${string}/element/${string}/element/emoji`
   | `moments/${string}/element/${string}/element/speaker`
   | `moments/${string}/element/${string}/element/text/skip`

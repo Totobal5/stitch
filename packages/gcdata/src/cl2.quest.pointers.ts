@@ -1,5 +1,6 @@
 export type QuestMoteDataPointer = `data/${QuestMotePointer}`;
-export type QuestMotePointer = ``
+export type QuestMotePointer =
+  | ``
   | `blocked`
   | `clues/${string}/element/phrases/${string}/element/phrase/emoji`
   | `clues/${string}/element/phrases/${string}/element/phrase/text/skip`

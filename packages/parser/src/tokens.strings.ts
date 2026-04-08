@@ -48,22 +48,12 @@ export const multilineDoubleStringTokens = [
     name: 'MultilineDoubleStringCharacter',
     pattern: /[^"]/,
     line_breaks: true,
-    categories: [
-      c.StringLiteral,
-      c.Substring,
-      c.MultilineStringLiteral,
-      c.DoubleQuoted,
-    ],
+    categories: [c.StringLiteral, c.Substring, c.MultilineStringLiteral, c.DoubleQuoted],
   }),
   createToken({
     name: 'MultilineDoubleStringEnd',
     pattern: /"/,
-    categories: [
-      c.Separators,
-      c.StringLiteral,
-      c.MultilineStringLiteral,
-      c.DoubleQuoted,
-    ],
+    categories: [c.Separators, c.StringLiteral, c.MultilineStringLiteral, c.DoubleQuoted],
     pop_mode: true,
   }),
 ];
@@ -73,22 +63,12 @@ export const multilineSingleStringTokens = [
     name: 'MultilineSingleStringCharacter',
     pattern: /[^']/,
     line_breaks: true,
-    categories: [
-      c.StringLiteral,
-      c.Substring,
-      c.MultilineStringLiteral,
-      c.SingleQuoted,
-    ],
+    categories: [c.StringLiteral, c.Substring, c.MultilineStringLiteral, c.SingleQuoted],
   }),
   createToken({
     name: 'MultilineSingleStringEnd',
     pattern: /'/,
-    categories: [
-      c.Separators,
-      c.StringLiteral,
-      c.MultilineStringLiteral,
-      c.SingleQuoted,
-    ],
+    categories: [c.Separators, c.StringLiteral, c.MultilineStringLiteral, c.SingleQuoted],
     pop_mode: true,
   }),
 ];

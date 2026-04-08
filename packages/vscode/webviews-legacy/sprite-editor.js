@@ -34,15 +34,9 @@ const elements = {
   name: /** @type {HTMLElement} */ (document.querySelector('.name')),
   width: /** @type {HTMLElement} */ (document.querySelector('.dim.width')),
   height: /** @type {HTMLElement} */ (document.querySelector('.dim.height')),
-  originPresets: /** @type {HTMLSelectElement} */ (
-    document.getElementById('origin-presets')
-  ),
-  xorigin: /** @type {HTMLInputElement} */ (
-    document.querySelector('.xorigin input')
-  ),
-  yorigin: /** @type {HTMLInputElement} */ (
-    document.querySelector('.yorigin input')
-  ),
+  originPresets: /** @type {HTMLSelectElement} */ (document.getElementById('origin-presets')),
+  xorigin: /** @type {HTMLInputElement} */ (document.querySelector('.xorigin input')),
+  yorigin: /** @type {HTMLInputElement} */ (document.querySelector('.yorigin input')),
   zoom: /** @type {HTMLInputElement} */ (document.querySelector('.zoom input')),
   frames: /** @type {HTMLOListElement} */ (document.getElementById('frames')),
 };
@@ -190,14 +184,14 @@ for (const vertical of ['Top', 'Middle', 'Bottom']) {
       horizontal === 'Left'
         ? 0
         : horizontal === 'Center'
-        ? Math.floor(FrameImage.dims.width / 2)
-        : FrameImage.dims.width - 1;
+          ? Math.floor(FrameImage.dims.width / 2)
+          : FrameImage.dims.width - 1;
     const yorigin =
       vertical === 'Top'
         ? 0
         : vertical === 'Middle'
-        ? Math.floor(FrameImage.dims.height / 2)
-        : FrameImage.dims.height - 1;
+          ? Math.floor(FrameImage.dims.height / 2)
+          : FrameImage.dims.height - 1;
     // Add an option to the select
     const option = document.createElement('option');
     option.value = JSON.stringify({ xorigin, yorigin });
@@ -218,10 +212,7 @@ elements.originPresets.addEventListener('change', (e) => {
 const originNames = ['xorigin', 'yorigin'];
 for (const origin of originNames) {
   elements[origin].value = `${FrameImage.dims[origin]}`;
-  const max =
-    origin === 'xorigin'
-      ? FrameImage.dims.width - 1
-      : FrameImage.dims.height - 1;
+  const max = origin === 'xorigin' ? FrameImage.dims.width - 1 : FrameImage.dims.height - 1;
   elements[origin].setAttribute('max', `${max}`);
   elements[origin].addEventListener('change', (e) => {
     const value = Math.min(+defined(e.target).value, max);

@@ -8,40 +8,26 @@ import {
   type SpriteSourceStage,
 } from './SpriteSource.schemas.js';
 import { FIO_RETRY_DELAY, MAX_FIO_RETRIES, retryOptions } from './constants.js';
-import {
-  SpriteSourceError,
-  assert,
-  deletePngChildren,
-  getDirs,
-  rethrow,
-} from './utility.js';
+import { SpriteSourceError, assert, deletePngChildren, getDirs, rethrow } from './utility.js';
 
 export class SpriteSource extends SpriteCache {
   get configFile() {
-    return this.stitchDir
-      .join('sprites.source.json')
-      .withValidator(spriteSourceConfigSchema);
+    return this.stitchDir.join('sprites.source.json').withValidator(spriteSourceConfigSchema);
   }
 
   protected async resolveStaged(staging: SpriteSourceStage) {
     const dir = pathy(staging.dir, this.spritesRoot);
     if (!(await existsSafe(dir, retryOptions))) {
-      this.issues.push(
-        new SpriteSourceError(`Staging directory does not exist: ${dir}`),
-      );
+      this.issues.push(new SpriteSourceError(`Staging directory does not exist: ${dir}`));
       return;
     }
     // Identify all "SpriteDirs". Stored as a set so we
     // can remove the ones we process.
-    const spriteDirs = new Set(
-      await this.getSpriteDirs(await getDirs(dir.absolute)),
-    );
+    const spriteDirs = new Set(await this.getSpriteDirs(await getDirs(dir.absolute)));
 
     for (const transform of staging.transforms) {
       // filter to matching sprites
-      const pattern = transform.include
-        ? new RegExp(transform.include)
-        : undefined;
+      const pattern = transform.include ? new RegExp(transform.include) : undefined;
       const sprites: SpriteDir[] = [];
       for (const sprite of spriteDirs) {
         if (!pattern || sprite.path.relative.match(pattern)) {
@@ -99,19 +85,14 @@ export class SpriteSource extends SpriteCache {
   }
 
   @sequential
-  async loadConfig(
-    overrides: SpriteSourceConfig = {},
-  ): Promise<SpriteSourceConfig> {
+  async loadConfig(overrides: SpriteSourceConfig = {}): Promise<SpriteSourceConfig> {
     // Validate options. Show error out if invalid.
     try {
       overrides = spriteSourceConfigSchema.parse(overrides);
     } catch (err) {
       rethrow(err, 'Invalid SpriteSource options');
     }
-    assert(
-      await this.spritesRoot.isDirectory(),
-      'Source must be an existing directory.',
-    );
+    assert(await this.spritesRoot.isDirectory(), 'Source must be an existing directory.');
     // Update the config
     await this.stitchDir.ensureDirectory();
     const config = await this.configFile.read({

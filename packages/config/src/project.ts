@@ -9,11 +9,7 @@ import {
 } from '@bscotch/yy';
 import { ok } from 'node:assert';
 import fsp from 'node:fs/promises';
-import {
-  type StitchConfig,
-  stitchConfigFilename,
-  stitchConfigSchema,
-} from './schema.ts';
+import { type StitchConfig, stitchConfigFilename, stitchConfigSchema } from './schema.ts';
 
 /**
  * Ensure that any texture/audio group assignments set in the config
@@ -45,44 +41,37 @@ export async function applyGroupAssignments(yypPath: string) {
     const waits: Promise<any>[] = [];
     for (const yyFile of yys) {
       waits.push(
-        Yy.read(yyFile.path, kind === 'audio' ? 'sounds' : 'sprites').then(
-          async (yy) => {
-            // Start from the *end* of the assignments and apply the first
-            // that matches (if any)
-            for (const [targetFolder, targetGroup] of assignments) {
-              const inFolder = yy.parent.path.replace(
-                /^folders[/\\](.*)\.yy$/,
-                '$1',
-              );
-              const isMatch =
-                inFolder === targetFolder ||
-                inFolder.startsWith(`${targetFolder}/`);
-              if (!isMatch) continue;
-              // Update the assigned group if it's different
-              if (kind === 'audio') {
-                const yySound = yy as YySound;
-                if (yySound.audioGroupId.name !== targetGroup) {
-                  yySound.audioGroupId = {
-                    name: targetGroup,
-                    path: `audiogroups/${targetGroup}`,
-                  };
-                  await Yy.write(yyFile.path, yySound, 'sounds');
-                }
-              } else {
-                const yySprite = yy as YySprite;
-                if (yySprite.textureGroupId.name !== targetGroup) {
-                  yySprite.textureGroupId = {
-                    name: targetGroup,
-                    path: `texturegroups/${targetGroup}`,
-                  };
-                  await Yy.write(yyFile.path, yySprite, 'sprites');
-                }
+        Yy.read(yyFile.path, kind === 'audio' ? 'sounds' : 'sprites').then(async (yy) => {
+          // Start from the *end* of the assignments and apply the first
+          // that matches (if any)
+          for (const [targetFolder, targetGroup] of assignments) {
+            const inFolder = yy.parent.path.replace(/^folders[/\\](.*)\.yy$/, '$1');
+            const isMatch = inFolder === targetFolder || inFolder.startsWith(`${targetFolder}/`);
+            if (!isMatch) continue;
+            // Update the assigned group if it's different
+            if (kind === 'audio') {
+              const yySound = yy as YySound;
+              if (yySound.audioGroupId.name !== targetGroup) {
+                yySound.audioGroupId = {
+                  name: targetGroup,
+                  path: `audiogroups/${targetGroup}`,
+                };
+                await Yy.write(yyFile.path, yySound, 'sounds');
               }
-              // No need to keep going if we got a match!
-              break;
+            } else {
+              const yySprite = yy as YySprite;
+              if (yySprite.textureGroupId.name !== targetGroup) {
+                yySprite.textureGroupId = {
+                  name: targetGroup,
+                  path: `texturegroups/${targetGroup}`,
+                };
+                await Yy.write(yyFile.path, yySprite, 'sprites');
+              }
             }
-          },
-        ),
+            // No need to keep going if we got a match!
+            break;
+          }
+        }),
       );
     }
     await Promise.allSettled(waits);
@@ -101,9 +90,7 @@ export async function ensureProjectConfig(yypPath: string): Promise<void> {
  * its Stitch Config file if it has one. Else return an
  * empty config.
  */
-export async function loadProjectConfig(
-  yypPath: string,
-): Promise<StitchConfig> {
+export async function loadProjectConfig(yypPath: string): Promise<StitchConfig> {
   const configPath = await findProjectConfigPath(yypPath);
   if (!(await fileExists(configPath.fullpath))) {
     return stitchConfigSchema.parse({});
@@ -112,9 +99,7 @@ export async function loadProjectConfig(
     const raw = await fsp.readFile(configPath.fullpath, 'utf8');
     return stitchConfigSchema.parse(JSON.parse(raw));
   } catch (err) {
-    console.error(
-      'Failed to load existing Stitch config. Check for syntax and content errors.',
-    );
+    console.error('Failed to load existing Stitch config. Check for syntax and content errors.');
     throw err;
   }
 }
@@ -122,11 +107,7 @@ export async function loadProjectConfig(
 export async function saveProjectConfig(yypPath: string, config: StitchConfig) {
   const configPath = await findProjectConfigPath(yypPath);
   config = stitchConfigSchema.parse(config);
-  await fsp.writeFile(
-    configPath.fullpath,
-    JSON.stringify(config, null, 2),
-    'utf8',
-  );
+  await fsp.writeFile(configPath.fullpath, JSON.stringify(config, null, 2), 'utf8');
 }
 
 /**

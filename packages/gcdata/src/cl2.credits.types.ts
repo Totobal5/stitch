@@ -10,10 +10,9 @@ import {
 } from './cl2.shared.types.js';
 import type { BschemaRoot } from './types.js';
 
-export interface CreditsUpdateResult
-  extends ParserResult<{
-    sections: CreditsUpdateResultSection[];
-  }> {}
+export interface CreditsUpdateResult extends ParserResult<{
+  sections: CreditsUpdateResultSection[];
+}> {}
 
 export interface CreditsUpdateResultSection {
   id: string;
@@ -34,19 +33,14 @@ export interface CreditsUpdateResultRole {
 }
 
 export function listCredits(gcData: Gcdata): [CreditsMote] {
-  return gcData.listMotesBySchema<CreditsData>(creditsSchemaId) as [
-    CreditsMote,
-  ];
+  return gcData.listMotesBySchema<CreditsData>(creditsSchemaId) as [CreditsMote];
 }
 
 export function isCreditsMote(mote: any): mote is CreditsMote {
   return mote.schema_id === creditsSchemaId;
 }
 
-export function getCreditsMote(
-  gcData: Gcdata,
-  moteId: string,
-): CreditsMote | undefined {
+export function getCreditsMote(gcData: Gcdata, moteId: string): CreditsMote | undefined {
   const mote = gcData.getMote<CreditsData>(moteId);
   assert(!mote || isCreditsMote(mote), `Mote ${moteId} is not a storyline`);
   return mote;

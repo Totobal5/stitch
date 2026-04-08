@@ -16,8 +16,7 @@ import { GameMakerFolder } from './tree.folder.mjs';
 
 export function getWorkspaceRoot() {
   const root =
-    vscode.workspace.workspaceFile?.fsPath ||
-    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    vscode.workspace.workspaceFile?.fsPath || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (!root) {
     throw new Error('Not in a workspace!');
   }
@@ -27,9 +26,7 @@ export function getWorkspaceRoot() {
 export function getAssetFromRef(ref: Reference | undefined): Asset | undefined {
   if (!ref) return;
   const project = ref.file.project;
-  return ref.item.asset
-    ? project.getAssetByName(ref.item.name)
-    : ref.item.def?.file?.asset;
+  return ref.item.asset ? project.getAssetByName(ref.item.name) : ref.item.def?.file?.asset;
 }
 
 /**
@@ -40,16 +37,12 @@ export function getAbsoluteWorkspacePath(relativePath: string): Pathy {
 }
 
 /** Convert a path into a workspace-root-relative path */
-export function getRelativeWorkspacePath(
-  path: Pathy | string | vscode.Uri,
-): string {
+export function getRelativeWorkspacePath(path: Pathy | string | vscode.Uri): string {
   const normalizedPath = pathy(path instanceof vscode.Uri ? path.fsPath : path);
   return normalizedPath.relativeFrom(getWorkspaceRoot());
 }
 
-export function pathyFromUri(
-  uri: vscode.TextDocument | vscode.Uri,
-): Pathy<any> {
+export function pathyFromUri(uri: vscode.TextDocument | vscode.Uri): Pathy<any> {
   return new Pathy(uri instanceof vscode.Uri ? uri.fsPath : uri.uri.fsPath);
 }
 
@@ -63,16 +56,10 @@ export function uriFromCodeFile(file: Code) {
 
 export function locationOf(thing: Range | string): vscode.Location | undefined {
   if (typeof thing === 'string') {
-    return new vscode.Location(
-      vscode.Uri.file(thing),
-      new vscode.Position(0, 0),
-    );
+    return new vscode.Location(vscode.Uri.file(thing), new vscode.Position(0, 0));
   }
   // Get a vscode.Range from the thing
-  return new vscode.Location(
-    vscode.Uri.file(thing.file.path.absolute),
-    rangeFrom(thing),
-  );
+  return new vscode.Location(vscode.Uri.file(thing.file.path.absolute), rangeFrom(thing));
 }
 
 export function rangeFrom(location: Range) {
@@ -170,9 +157,7 @@ export function findProject(
     // Then we clicked in the tree view
     project = workspace.projects.find((p) => p.name === uriOrFolder.name);
   } else {
-    const uriString =
-      uriOrFolder?.[0] ||
-      vscode.window.activeTextEditor?.document.uri.toString();
+    const uriString = uriOrFolder?.[0] || vscode.window.activeTextEditor?.document.uri.toString();
     if (uriString) {
       const uri = vscode.Uri.parse(uriString);
       project = workspace.getProject(uri);
@@ -181,10 +166,7 @@ export function findProject(
   return project;
 }
 
-export function registerCommand(
-  command: CommandName,
-  callback: (...args: any[]) => any,
-) {
+export function registerCommand(command: CommandName, callback: (...args: any[]) => any) {
   return vscode.commands.registerCommand(command, callback);
 }
 
@@ -192,10 +174,7 @@ export function copyToClipboard(text: string) {
   vscode.env.clipboard.writeText(text);
 }
 
-export async function openPath(
-  path: string | Pathy,
-  options?: { assertLoudly?: boolean },
-) {
+export async function openPath(path: string | Pathy, options?: { assertLoudly?: boolean }) {
   path = pathy(path);
   // Does it exist?
   const exists = await path.exists();
@@ -210,16 +189,11 @@ export async function openPath(
   // Is it a file or a folder?
   const isFile = await path.isFile();
   if (isFile) {
-    await vscode.commands.executeCommand(
-      'vscode.open',
-      vscode.Uri.file(path.absolute),
-    );
+    await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path.absolute));
   } else {
-    await vscode.commands.executeCommand(
-      'vscode.openFolder',
-      vscode.Uri.file(path.absolute),
-      { forceNewWindow: true },
-    );
+    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(path.absolute), {
+      forceNewWindow: true,
+    });
   }
 }
 
@@ -250,10 +224,7 @@ export async function showProgress<T extends (...args: any[]) => any>(
  * A tagged template that doesn't do anything interesting, but
  * allows indicating that the template is HTML.
  */
-export function html(
-  strings: TemplateStringsArray,
-  ...values: unknown[]
-): string {
+export function html(strings: TemplateStringsArray, ...values: unknown[]): string {
   const allStrings: string[] = [];
   for (let i = 0; i < strings.length; i++) {
     allStrings.push(strings[i]);
@@ -305,10 +276,7 @@ export function toKebabCase(text: string) {
     .toLowerCase();
 }
 
-export function assertThrows(
-  fn: () => any,
-  msg = 'Expected an error to be thrown',
-) {
+export function assertThrows(fn: () => any, msg = 'Expected an error to be thrown') {
   try {
     fn();
   } catch (e) {
@@ -324,14 +292,11 @@ export function killProjectRunner(title: string) {
   }
   assertInternalClaim(title, 'Title must be provided');
   return new Promise<void>((resolve, reject) => {
-    exec(
-      `taskkill /FI "WINDOWTITLE eq ${title}" /FI "IMAGENAME eq Runner.exe"`,
-      (err) => {
-        if (err) {
-          return reject(err);
-        }
-        resolve();
-      },
-    );
+    exec(`taskkill /FI "WINDOWTITLE eq ${title}" /FI "IMAGENAME eq Runner.exe"`, (err) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve();
+    });
   });
 }

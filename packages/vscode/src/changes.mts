@@ -23,23 +23,14 @@ export class ChangeTracker {
   };
 
   constructor(readonly provider: StitchWorkspace) {
-    stitchEvents.on(
-      'clean-project-start',
-      () => (this.cache.igorCacheIsClean = true),
-    );
-    stitchEvents.on(
-      'run-project-start',
-      () => (this.cache.igorCacheIsClean = false),
-    );
+    stitchEvents.on('clean-project-start', () => (this.cache.igorCacheIsClean = true));
+    stitchEvents.on('run-project-start', () => (this.cache.igorCacheIsClean = false));
   }
 
   addChange(event: ChangeEvent) {
     this.queue.push(event);
     clearTimeout(this.timeout);
-    this.timeout = setTimeout(
-      () => this.flush(),
-      stitchConfig.externalChangeDelay,
-    );
+    this.timeout = setTimeout(() => this.flush(), stitchConfig.externalChangeDelay);
   }
 
   protected async flush() {
@@ -123,8 +114,7 @@ export class ChangeTracker {
       // changes to .atlas files should result in an auto-clean, and changes
       // to .png files should result in a popup detailing all sprites changes.
       if (type === 'change' && uri.path.endsWith('.atlas')) {
-        const shouldClean =
-          stitchConfig.cleanOnSpineSpriteChange && !this.cache.igorCacheIsClean;
+        const shouldClean = stitchConfig.cleanOnSpineSpriteChange && !this.cache.igorCacheIsClean;
         logger.info(
           `atlas file "${uri.path}" changed on disk. `,
           shouldClean ? 'Cleaning!' : 'Skipping cache-clean.',

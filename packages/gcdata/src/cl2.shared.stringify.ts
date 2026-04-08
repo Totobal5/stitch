@@ -19,13 +19,9 @@ export function emojiString(
   return name ? `(${name})` : '';
 }
 
-export function characterString(
-  characterId: string,
-  packed: GameChanger,
-): string {
+export function characterString(characterId: string, packed: GameChanger): string {
   assert(characterId, 'Character ID must be defined');
   const character = packed.working.getMote(characterId);
-  const name =
-    packed.working.getMoteName(character) || character?.id || 'UNKNOWN';
+  const name = packed.working.getMoteName(character) || character?.id || 'UNKNOWN';
   return name ? `${name.toUpperCase()}${toMoteTag(characterId)}` : '';
 }

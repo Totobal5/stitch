@@ -121,10 +121,7 @@ export class Code {
     return new Range(this.startPosition, this.startPosition);
   }
 
-  protected isInRange(
-    range: { start: IPosition; end: IPosition },
-    offset: number | LinePosition,
-  ) {
+  protected isInRange(range: { start: IPosition; end: IPosition }, offset: number | LinePosition) {
     return isInRange(range, offset);
   }
 
@@ -139,10 +136,7 @@ export class Code {
   getReferenceAt(offset: number): Reference | undefined;
   getReferenceAt(position: LinePosition): Reference | undefined;
   getReferenceAt(line: number, column: number): Reference | undefined;
-  getReferenceAt(
-    offset: number | LinePosition,
-    column?: number,
-  ): Reference | undefined {
+  getReferenceAt(offset: number | LinePosition, column?: number): Reference | undefined {
     if (typeof offset === 'number' && typeof column === 'number') {
       offset = { line: offset, column };
     }
@@ -158,10 +152,7 @@ export class Code {
     return undefined;
   }
 
-  getJsdocAt(
-    offset: number | LinePosition,
-    column?: number,
-  ): JsdocSummary | undefined {
+  getJsdocAt(offset: number | LinePosition, column?: number): JsdocSummary | undefined {
     if (typeof offset === 'number' && typeof column === 'number') {
       offset = { line: offset, column };
     }
@@ -220,10 +211,7 @@ export class Code {
     return undefined;
   }
 
-  getScopeRangeAt(
-    offset: number | LinePosition,
-    column?: number,
-  ): Scope | undefined {
+  getScopeRangeAt(offset: number | LinePosition, column?: number): Scope | undefined {
     if (typeof offset === 'number' && typeof column === 'number') {
       offset = { line: offset, column };
     }
@@ -237,10 +225,7 @@ export class Code {
     return this.scopes.at(-1);
   }
 
-  getInScopeSymbolsAt(
-    offset: number | LinePosition,
-    column?: number,
-  ): Signifier[] {
+  getInScopeSymbolsAt(offset: number | LinePosition, column?: number): Signifier[] {
     if (typeof offset === 'number' && typeof column === 'number') {
       offset = { line: offset, column };
     }
@@ -269,9 +254,7 @@ export class Code {
       // Local variables
       ...(scopeRange.local.listMembers() || []),
       // Self variables, if not global
-      ...((scopeRange.self !== this.project.self
-        ? scopeRange.self.listMembers()
-        : []) || []),
+      ...((scopeRange.self !== this.project.self ? scopeRange.self.listMembers() : []) || []),
       // Project globals
       ...(this.project.self.listMembers() || []),
     ];
@@ -280,10 +263,7 @@ export class Code {
     // non-uniques by just keeping the first one we find.
     const uniqueSignifiers = new Map<string, Signifier>();
     for (const signifier of allSignifiers) {
-      if (
-        !uniqueSignifiers.has(signifier.name) &&
-        (signifier.def || signifier.native)
-      ) {
+      if (!uniqueSignifiers.has(signifier.name) && (signifier.def || signifier.native)) {
         uniqueSignifiers.set(signifier.name, signifier);
       }
     }
@@ -330,19 +310,14 @@ export class Code {
    */
   async parse(content?: string) {
     this.clearAllDiagnostics();
-    this.content =
-      typeof content === 'string' ? content : await this.path.read();
+    this.content = typeof content === 'string' ? content : await this.path.read();
     this._parsed = parser.parse(this.content);
     for (const diagnostic of this._parsed.errors) {
       const fromToken = isNaN(diagnostic.token.startOffset)
         ? diagnostic.previousToken
         : diagnostic.token;
-      logger.debug(
-        'SYNTAX ERROR',
-        diagnostic?.message,
-        this.path?.absolute,
-        fromToken,
-      );
+      const summary = summarizeSyntaxDiagnostic(diagnostic?.message || 'Syntax error');
+      logger.debug('SYNTAX ERROR', summary, this.path?.absolute, fromToken);
       this.diagnostics.SYNTAX_ERROR.push(
         Diagnostic.error(
           diagnostic.message,
@@ -359,17 +334,11 @@ export class Code {
    */
   @sequential
   async renameSignifier(signifier: Signifier, newName: string) {
-    const renameableRefs = this.refs.filter(
-      (ref) => ref.item === signifier && ref.isRenameable,
-    );
+    const renameableRefs = this.refs.filter((ref) => ref.item === signifier && ref.isRenameable);
     // Rename using magic-string so we don't have to track changed positions
     const updated = new MagicString(this.content);
     for (const ref of renameableRefs) {
-      updated.update(
-        ref.start.offset,
-        ref.end.offset + 1,
-        ref.toRenamed(newName),
-      );
+      updated.update(ref.start.offset, ref.end.offset + 1, ref.toRenamed(newName));
     }
     // Save to disk and reprocess
     this.content = updated.toString();
@@ -493,9 +462,7 @@ export class Code {
     // find the match for this event
     const yy = this.asset.yy as YyObject;
     const eventIdx = yy.eventList.findIndex(
-      (event) =>
-        event.eventNum === eventInfo.eventNum &&
-        event.eventType === eventInfo.eventType,
+      (event) => event.eventNum === eventInfo.eventNum && event.eventType === eventInfo.eventType,
     );
     if (eventIdx > -1) {
       yy.eventList.splice(eventIdx, 1);
@@ -616,8 +583,7 @@ export class Code {
         continue;
       }
       // Handle global prefixes setting
-      const prefixes =
-        this.project.options?.settings?.autoDeclareGlobalsPrefixes || [];
+      const prefixes = this.project.options?.settings?.autoDeclareGlobalsPrefixes || [];
       for (const prefix of prefixes) {
         if (ref.item.name.startsWith(prefix)) {
           // Then mark it as *global* and *declared*
@@ -644,10 +610,7 @@ export class Code {
         this.diagnostics.JSDOC.push(
           Diagnostic.warn(
             diagnostic.message,
-            new Range(
-              Position.from(this, diagnostic.start),
-              Position.from(this, diagnostic.end),
-            ),
+            new Range(Position.from(this, diagnostic.start), Position.from(this, diagnostic.end)),
           ),
         );
       }
@@ -671,9 +634,7 @@ export class Code {
       const hasNonDefRefs = [...ref.item.refs.values()].some((r) => !r.isDef);
       if (!hasNonDefRefs) {
         unused.add(ref.item);
-        this.diagnostics.UNUSED.push(
-          Diagnostic.info(`Unused function \`${ref.item.name}\``, ref),
-        );
+        this.diagnostics.UNUSED.push(Diagnostic.info(`Unused function \`${ref.item.name}\``, ref));
       }
     }
   }
@@ -701,4 +662,9 @@ export class Code {
   updateAllSymbols() {
     registerSignifiers(this);
   }
+}
+
+function summarizeSyntaxDiagnostic(message: string): string {
+  // Keep parser debug logs compact; full details remain in diagnostics.
+  return message.split(/\r?\n/, 1)[0].replace(/\s+/g, ' ').trim();
 }

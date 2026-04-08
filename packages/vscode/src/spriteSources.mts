@@ -1,10 +1,6 @@
 import { Asset, isAssetOfKind } from '@bscotch/gml-parser';
 import { Pathy, pathy } from '@bscotch/pathy';
-import {
-  SpriteDest,
-  SpriteSource,
-  SpriteSourceStage,
-} from '@bscotch/sprite-source';
+import { SpriteDest, SpriteSource, SpriteSourceStage } from '@bscotch/sprite-source';
 import { sequential } from '@bscotch/utility';
 import path from 'path';
 import vscode from 'vscode';
@@ -37,28 +33,20 @@ export class SpriteSourcesTree implements vscode.TreeDataProvider<Item> {
   importing = false;
 
   // Map of <project: spriteName: SpriteChangeInfo>
-  static recentlyChangedSprites: Map<
-    GameMakerProject,
-    Map<string, SpriteChangeInfo>
-  > = new Map();
+  static recentlyChangedSprites: Map<GameMakerProject, Map<string, SpriteChangeInfo>> = new Map();
 
-  private _onDidChangeTreeData: vscode.EventEmitter<
-    Item | undefined | null | void
-  > = new vscode.EventEmitter<Item | undefined | null | void>();
+  private _onDidChangeTreeData: vscode.EventEmitter<Item | undefined | null | void> =
+    new vscode.EventEmitter<Item | undefined | null | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  private _onDidCollapseElement: vscode.EventEmitter<
-    Item | undefined | null | void
-  > = new vscode.EventEmitter<Item | undefined | null | void>();
+  private _onDidCollapseElement: vscode.EventEmitter<Item | undefined | null | void> =
+    new vscode.EventEmitter<Item | undefined | null | void>();
   readonly onDidCollapseElement = this._onDidCollapseElement.event;
 
   constructor(readonly workspace: StitchWorkspace) {
     // Whenever a project changes we may have different sprites to show
     stitchEvents.on('project-changed', () => this.rebuild());
-    stitchEvents.on(
-      'asset-changed',
-      (asset) => isAssetOfKind(asset, 'sprites') && this.rebuild(),
-    );
+    stitchEvents.on('asset-changed', (asset) => isAssetOfKind(asset, 'sprites') && this.rebuild());
   }
 
   get currentProject() {
@@ -91,8 +79,7 @@ export class SpriteSourcesTree implements vscode.TreeDataProvider<Item> {
       project,
       SpriteSourcesTree.recentlyChangedSprites.get(project) || new Map(),
     );
-    const projectChanges =
-      SpriteSourcesTree.recentlyChangedSprites.get(project)!;
+    const projectChanges = SpriteSourcesTree.recentlyChangedSprites.get(project)!;
 
     await vscode.window.withProgress(
       {
@@ -117,14 +104,10 @@ export class SpriteSourcesTree implements vscode.TreeDataProvider<Item> {
               .map(
                 (issue) =>
                   `${issue.message}${
-                    issue.cause && issue.cause instanceof Error
-                      ? ` (${issue.cause.message})`
-                      : ''
+                    issue.cause && issue.cause instanceof Error ? ` (${issue.cause.message})` : ''
                   }`,
               )
-              .join('\n\n')}${
-              moreIssues ? `\n\n...and ${moreIssues} more` : ''
-            }`,
+              .join('\n\n')}${moreIssues ? `\n\n...and ${moreIssues} more` : ''}`,
           );
         }
 
@@ -147,8 +130,7 @@ export class SpriteSourcesTree implements vscode.TreeDataProvider<Item> {
     const dest = await SpriteDest.from(source.project.yypPath.absolute);
     const config = await dest.loadConfig();
     const sourceIndex =
-      config.sources?.findIndex((s) => s.source === source.relativeSourceDir) ??
-      -1;
+      config.sources?.findIndex((s) => s.source === source.relativeSourceDir) ?? -1;
     assertLoudly(sourceIndex >= 0, 'Could not find sprite source in settings.');
     config.sources!.splice(sourceIndex, 1);
     await dest.loadConfig(config); // To resave the config
@@ -168,10 +150,7 @@ export class SpriteSourcesTree implements vscode.TreeDataProvider<Item> {
         const sourceDir = await SpriteSource.from(source.sourceDir.absolute);
         await sourceDir.cacheFile.delete();
       } catch (err) {
-        logger.error(
-          `Error clearing cache for ${source.sourceDir.absolute}`,
-          err,
-        );
+        logger.error(`Error clearing cache for ${source.sourceDir.absolute}`, err);
       }
     }
     this.rebuild();
@@ -203,16 +182,12 @@ export class SpriteSourcesTree implements vscode.TreeDataProvider<Item> {
     const targetProjectName =
       this.workspace.projects.length === 1
         ? this.workspace.projects[0].name
-        : await vscode.window.showQuickPick(
-            this.workspace.projects.map((p) => p.name),
-          );
+        : await vscode.window.showQuickPick(this.workspace.projects.map((p) => p.name));
     if (!targetProjectName) {
       logger.info('No target project selected.');
       return;
     }
-    const targetProject = this.workspace.projects.find(
-      (p) => p.name === targetProjectName,
-    )!;
+    const targetProject = this.workspace.projects.find((p) => p.name === targetProjectName)!;
 
     // Add the source to the config
     /** The path is stored relative to the project folder */
@@ -266,14 +241,8 @@ export class SpriteSourcesTree implements vscode.TreeDataProvider<Item> {
         logger.info("No active project. Can't load sprite sources.");
         return [];
       }
-      return [
-        new SpriteSourcesFolder(project),
-        new RecentlyChangedFolder(project),
-      ];
-    } else if (
-      'getChildren' in element &&
-      typeof element.getChildren === 'function'
-    ) {
+      return [new SpriteSourcesFolder(project), new RecentlyChangedFolder(project)];
+    } else if ('getChildren' in element && typeof element.getChildren === 'function') {
       return (await element.getChildren()) as Item[];
     }
     return [];
@@ -306,35 +275,23 @@ export class SpriteSourcesTree implements vscode.TreeDataProvider<Item> {
         const project = workspace.getActiveProject();
         tree.currentProject = project;
       }),
-      registerCommand(
-        'stitch.spriteSource.watch',
-        async (stage: SpriteSourceFolder) => {
-          const wait = stage.watch();
-          // Make sure the icon gets reset!
-          tree._onDidChangeTreeData.fire(stage);
-          await wait;
-        },
-      ),
-      registerCommand(
-        'stitch.spriteSource.unwatch',
-        (stage: SpriteSourceFolder) => {
-          stage.unwatch();
-          tree._onDidChangeTreeData.fire(stage);
-        },
-      ),
-      registerCommand(
-        'stitch.spriteSource.addStage',
-        (source: SpriteSourceFolder) => {
-          tree.addSpriteSourceStage(source);
-        },
-      ),
-      registerCommand(
-        'stitch.spriteSource.clearRecentImports',
-        (folder: RecentlyChangedFolder) => {
-          SpriteSourcesTree.recentlyChangedSprites.delete(folder.project);
-          tree.rebuild();
-        },
-      ),
+      registerCommand('stitch.spriteSource.watch', async (stage: SpriteSourceFolder) => {
+        const wait = stage.watch();
+        // Make sure the icon gets reset!
+        tree._onDidChangeTreeData.fire(stage);
+        await wait;
+      }),
+      registerCommand('stitch.spriteSource.unwatch', (stage: SpriteSourceFolder) => {
+        stage.unwatch();
+        tree._onDidChangeTreeData.fire(stage);
+      }),
+      registerCommand('stitch.spriteSource.addStage', (source: SpriteSourceFolder) => {
+        tree.addSpriteSourceStage(source);
+      }),
+      registerCommand('stitch.spriteSource.clearRecentImports', (folder: RecentlyChangedFolder) => {
+        SpriteSourcesTree.recentlyChangedSprites.delete(folder.project);
+        tree.rebuild();
+      }),
       registerCommand(
         'stitch.spriteSource.clearCache',
         (source: SpriteSourceFolder | undefined) => {
@@ -344,21 +301,13 @@ export class SpriteSourcesTree implements vscode.TreeDataProvider<Item> {
       registerCommand('stitch.spriteSource.create', () => {
         tree.addSpriteSource();
       }),
-      registerCommand(
-        'stitch.spriteSource.delete',
-        (source: SpriteSourceFolder) => {
-          tree.deleteSpriteSource(source);
-        },
-      ),
+      registerCommand('stitch.spriteSource.delete', (source: SpriteSourceFolder) => {
+        tree.deleteSpriteSource(source);
+      }),
       registerCommand('stitch.spriteSource.edit', async () => {
         assertLoudly(tree.currentProject, 'No project active.');
-        const dest = await SpriteDest.from(
-          tree.currentProject.yypPath.absolute,
-        );
-        vscode.commands.executeCommand(
-          'vscode.open',
-          vscode.Uri.file(dest.configFile.absolute),
-        );
+        const dest = await SpriteDest.from(tree.currentProject.yypPath.absolute);
+        vscode.commands.executeCommand('vscode.open', vscode.Uri.file(dest.configFile.absolute));
       }),
       registerCommand(
         'stitch.spriteSource.openExplorer',
@@ -395,9 +344,7 @@ class SpriteSourcesFolder extends StitchTreeItemBase<'sprite-sources'> {
     const children: SpriteSourceFolder[] = [];
     for (const source of config.sources) {
       try {
-        children.push(
-          await SpriteSourceFolder.from(this.project, source.source),
-        );
+        children.push(await SpriteSourceFolder.from(this.project, source.source));
       } catch (err) {
         logger.error(`Error loading sprite source: ${source.source}`, err);
       }
@@ -453,9 +400,7 @@ class SpriteSourceFolder extends StitchTreeItemBase<'sprite-source'> {
     // turn itself off, since these instances are recreated every
     // time the tree is refreshed.
     // We need to set the contextValue based on what's currently being watch
-    const isWatching = SpriteSourcesTree.sourceWatchers.has(
-      this.sourceDir.absolute,
-    );
+    const isWatching = SpriteSourcesTree.sourceWatchers.has(this.sourceDir.absolute);
     this.contextValue = `${this.kind}-${isWatching ? '' : 'un'}watched`;
 
     this.setBaseIcon('library');
@@ -531,9 +476,7 @@ class SpriteSourceFolder extends StitchTreeItemBase<'sprite-source'> {
 
   unwatch() {
     this.contextValue = `${this.kind}-unwatched`;
-    const watchers = SpriteSourcesTree.sourceWatchers.get(
-      this.sourceDir.absolute,
-    );
+    const watchers = SpriteSourcesTree.sourceWatchers.get(this.sourceDir.absolute);
     watchers?.forEach((watcher) => watcher.dispose());
     SpriteSourcesTree.sourceWatchers.delete(this.sourceDir.absolute);
   }
@@ -610,9 +553,7 @@ class SpriteItem extends ObjectSpriteItem {
       style: 'narrow',
       numeric: 'always',
     });
-    const minutesAgo = Math.round(
-      (new Date().getTime() - this.info.when.getTime()) / 1000 / 60,
-    );
+    const minutesAgo = Math.round((new Date().getTime() - this.info.when.getTime()) / 1000 / 60);
     this.description = relativeTimeFormatter.format(-minutesAgo, 'minutes');
     this.setIcon();
   }

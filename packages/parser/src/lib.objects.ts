@@ -20,12 +20,15 @@ interface ObjectAlarmEvent<N extends number> extends ObjectEvent {
   group: 'alarm';
 }
 
-interface ObjectKeyPressEvent<KeyName extends string, KeyNumber extends number> extends ObjectEvent {
-    label: `Key Pressed (${KeyName})`;
-    name: `KeyPress_${KeyNumber}`;
-    eventNum: KeyNumber;
-    eventType: 9;
-    group: 'key-press';
+interface ObjectKeyPressEvent<
+  KeyName extends string,
+  KeyNumber extends number,
+> extends ObjectEvent {
+  label: `Key Pressed (${KeyName})`;
+  name: `KeyPress_${KeyNumber}`;
+  eventNum: KeyNumber;
+  eventType: 9;
+  group: 'key-press';
 }
 
 interface ObjectCollisionEvent<O extends string> extends ObjectEvent {
@@ -254,7 +257,7 @@ export const objectEvents = [
     name: 'Mouse_57',
     eventNum: 57,
     eventType: 6,
-    group: 'mouse'
+    group: 'mouse',
   },
   {
     label: 'Global Middle Released',
@@ -269,9 +272,7 @@ Object.freeze(Object.seal(objectEvents));
 
 /**
  * Given a GameMaker object event filename, get its human-friendly name. */
-export function getEventFromFilename(
-  filename: string,
-): ObjectEvent | undefined {
+export function getEventFromFilename(filename: string): ObjectEvent | undefined {
   const name = path.basename(filename, '.gml');
   const collisionParts = name.match(/^Collision_(?<name>.+)$/);
   if (collisionParts) {
@@ -306,11 +307,6 @@ export function getEventFromLabel(label: string): ObjectEvent | undefined {
   return objectEvents.find((x) => x.label === label);
 }
 
-export function getEventFrom(
-  eventNum: number,
-  eventType: number,
-): ObjectEvent | undefined {
-  return objectEvents.find(
-    (x) => x.eventNum === eventNum && x.eventType === eventType,
-  );
+export function getEventFrom(eventNum: number, eventType: number): ObjectEvent | undefined {
+  return objectEvents.find((x) => x.eventNum === eventNum && x.eventType === eventType);
 }

@@ -7,9 +7,7 @@ if (command === 'init') {
   const [yypFile] = args;
   if (!yypFile || askingForHelp(yypFile)) {
     console.error('Usage: stitch-config init <yypFile>');
-    console.error(
-      '\nEnsures that a Stitch Config file exists for the target project.',
-    );
+    console.error('\nEnsures that a Stitch Config file exists for the target project.');
     process.exit(1);
   }
   await ensureProjectConfig(yypFile);

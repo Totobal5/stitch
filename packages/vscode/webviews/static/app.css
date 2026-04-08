@@ -1,102 +1,102 @@
 @layer global {
-	*,
-	*::before,
-	*::after {
-		box-sizing: border-box;
-	}
-	:root {
-		--color-background: #111111;
-		--color-text: #e3e3e3;
-		--color-text-muted: #a0a0a0;
-		--color-text-link: #3794ff;
-		--color-text-error: #e72929;
-		--color-text-warning: #ccaa00;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  :root {
+    --color-background: #111111;
+    --color-text: #e3e3e3;
+    --color-text-muted: #a0a0a0;
+    --color-text-link: #3794ff;
+    --color-text-error: #e72929;
+    --color-text-warning: #ccaa00;
 
-		/* Primary button */
-		--color-button-primary-background: #0e639c;
-		--color-button-primary-foreground: #ffffff;
-		--color-button-primary-hover-background: #0e639c;
-		--color-button-primary-border: #0e639c;
+    /* Primary button */
+    --color-button-primary-background: #0e639c;
+    --color-button-primary-foreground: #ffffff;
+    --color-button-primary-hover-background: #0e639c;
+    --color-button-primary-border: #0e639c;
 
-		/* Secondary button */
-		--color-button-secondary-background: #3a3d41;
-		--color-button-secondary-foreground: #ffffff;
-		--color-button-secondary-hover-background: #3a3d41;
-		--color-button-secondary-border: #3a3d41;
-		--font-family: 'Courier New', Courier, monospace;
-		--font-size: 12px;
-	}
-	body {
-		font-size: var(--font-size);
-		background-color: var(--color-background);
-		color: var(--color-text);
-		font-family: var(--font-family);
-	}
-	input {
-		font-family: var(--font-family);
-		font-size: var(--font-size);
-	}
-	a {
-		color: var(--color-text-link);
-	}
-	a[role='button'] {
-		cursor: pointer;
-	}
-	details > summary {
-		cursor: pointer;
-		user-select: none;
-	}
-	h1 {
-		font-size: 1.4rem;
-	}
-	h2 {
-		font-size: 1.25rem;
-	}
-	h3 {
-		font-size: 1.15rem;
-	}
-	h4 {
-		font-size: 1.08rem;
-	}
-	h2,
-	h3,
-	h4 {
-		margin: 0;
-	}
-	ul,
-	ol {
-		/* decrease default indent */
-		padding-inline-start: 1.5rem;
-	}
+    /* Secondary button */
+    --color-button-secondary-background: #3a3d41;
+    --color-button-secondary-foreground: #ffffff;
+    --color-button-secondary-hover-background: #3a3d41;
+    --color-button-secondary-border: #3a3d41;
+    --font-family: 'Courier New', Courier, monospace;
+    --font-size: 12px;
+  }
+  body {
+    font-size: var(--font-size);
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-family);
+  }
+  input {
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+  }
+  a {
+    color: var(--color-text-link);
+  }
+  a[role='button'] {
+    cursor: pointer;
+  }
+  details > summary {
+    cursor: pointer;
+    user-select: none;
+  }
+  h1 {
+    font-size: 1.4rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+  }
+  h3 {
+    font-size: 1.15rem;
+  }
+  h4 {
+    font-size: 1.08rem;
+  }
+  h2,
+  h3,
+  h4 {
+    margin: 0;
+  }
+  ul,
+  ol {
+    /* decrease default indent */
+    padding-inline-start: 1.5rem;
+  }
 
-	ul.reset,
-	ol.reset {
-		padding: 0;
-		margin: 0;
-	}
-	ul.reset li,
-	ol.reset li {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
+  ul.reset,
+  ol.reset {
+    padding: 0;
+    margin: 0;
+  }
+  ul.reset li,
+  ol.reset li {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
 
-	button {
-		cursor: pointer;
-		background-color: var(--color-button-primary-background);
-		color: var(--color-button-primary-foreground);
-		border: 1px solid var(--color-button-primary-border);
-		padding: 0.5em 1em;
-		border-radius: 0.25em;
-	}
-	button.secondary {
-		background-color: var(--color-button-secondary-background);
-		color: var(--color-button-secondary-foreground);
-		border-color: var(--color-button-secondary-border);
-	}
+  button {
+    cursor: pointer;
+    background-color: var(--color-button-primary-background);
+    color: var(--color-button-primary-foreground);
+    border: 1px solid var(--color-button-primary-border);
+    padding: 0.5em 1em;
+    border-radius: 0.25em;
+  }
+  button.secondary {
+    background-color: var(--color-button-secondary-background);
+    color: var(--color-button-secondary-foreground);
+    border-color: var(--color-button-secondary-border);
+  }
 
-	mark[data-current] {
-		background-color: #ff9632;
-		color: black;
-	}
+  mark[data-current] {
+    background-color: #ff9632;
+    color: black;
+  }
 }

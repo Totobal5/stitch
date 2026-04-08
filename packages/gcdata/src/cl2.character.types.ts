@@ -38,10 +38,9 @@ export function isNpcMote(mote: any): mote is Mote<NpcData> {
   return mote.schema_id === npcSchemaId;
 }
 
-export interface CharacterUpdateResult
-  extends ParserResult<{
-    idles: ParsedTopic[];
-  }> {}
+export interface CharacterUpdateResult extends ParserResult<{
+  idles: ParsedTopic[];
+}> {}
 
 export interface ParsedTopic {
   id: string | undefined;

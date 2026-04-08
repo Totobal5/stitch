@@ -5,6 +5,7 @@ import {
   YyData,
   YyExtension,
   YyObject,
+  YyObjectPropertyVarType,
   YyResourceType,
   YyRoom,
   YyRoomInstanceLayer,
@@ -27,13 +28,8 @@ import { Signifier } from './signifiers.js';
 import { StructType, Type } from './types.js';
 import { assert, getPngSize, groupPathToPosix, ok } from './util.js';
 
-export function isAssetOfKind<T extends YyResourceType>(
-  asset: any,
-  kind: T,
-): asset is Asset<T> {
-  return (
-    asset !== null && typeof asset === 'object' && asset.assetKind === kind
-  );
+export function isAssetOfKind<T extends YyResourceType>(asset: any, kind: T): asset is Asset<T> {
+  return asset !== null && typeof asset === 'object' && asset.assetKind === kind;
 }
 
 export function assertIsAssetOfKind<T extends YyResourceType>(
@@ -136,12 +132,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
   @sequential
   async saveYy() {
     assert(this.yyPath, 'Cannot save YY without a path');
-    await Yy.write(
-      this.yyPath.absolute,
-      this.yy,
-      this.assetKind,
-      this.project.yyp,
-    );
+    await Yy.write(this.yyPath.absolute, this.yy, this.assetKind, this.project.yyp);
   }
 
   get isScript() {
@@ -173,10 +164,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
   }
 
   get soundFile(): Pathy<Buffer> {
-    assert(
-      isAssetOfKind(this, 'sounds'),
-      'Can only get sound files from sound assets',
-    );
+    assert(isAssetOfKind(this, 'sounds'), 'Can only get sound files from sound assets');
     const yy = this.yy as YySound;
     return this.dir.join(yy.soundFile);
   }
@@ -185,9 +173,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
     assert(isAssetOfKind(this, 'objects'), 'Can only get sprites from objects');
     const yy = this.yy as YyObject;
     const spriteName = yy.spriteId?.name;
-    const sprite = spriteName
-      ? this.project.getAssetByName(spriteName)
-      : undefined;
+    const sprite = spriteName ? this.project.getAssetByName(spriteName) : undefined;
     if (spriteName && !sprite) {
       logger.warn(`Sprite ${spriteName} has no asset`);
     }
@@ -358,10 +344,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
    * old name are updated to the new name. This includes the object's name in rooms.
    */
   @sequential
-  async renameRoomInstanceObjects(
-    oldObjectName: string,
-    newObjectName: string,
-  ) {
+  async renameRoomInstanceObjects(oldObjectName: string, newObjectName: string) {
     assert(this.isRoom, 'Can only rename object instances in rooms'); // Iterate through each instance layer and remove any instances with the given ID
     const yy = this.yy as YyRoom;
     let didUpdate = false;
@@ -370,9 +353,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
         continue;
       }
       layer.instances.forEach((instance) => {
-        if (
-          instance.objectId.name.toLowerCase() === oldObjectName.toLowerCase()
-        ) {
+        if (instance.objectId.name.toLowerCase() === oldObjectName.toLowerCase()) {
           instance.objectId.name = newObjectName;
           instance.objectId.path = `objects/${newObjectName}/${newObjectName}.yy`;
           didUpdate = true;
@@ -393,9 +374,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
       if (layer.resourceType !== 'GMRInstanceLayer') {
         continue;
       }
-      layer.instances = (layer.instances || []).filter(
-        (x) => x.name !== instanceId,
-      );
+      layer.instances = (layer.instances || []).filter((x) => x.name !== instanceId);
     }
     // Remove the instance from the creation order
     yy.instanceCreationOrder = (yy.instanceCreationOrder || []).filter(
@@ -408,10 +387,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
   async reorganizeRoomInstances(instanceIds: string[]) {
     assert(this.isRoom, 'Can only add object instances to rooms');
     const instanceIdsSet = new Set(instanceIds);
-    assert(
-      instanceIds.length === instanceIdsSet.size,
-      'Cannot have duplicate instance IDs',
-    );
+    assert(instanceIds.length === instanceIdsSet.size, 'Cannot have duplicate instance IDs');
     const yy = this.yy as YyRoom;
     const currentIds = new Set(yy.instanceCreationOrder.map((x) => x.name));
     // Ensure that the new order includes all existing instances
@@ -432,9 +408,9 @@ export class Asset<T extends YyResourceType = YyResourceType> {
     assert(this.isRoom, 'Can only add object instances to rooms');
     const yy = this.yy as YyRoom;
     // Ensure we have an instance layer
-    let instanceLayer = yy.layers.find(
-      (x) => x.resourceType === 'GMRInstanceLayer',
-    ) as YyRoomInstanceLayer | undefined;
+    let instanceLayer = yy.layers.find((x) => x.resourceType === 'GMRInstanceLayer') as
+      | YyRoomInstanceLayer
+      | undefined;
     if (!instanceLayer) {
       instanceLayer = yyRoomInstanceLayerSchema.parse({});
       yy.layers.unshift(instanceLayer);
@@ -562,14 +538,9 @@ export class Asset<T extends YyResourceType = YyResourceType> {
         height: yy.height,
       };
     }
-    const frameSizes = await Promise.all(
-      sourceImages.map((x) => getPngSize(x)),
-    );
+    const frameSizes = await Promise.all(sourceImages.map((x) => getPngSize(x)));
     assert(
-      frameSizes.every(
-        (x) =>
-          x.width === expectedDims.width && x.height === expectedDims.height,
-      ),
+      frameSizes.every((x) => x.width === expectedDims.width && x.height === expectedDims.height),
       `Expected all frames to have width ${expectedDims.width} and height ${expectedDims.height}`,
     );
     const startingFrameCount = yy.frames.length;
@@ -579,9 +550,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
     // Copy the new frames over.
     await Promise.all(
       sourceImages.map((source, i) => {
-        const dest = this.dir.join(
-          `${yy.frames[startingFrameCount + i].name}.png`,
-        );
+        const dest = this.dir.join(`${yy.frames[startingFrameCount + i].name}.png`);
         return source.copy(dest);
       }),
     );
@@ -600,9 +569,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
     yy.eventList ||= [];
     if (
       yy.eventList.find(
-        (x) =>
-          x.eventNum === eventInfo.eventNum &&
-          x.eventType === eventInfo.eventType,
+        (x) => x.eventNum === eventInfo.eventNum && x.eventType === eventInfo.eventType,
       )
     ) {
       logger.warn(`Event ${eventInfo.name} already exists on ${this.name}`);
@@ -707,9 +674,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
   }
 
   protected addGmlFile(path: Pathy<string>): Code {
-    const gml =
-      this.getGmlFile(path) ||
-      new Code(this as Asset<'scripts' | 'objects'>, path);
+    const gml = this.getGmlFile(path) || new Code(this as Asset<'scripts' | 'objects'>, path);
     assert(path, 'Cannot add GML file, path does not exist');
     this.gmlFiles.set(path.absolute.toLocaleLowerCase(), gml);
     return gml;
@@ -718,15 +683,13 @@ export class Asset<T extends YyResourceType = YyResourceType> {
   async reload() {
     // Find all immediate children, which might include legacy GML files
 
-    const [, children] = await Promise.all([
-      await this.readYy(),
-      this.dir.listChildren(),
-    ]);
+    const [, children] = await Promise.all([await this.readYy(), this.dir.listChildren()]);
     if (this.assetKind === 'scripts') {
       this.addScriptFile(children as Pathy<string>[]);
     } else if (this.assetKind === 'objects') {
       this.gmlFiles.clear();
       this.addObjectFile(children as Pathy<string>[]);
+      this.registerObjectYyProperties();
     } else if (this.assetKind === 'extensions') {
       const diagnostics: Diagnostic[] = [];
 
@@ -751,11 +714,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
               : constant.value.match(/^-?[\d_.]+$/)
                 ? 'Real'
                 : 'Any';
-            const signifier = new Signifier(
-              this.project.self,
-              constant.name,
-              new Type(type),
-            );
+            const signifier = new Signifier(this.project.self, constant.name, new Type(type));
             signifier.macro = true;
             signifier.global = true;
             signifier.writable = false;
@@ -784,9 +743,7 @@ export class Asset<T extends YyResourceType = YyResourceType> {
             continue;
           }
           try {
-            const type = new Type('Function')
-              .named(func.externalName)
-              .describe(func.help);
+            const type = new Type('Function').named(func.externalName).describe(func.help);
             type.setReturnType(new Type(typeIndexToName(func.returnType)));
             for (let i = 0; i < func.args.length; i++) {
               const typeIdx = func.args[i];
@@ -821,6 +778,64 @@ export class Asset<T extends YyResourceType = YyResourceType> {
     await this.initiallyReadAndParseGml();
   }
 
+  private registerObjectYyProperties() {
+    if (this.assetKind !== 'objects') {
+      return;
+    }
+    const yy = this.yy as YyObject;
+    for (const property of yy.properties || []) {
+      if (!property?.name) {
+        continue;
+      }
+      const signifier = this.variables?.addMember(property.name);
+      if (!signifier) {
+        continue;
+      }
+      signifier.instance = true;
+      signifier.override = true;
+      if (!signifier.def) {
+        signifier.def = {};
+      }
+      signifier.setType(this.typeForObjectProperty(property));
+    }
+  }
+
+  private typeForObjectProperty(property: {
+    varType: YyObjectPropertyVarType;
+    filters?: unknown[];
+  }) {
+    switch (property.varType) {
+      case YyObjectPropertyVarType.String:
+        return Type.String;
+      case YyObjectPropertyVarType.Boolean:
+        return Type.Bool;
+      case YyObjectPropertyVarType.Asset: {
+        const firstFilter = `${property.filters?.[0] || ''}`;
+        if (firstFilter === 'GMRoom') {
+          return new Type('Asset.GMRoom');
+        }
+        if (firstFilter === 'GMObject') {
+          return new Type('Asset.GMObject');
+        }
+        if (firstFilter === 'GMSprite') {
+          return new Type('Asset.GMSprite');
+        }
+        if (firstFilter === 'GMSound') {
+          return new Type('Asset.GMSound');
+        }
+        return Type.Any;
+      }
+      case YyObjectPropertyVarType.Real:
+      case YyObjectPropertyVarType.Integer:
+      case YyObjectPropertyVarType.Colour:
+        return Type.Real;
+      case YyObjectPropertyVarType.Expression:
+      case YyObjectPropertyVarType.List:
+      default:
+        return Type.Any;
+    }
+  }
+
   async onRemove() {
     await Promise.all(this.gmlFilesArray.map((gml) => gml.remove()));
     // Remove this signifier and any global types from the project
@@ -844,23 +859,17 @@ export class Asset<T extends YyResourceType = YyResourceType> {
     // The YY file includes the list of events, but references them by
     // numeric identifiers instead of their name. For now we'll just
     // assume that the GML files are correct.
-    children
-      .filter((p) => p.hasExtension('gml'))
-      .forEach((p) => this.addGmlFile(p));
+    children.filter((p) => p.hasExtension('gml')).forEach((p) => this.addGmlFile(p));
   }
 
   protected addScriptFile(children: Pathy<string>[]) {
     // Scripts should have exactly one GML file, which is the script itself,
     // named the same as the script (though there could be casing variations)
     const matches = children.filter(
-      (p) =>
-        p.basename.toLocaleLowerCase() ===
-        `${this.name?.toLocaleLowerCase?.()}.gml`,
+      (p) => p.basename.toLocaleLowerCase() === `${this.name?.toLocaleLowerCase?.()}.gml`,
     );
     if (matches.length !== 1) {
-      logger.error(
-        `Script ${this.name} has ${matches.length} GML files. Expected 1.`,
-      );
+      logger.error(`Script ${this.name} has ${matches.length} GML files. Expected 1.`);
     } else {
       this.addGmlFile(matches[0]);
     }
@@ -907,14 +916,10 @@ export class Asset<T extends YyResourceType = YyResourceType> {
     if (!(await yyPath.exists())) {
       const assetsDir = yyPath.up(2);
       const namePattern = new RegExp(`^${resource.id.name}$`, 'i');
-      const dir = (await assetsDir.listChildren()).find((p) =>
-        p.basename.match(namePattern),
-      );
+      const dir = (await assetsDir.listChildren()).find((p) => p.basename.match(namePattern));
       if (dir) {
         const yyPattern = new RegExp(`^${resource.id.name}\\.yy$`, 'i');
-        yyPath = (await dir.listChildren()).find((p) =>
-          p.basename.match(yyPattern),
-        );
+        yyPath = (await dir.listChildren()).find((p) => p.basename.match(yyPattern));
         if (!yyPath) {
           logger.warn(`Could not find file for "${resource.id.path}"`);
         }

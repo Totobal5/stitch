@@ -1,9 +1,5 @@
 import { ok } from 'node:assert';
-import {
-  BsArrayItem,
-  createBsArrayKey,
-  updateBsArrayOrder,
-} from './helpers.js';
+import { BsArrayItem, createBsArrayKey, updateBsArrayOrder } from './helpers.js';
 
 describe('Helpers', function () {
   it('can create a four-character, consonumeric key', function () {

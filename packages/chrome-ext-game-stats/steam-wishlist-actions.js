@@ -12,12 +12,7 @@ async function addButtons() {
   // the data we need. So we need to extract it out of the script tags.
   chartToTsvButton(
     document.querySelectorAll('body script')[4]?.innerHTML,
-    [
-      'Wishlist Adds',
-      'Wishlist Deletes',
-      'Wishlist Purchases & Activations',
-      'Wishlist Gifts',
-    ],
+    ['Wishlist Adds', 'Wishlist Deletes', 'Wishlist Purchases & Activations', 'Wishlist Gifts'],
     'actions_graph',
     document.querySelectorAll('h2')[3],
   );
@@ -111,9 +106,7 @@ function datesFromSegments(segments) {
       dates.add(date);
     }
   }
-  const sorted = [...dates].sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime(),
-  );
+  const sorted = [...dates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   const range = [sorted[0], sorted[sorted.length - 1]];
   // Return an array that starts with the first date in the range and
   // adds one day at a time until we reach the last date in the range.

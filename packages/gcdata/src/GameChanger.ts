@@ -3,10 +3,7 @@ import { Pathy, pathy } from '@bscotch/pathy';
 import fetch from 'node-fetch';
 import { gameChangerEvents } from './GameChanger.events.js';
 import { GcdataError, assert } from './assert.js';
-import {
-  GameChangerRumpusMetadata,
-  gameChangerRumpusMetadataSchema,
-} from './types.cl2.rumpus.js';
+import { GameChangerRumpusMetadata, gameChangerRumpusMetadataSchema } from './types.cl2.rumpus.js';
 import {
   Bschema,
   BschemaObject,
@@ -26,11 +23,7 @@ import {
   type PackedData,
   type SchemaId,
 } from './types.js';
-import {
-  resolvePointer,
-  resolvePointerInSchema,
-  setValueAtPointer,
-} from './util.js';
+import { resolvePointer, resolvePointerInSchema, setValueAtPointer } from './util.js';
 
 interface MoteVisitorDataCtx {
   /** The data at this point in the heirarchy */
@@ -82,10 +75,7 @@ export class Gcdata {
   ): R;
   visitMoteData<Store, R>(
     moteId: string | Mote,
-    visitor: (
-      ctx: MoteVisitorCtx<Store>,
-      priorVisitorReturn?: R | undefined,
-    ) => R,
+    visitor: (ctx: MoteVisitorCtx<Store>, priorVisitorReturn?: R | undefined) => R,
     store: Store,
   ): R;
   visitMoteData(
@@ -122,9 +112,7 @@ export class Gcdata {
           const subschema = resolvePointerInSchema(pointer, ctx.mote, this);
           if (!subschema) {
             console.warn(
-              `Could not resolve pointer ${pointer.join('/')} for schema ${
-                ctx.mote.schema_id
-              }`,
+              `Could not resolve pointer ${pointer.join('/')} for schema ${ctx.mote.schema_id}`,
             );
             continue;
           }
@@ -188,9 +176,7 @@ export class Gcdata {
     return resolvePointer(pointer, mote.data) || mote.id;
   }
 
-  getMote<T = any>(
-    moteId: Mote | string | MoteId | undefined,
-  ): Mote<T> | undefined {
+  getMote<T = any>(moteId: Mote | string | MoteId | undefined): Mote<T> | undefined {
     if (!moteId) return;
     return this.data.motes[typeof moteId === 'string' ? moteId : moteId.id];
   }
@@ -204,18 +190,13 @@ export class Gcdata {
     return Object.values(this.data.motes);
   }
 
-  listMotesBySchema<D = unknown>(
-    ...schemaId: (string | SchemaId)[]
-  ): Mote<D>[] {
+  listMotesBySchema<D = unknown>(...schemaId: (string | SchemaId)[]): Mote<D>[] {
     return Object.values(this.data.motes).filter((mote) =>
       schemaId.includes(mote.schema_id),
     ) as Mote<D>[];
   }
 
-  static async from(
-    gcdataFile: Pathy,
-    options?: { resolveRefsAndOverrides?: boolean },
-  ) {
+  static async from(gcdataFile: Pathy, options?: { resolveRefsAndOverrides?: boolean }) {
     const data = JSON.parse(await gcdataFile.read({ parse: false }));
     return new Gcdata(data, options);
   }
@@ -241,16 +222,11 @@ export class Gcdata {
         }
         // If this was an object, need to recurse through properties
         // and additionalProperties
-        if (
-          'additionalProperties' in subschema &&
-          isObject(subschema.additionalProperties)
-        ) {
+        if ('additionalProperties' in subschema && isObject(subschema.additionalProperties)) {
           recursivelyResolve(subschema.additionalProperties as BschemaObject);
         }
         if ('properties' in subschema && isObject(subschema.properties)) {
-          for (const prop of Object.values(
-            subschema.properties as Record<string, Bschema>,
-          )) {
+          for (const prop of Object.values(subschema.properties as Record<string, Bschema>)) {
             recursivelyResolve(prop);
           }
         }
@@ -320,9 +296,7 @@ export class GameChanger {
     // Remove the working version, then recreate it from the diffs
     delete this.working.data.motes[moteId];
     if (this.base.data.motes[moteId]) {
-      this.working.data.motes[moteId] = structuredClone(
-        this.base.data.motes[moteId],
-      );
+      this.working.data.motes[moteId] = structuredClone(this.base.data.motes[moteId]);
     }
     this.applyChanges();
   }
@@ -338,17 +312,13 @@ export class GameChanger {
       'Parent ID must be a string or undefined',
     );
     assert(
-      newFolder === undefined ||
-        (typeof newFolder === 'string' && newFolder.length > 0),
+      newFolder === undefined || (typeof newFolder === 'string' && newFolder.length > 0),
       'Folder must be a string or undefined',
     );
     const mote = this.working.getMote(moteId);
     assert(mote, `Cannot update non-existent mote ${moteId}`);
     const parent = newParentId ? this.working.getMote(newParentId) : undefined;
-    assert(
-      parent || newParentId === undefined,
-      `Cannot find mote ${newParentId}`,
-    );
+    assert(parent || newParentId === undefined, `Cannot find mote ${newParentId}`);
 
     setValueAtPointer(this.working.data.motes[moteId], 'parent', parent?.id);
     setValueAtPointer(this.working.data.motes[moteId], 'folder', newFolder);
@@ -383,20 +353,14 @@ export class GameChanger {
   createMote(schemaId: string, moteId: string) {
     assert(schemaId, 'Must specify schema ID');
     assert(moteId, 'Must specify mote ID');
-    assert(
-      !this.working.getMote(moteId),
-      `Mote ${moteId} already exists in the working copy`,
-    );
+    assert(!this.working.getMote(moteId), `Mote ${moteId} already exists in the working copy`);
     const schema = this.working.getSchema(schemaId);
     assert(schema, `Schema ${schemaId} does not exist`);
 
     this.changes.changes.motes ||= {};
 
     // If we already have this mote in changes, we cannot proceed
-    assert(
-      !this.changes.changes.motes[moteId],
-      `Mote ${moteId} already exists in changes`,
-    );
+    assert(!this.changes.changes.motes[moteId], `Mote ${moteId} already exists in changes`);
 
     // Create the full change entry for the added mote
     const item = changeSchema.parse({
@@ -450,18 +414,13 @@ export class GameChanger {
       this.working,
       sampleDataFromPath,
     );
-    assert(
-      subschema,
-      `Could not resolve ${dataPath} in schema ${workingMote.schema_id}}`,
-    );
+    assert(subschema, `Could not resolve ${dataPath} in schema ${workingMote.schema_id}}`);
 
     // Do some basic schema validation to avoid really dumb errors
     if (isBschemaConst(subschema)) {
       assert(
         value === null || value === subschema.bConst,
-        `Expected constant value ${JSON.stringify(
-          subschema.bConst,
-        )}, got ${JSON.stringify(value)}`,
+        `Expected constant value ${JSON.stringify(subschema.bConst)}, got ${JSON.stringify(value)}`,
       );
     } else if (isBschemaEnum(subschema)) {
       assert(
@@ -471,23 +430,17 @@ export class GameChanger {
     } else if (typeof value === 'string') {
       assert(
         isBschemaString(subschema),
-        `Invalid value '${JSON.stringify(
-          value,
-        )}'. Schema for ${dataPath} is not for a string.`,
+        `Invalid value '${JSON.stringify(value)}'. Schema for ${dataPath} is not for a string.`,
       );
     } else if (typeof value === 'boolean') {
       assert(
         isBschemaBoolean(subschema),
-        `Invalid value '${JSON.stringify(
-          value,
-        )}'. Schema for ${dataPath} is not boolean`,
+        `Invalid value '${JSON.stringify(value)}'. Schema for ${dataPath} is not boolean`,
       );
     } else if (typeof value === 'number') {
       assert(
         isBschemaBoolean(subschema) || isBschemaNumeric(subschema),
-        `Invalid value '${JSON.stringify(
-          value,
-        )}'. Schema for ${dataPath} is not numeric`,
+        `Invalid value '${JSON.stringify(value)}'. Schema for ${dataPath} is not numeric`,
       );
     }
 
@@ -497,9 +450,7 @@ export class GameChanger {
     // See if we have a change relative to the base
     const currentValue =
       resolvePointer(dataPath, this.base.getMote(moteId)) ??
-      (subschema.defaultValue === undefined
-        ? null
-        : structuredClone(subschema.defaultValue));
+      (subschema.defaultValue === undefined ? null : structuredClone(subschema.defaultValue));
     value = value ?? null;
     if (currentValue == value) {
       // Then we haven't changed from the base data, but
@@ -520,13 +471,8 @@ export class GameChanger {
     change: { type: ChangeType; pointer?: string; newValue?: any },
   ) {
     const moteId = category === 'motes' ? id : undefined;
-    assert(
-      moteId || category === 'schemas',
-      'Must specify mote ID for mote changes',
-    );
-    const mote = moteId
-      ? this.working.getMote(moteId) || change.newValue
-      : undefined;
+    assert(moteId || category === 'schemas', 'Must specify mote ID for mote changes');
+    const mote = moteId ? this.working.getMote(moteId) || change.newValue : undefined;
     const schemaId = category === 'schemas' ? id : mote?.schema_id;
     assert(schemaId, 'Could not determine schema ID for change');
     assert(
@@ -537,14 +483,10 @@ export class GameChanger {
       assert(!this.working.getMote(moteId), `Mote ${moteId} already exists`);
     }
     if (category === 'schemas' && change.type === 'added') {
-      assert(
-        !this.working.getSchema(schemaId),
-        `Schema ${schemaId} already exists`,
-      );
+      assert(!this.working.getSchema(schemaId), `Schema ${schemaId} already exists`);
     }
     assert(
-      (category === 'schemas' && change.type === 'added') ||
-        this.working.getSchema(schemaId),
+      (category === 'schemas' && change.type === 'added') || this.working.getSchema(schemaId),
       `Schema ${schemaId} does not exist`,
     );
 
@@ -564,10 +506,7 @@ export class GameChanger {
       item.type = 'deleted';
       delete item.diffs;
     } else if (change.pointer) {
-      let originalValue = resolvePointer(
-        change.pointer,
-        this.baseData[category][id],
-      );
+      let originalValue = resolvePointer(change.pointer, this.baseData[category][id]);
       originalValue = originalValue === undefined ? null : originalValue;
       change.newValue = change.newValue === undefined ? null : change.newValue;
       if (originalValue !== change.newValue) {
@@ -584,13 +523,9 @@ export class GameChanger {
     // Write it to a backup file first (to ensure that the GameChanger)
     // doesn't clobber what we've done without a recovery option.
     // Then write it to the actual file.
-    const backupsFolder = GameChanger.projectGameChangerChangesBackupFolder(
-      this.projectName,
-    );
+    const backupsFolder = GameChanger.projectGameChangerChangesBackupFolder(this.projectName);
     await backupsFolder.ensureDirectory();
-    const changesFile = GameChanger.projectGameChangerChangesFile(
-      this.projectName,
-    );
+    const changesFile = GameChanger.projectGameChangerChangesFile(this.projectName);
     if (await changesFile.exists()) {
       // Copy it to the backup folder
       const now = new Date();
@@ -606,9 +541,7 @@ export class GameChanger {
       const backupFile = backupsFolder.join(`${timestamp}.changes.json`);
       await changesFile.copy(backupFile);
     }
-    await GameChanger.projectGameChangerChangesFile(this.projectName).write(
-      this.changes,
-    );
+    await GameChanger.projectGameChangerChangesFile(this.projectName).write(this.changes);
     gameChangerEvents.emit('gamechanger-changes-saved');
   }
 
@@ -626,10 +559,7 @@ export class GameChanger {
         if (change.type === 'deleted') {
           delete this.workingData[type][id];
           continue;
-        } else if (
-          change.type === 'changed' &&
-          !Object.keys(change.diffs || {}).length
-        ) {
+        } else if (change.type === 'changed' && !Object.keys(change.diffs || {}).length) {
           // Then we can remove this change entry altogether
           delete this.changes.changes[type][id];
           continue;
@@ -659,8 +589,7 @@ export class GameChanger {
             if (
               part.data === undefined ||
               part.data === null ||
-              (typeof part.data === 'object' &&
-                Object.keys(part.data).length === 0)
+              (typeof part.data === 'object' && Object.keys(part.data).length === 0)
             ) {
               const parent = dataPath[p - 1].data;
               delete parent[part.key!];
@@ -672,9 +601,7 @@ export class GameChanger {
   }
 
   protected async loadChanges() {
-    const changesFile = GameChanger.projectGameChangerChangesFile(
-      this.projectName,
-    );
+    const changesFile = GameChanger.projectGameChangerChangesFile(this.projectName);
     if (!(await changesFile.exists())) {
       const metadata = await this.readCommitsMetadata();
       // Get the commitIds, sorted descending by number
@@ -705,9 +632,7 @@ export class GameChanger {
   }
 
   protected async readCommitsMetadata(): Promise<GameChangerRumpusMetadata> {
-    const metadataFile = GameChanger.projectRumpusGameChangerMetadataFile(
-      this.projectName,
-    );
+    const metadataFile = GameChanger.projectRumpusGameChangerMetadataFile(this.projectName);
     assert(
       await metadataFile.exists(),
       'Could not find game-changer metadata file. Open the GameChanger to ensure that it gets created.',
@@ -721,9 +646,7 @@ export class GameChanger {
     try {
       return gameChangerRumpusMetadataSchema.parse(JSON.parse(rawMetadata));
     } catch (err) {
-      const issue = new GcdataError(
-        'Could not parse game-changer metadata file.',
-      );
+      const issue = new GcdataError('Could not parse game-changer metadata file.');
       issue.cause = err;
       throw err;
     }
@@ -737,17 +660,11 @@ export class GameChanger {
     const commitItemId = Object.keys(metadata.item_metadata).find(
       (itemId) => metadata.item_metadata[itemId].name === this.changes.commitId,
     );
-    assert(
+    assert(commitItemId, `Could not find commit item with name "${this.changes.commitId}"`);
+    const commitItemFile = GameChanger.projectRumpusGameChangerDir(this.projectName).join(
       commitItemId,
-      `Could not find commit item with name "${this.changes.commitId}"`,
     );
-    const commitItemFile = GameChanger.projectRumpusGameChangerDir(
-      this.projectName,
-    ).join(commitItemId);
-    assert(
-      await commitItemFile.exists(),
-      `Could not find commit item file "${commitItemFile}"`,
-    );
+    assert(await commitItemFile.exists(), `Could not find commit item file "${commitItemFile}"`);
     const baseData = JSON.parse(await commitItemFile.read({ parse: false }));
     this.base ||= new Gcdata(baseData);
     this.base.data = baseData;
@@ -757,11 +674,7 @@ export class GameChanger {
     this.applyChanges();
   }
 
-  async loadGlossary(access: {
-    host: string;
-    username: string;
-    password: string;
-  }) {
+  async loadGlossary(access: { host: string; username: string; password: string }) {
     const client = new Client({
       baseUrl: access.host,
       password: access.password,
@@ -792,9 +705,7 @@ export class GameChanger {
   }
 
   static projectRumpusGameChangerDir(projectName: string) {
-    return this.projectSaveDir(projectName).join(
-      'Dev/Rumpus/Crates/game-changer',
-    );
+    return this.projectSaveDir(projectName).join('Dev/Rumpus/Crates/game-changer');
   }
 
   static projectRumpusGameChangerMetadataFile(projectName: string) {
@@ -812,8 +723,6 @@ export class GameChanger {
   }
 
   static projectGameChangerChangesBackupFolder(projectName: string) {
-    return this.projectGameChangerChangesFolder(projectName).join(
-      'stitch-backups',
-    );
+    return this.projectGameChangerChangesFolder(projectName).join('stitch-backups');
   }
 }

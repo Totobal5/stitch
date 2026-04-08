@@ -1,9 +1,4 @@
-import {
-  Code,
-  JsdocSummary,
-  Signifier,
-  primitiveNames,
-} from '@bscotch/gml-parser';
+import { Code, JsdocSummary, Signifier, primitiveNames } from '@bscotch/gml-parser';
 import vscode, { CancellationToken, CompletionContext } from 'vscode';
 import { stitchConfig } from './config.mjs';
 import type { StitchWorkspace } from './extension.workspace.mjs';
@@ -37,10 +32,7 @@ export class StitchCompletionProvider implements vscode.CompletionItemProvider {
       // Are we in a StructNewMember range?
       const inStruct = gmlFile.getStructNewMemberRangeAt(offset);
       if (inStruct) {
-        return inScopeSymbolsToCompletions(
-          document,
-          inStruct.type.listMembers(),
-        );
+        return inScopeSymbolsToCompletions(document, inStruct.type.listMembers());
       }
       const items = gmlFile.getInScopeSymbolsAt(offset);
       return inScopeSymbolsToCompletions(document, items);
@@ -70,10 +62,7 @@ export function jsdocCompletions(
     typeNames.add(primitiveName);
   }
   for (const type of typeNames) {
-    const item = new vscode.CompletionItem(
-      type,
-      vscode.CompletionItemKind.Interface,
-    );
+    const item = new vscode.CompletionItem(type, vscode.CompletionItemKind.Interface);
     completions.push(item);
   }
   return completions;
@@ -98,10 +87,7 @@ export function inScopeSymbolsToCompletions(
     if (shouldHide) {
       continue;
     }
-    const item = new vscode.CompletionItem(
-      signifier.name!,
-      vscode.CompletionItemKind.Constant,
-    );
+    const item = new vscode.CompletionItem(signifier.name!, vscode.CompletionItemKind.Constant);
     item.detail = inferDetails(signifier);
     item.kind = inferVscodeKind(signifier);
 

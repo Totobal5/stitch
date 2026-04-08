@@ -1,13 +1,13 @@
 {
-  "$GMScript":"",
-  "%Name":"Complicated",
-  "isCompatibility":false,
-  "isDnD":false,
-  "name":"Complicated",
-  "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+  "$GMScript": "",
+  "%Name": "Complicated",
+  "isCompatibility": false,
+  "isDnD": false,
+  "name": "Complicated",
+  "parent": {
+    "name": "Scripts",
+    "path": "folders/Scripts.yy"
   },
-  "resourceType":"GMScript",
-  "resourceVersion":"2.0",
+  "resourceType": "GMScript",
+  "resourceVersion": "2.0"
 }

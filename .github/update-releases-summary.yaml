@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "@bscotch/gamemaker-releases@*"
+      - '@bscotch/gamemaker-releases@*'
   schedule:
     # https://crontab.guru/#22_13,17,20,22_*_*_1-5
     - cron: '22 13,17,20,22 * * 1-5'
@@ -35,7 +35,7 @@ jobs:
         run: echo "OLD_SUMMARY_CHECKSUM=${{hashFiles('packages/releases/releases-summary.json')}}" >> $GITHUB_ENV
 
       - name: Build
-        run: pnpm run -r --filter=gamemaker-releases... build 
+        run: pnpm run -r --filter=gamemaker-releases... build
       - name: Compute New Summary
         # This script adds the env var `LATEST_RELEASE`
         run: node scripts/update-releases-summary.mjs
@@ -43,7 +43,7 @@ jobs:
         run: echo "NEW_SUMMARY_CHECKSUM=${{hashFiles('packages/releases/releases-summary.json')}}" >> $GITHUB_ENV
       - name: Report
         run: echo ${{env.LATEST_RELEASE}} ${{env.OLD_SUMMARY_CHECKSUM}} ${{ENV.NEW_SUMMARY_CHECKSUM}} && ls packages/releases/release*.json
-  
+
       - name: Create New Release
         # if: ${{env.OLD_SUMMARY_CHECKSUM != env.NEW_SUMMARY_CHECKSUM}}
         run: cd packages/releases && gh gist edit $GIST_ID -a release-notes-cache.json -a releases-summary.json
@@ -52,4 +52,3 @@ jobs:
         # run: gh release create --title "GameMaker Releases Summary v${{env.LATEST_RELEASE}}" releases-summary@${{env.LATEST_RELEASE}} packages/releases/releases-summary.json#GameMakerReleases packages/releases/release-notes-cache.json#NotesCache
         # env:
         #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      

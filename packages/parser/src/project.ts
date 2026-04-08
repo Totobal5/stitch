@@ -183,9 +183,7 @@ export class Project {
    * assets, parsing logs, etc.
    */
   get stitchConfig() {
-    return this.dir
-      .join(stitchConfigFilename)
-      .withValidator(stitchConfigSchema);
+    return this.dir.join(stitchConfigFilename).withValidator(stitchConfigSchema);
   }
 
   /** List the names of the GameMaker configs defined by this project. */
@@ -242,15 +240,35 @@ export class Project {
    */
   getAssetByName<Assert extends boolean>(
     name: string | undefined,
-    options?: { assertExists: Assert },
+    options?: { assertExists: Assert; kind?: string },
   ): Assert extends true ? Asset : Asset | undefined {
     assert(name || !options?.assertExists, 'No asset name provided');
     if (!name) {
       return undefined as Assert extends true ? Asset : Asset | undefined;
     }
-    const asset = this.assets.get(name.toLocaleLowerCase());
-    assert(asset || !options?.assertExists, `Asset "${name}" does not exist.`);
-    return asset as Assert extends true ? Asset : Asset | undefined;
+    const nameLower = name.toLocaleLowerCase();
+
+    // If a specific kind is provided, search for that exact combination
+    if (options?.kind) {
+      const key = `${nameLower}#${options.kind}`;
+      const asset = this.assets.get(key);
+      assert(
+        asset || !options?.assertExists,
+        `Asset "${name}" of kind "${options.kind}" does not exist.`,
+      );
+      return asset as Assert extends true ? Asset : Asset | undefined;
+    }
+
+    // Otherwise, search for any asset with this name
+    // This maintains backward compatibility when kind is not specified
+    for (const [key, asset] of this.assets) {
+      if (key.startsWith(`${nameLower}#`)) {
+        return asset as Assert extends true ? Asset : Asset | undefined;
+      }
+    }
+
+    assert(!options?.assertExists, `Asset "${name}" does not exist.`);
+    return undefined as Assert extends true ? Asset : Asset | undefined;
   }
 
   /**
@@ -259,40 +277,23 @@ export class Project {
   @sequential
   async removeAssetByName(name: string | undefined) {
     if (!name) return;
-    name = name.toLocaleLowerCase();
-    const asset = this.assets.get(name);
+    const asset = this.getAssetByName(name);
     if (!asset) return;
-    // Remove the asset from the yyp
-    const resourceIdx = this.yyp.resources.findIndex(
-      (r) => r.id.name.toLocaleLowerCase() === name,
-    );
     // If it's a room, remove it from the room order list
     if (isAssetOfKind(asset, 'rooms')) {
       this.yyp.RoomOrderNodes = this.yyp.RoomOrderNodes.filter((node) => {
-        return (
-          node.roomId.path.toLowerCase() !==
-          asset.resource.id.path.toLowerCase()
-        );
+        return node.roomId.path.toLowerCase() !== asset.resource.id.path.toLowerCase();
       });
     }
     // If it'll be referenced in other assets, remove those references
-    else if (
-      isAssetOfKind(asset, 'objects') ||
-      isAssetOfKind(asset, 'sprites')
-    ) {
+    else if (isAssetOfKind(asset, 'objects') || isAssetOfKind(asset, 'sprites')) {
       for (const other of this.assets.values()) {
-        if (
-          isAssetOfKind(asset, 'sprites') &&
-          isAssetOfKind(other, 'objects')
-        ) {
+        if (isAssetOfKind(asset, 'sprites') && isAssetOfKind(other, 'objects')) {
           // If this object has this sprite, unset it!
           if (other.sprite?.name === asset.name) {
             other.sprite = undefined;
           }
-        } else if (
-          isAssetOfKind(asset, 'objects') &&
-          isAssetOfKind(other, 'objects')
-        ) {
+        } else if (isAssetOfKind(asset, 'objects') && isAssetOfKind(other, 'objects')) {
           // Then this object might be referenced in a collision event
           // with the other object.
           const yy = other.yy;
@@ -324,7 +325,15 @@ export class Project {
       }
     }
 
-    this.assets.delete(name);
+    // Delete using the composite key format
+    const assetKey = this.assetKeyFromResource(asset);
+    this.assets.delete(assetKey);
+    // Remove from resource using resource path match
+    const nameLower = name.toLocaleLowerCase();
+    const resourceIdx = this.yyp.resources.findIndex(
+      (r) =>
+        r.id.name.toLocaleLowerCase() === nameLower && r.id.path.includes(`/${asset.assetKind}/`),
+    );
     if (resourceIdx > -1) {
       this.yyp.resources.splice(resourceIdx, 1);
       await this.saveYyp();
@@ -335,7 +344,22 @@ export class Project {
   }
 
   getAsset(path: Pathy<any>): Asset | undefined {
-    return this.assets.get(this.assetNameFromPath(path));
+    const projectRelativePath = this.toProjectRelativePath(path);
+    if (!projectRelativePath) {
+      return;
+    }
+    // Extract the asset kind from the project-relative path
+    // (e.g., "objects/Game/Game.yy" -> "objects")
+    const assetKind = projectRelativePath.split('/')[0];
+    if (!assetKind || assetKind === '..') {
+      return;
+    }
+    const name = this.assetNameFromPath(path);
+    if (!name) {
+      return;
+    }
+    const key = `${name.toLocaleLowerCase()}#${assetKind}`;
+    return this.assets.get(key);
   }
 
   getGmlFile(path: Pathy<any>): Code | undefined {
@@ -347,10 +371,7 @@ export class Project {
   }
 
   /** Normalize path information for a datafile ("Included File") */
-  parseIncludedFilePath(
-    filePath: string,
-    name?: string,
-  ): { filePath: string; name: string } {
+  parseIncludedFilePath(filePath: string, name?: string): { filePath: string; name: string } {
     filePath.replace(/[/\\]+$/, '/').replace(/\/$/, '');
     if (!name) {
       ({ folder: filePath, name } =
@@ -380,9 +401,7 @@ export class Project {
    */
   @sequential
   async syncIncludedFiles() {
-    const includedFiles = (
-      await this.dir.join('datafiles').listChildrenRecursively()
-    ).map((f) => {
+    const includedFiles = (await this.dir.join('datafiles').listChildrenRecursively()).map((f) => {
       /** The filepath relative to the project dir (starts with 'datafiles') */
       const fullPath = f.relativeFrom(this.dir);
       // Will throw with unexpected paths, preventing anything from being
@@ -390,22 +409,46 @@ export class Project {
       const { filePath, name } = this.parseIncludedFilePath(fullPath);
       const existing = this.findIncludedFile(filePath, name);
 
-      return existing || { filePath, name };
+      return this.normalizeIncludedFile(filePath, name, existing);
     });
     // Note: Should check if there have been any changes, and only write if not!
     // No need to compare with what's already in there, just overwrite it!
     // GameMaker seems to sort these by full path, so we'll do the same to
     // prevent git noise.
-    // @ts-expect-error The schema will ensure it's written correctly
     this.yyp.IncludedFiles = includedFiles;
     await this.saveYyp();
   }
 
+  private normalizeIncludedFile(
+    filePath: string,
+    name: string,
+    existing?: Yyp['IncludedFiles'][number],
+  ): Yyp['IncludedFiles'][number] {
+    const normalized = existing
+      ? { ...existing }
+      : ({ filePath, name } as Yyp['IncludedFiles'][number]);
+    normalized.filePath = filePath;
+    normalized.name = name;
+    normalized.CopyToMask = normalizeMaskValue(normalized.CopyToMask);
+
+    if (normalized.ConfigValues) {
+      for (const configName of Object.keys(normalized.ConfigValues)) {
+        const configValues = normalized.ConfigValues[configName];
+        if (!configValues) {
+          continue;
+        }
+        configValues.CopyToMask = normalizeMaskValue(configValues.CopyToMask);
+      }
+    }
+
+    return normalized;
+  }
+
   /** @internal Load an Asset instance into the project's data model. For use by methods that load the project, add assets, etc. */
   registerAsset(resource: Asset): void {
-    const name = this.assetNameFromPath(resource.dir);
-    ok(!this.assets.has(name), `Resource ${name} already exists`);
-    this.assets.set(name, resource);
+    const key = this.assetKeyFromResource(resource);
+    ok(!this.assets.has(key), `Resource ${resource.name}#${resource.assetKind} already exists`);
+    this.assets.set(key, resource);
   }
 
   /**
@@ -421,8 +464,7 @@ export class Project {
 
     // Create a new asset with the new name, copying over the old asset's files and updating them as needed
     const newAssetDir = asset.dir.up().join(to);
-    const reset = async () =>
-      await newAssetDir.delete({ force: true, recursive: true });
+    const reset = async () => await newAssetDir.delete({ force: true, recursive: true });
     await newAssetDir.ensureDirectory();
     await newAssetDir.isEmptyDirectory({ assert: true });
     await asset.dir.copy(newAssetDir);
@@ -489,12 +531,7 @@ export class Project {
       for (const obj of this.assets.values()) {
         if (!isAssetOfKind(obj, 'objects')) continue;
         if (!obj.sprite) continue;
-        console.log(
-          'Checking old sprite name',
-          obj.sprite.name,
-          asset.name,
-          newAsset.name,
-        );
+        console.log('Checking old sprite name', obj.sprite.name, asset.name, newAsset.name);
         if (obj.sprite?.name === asset.name) {
           console.log('UPDATING SPRITE');
           obj.sprite = newAsset;
@@ -537,10 +574,7 @@ export class Project {
   }
 
   @sequential
-  async import(
-    fromProject: Project | string,
-    options: ImportModuleOptions = {},
-  ) {
+  async import(fromProject: Project | string, options: ImportModuleOptions = {}) {
     if (typeof fromProject === 'string') {
       fromProject = await Project.initialize(fromProject);
     }
@@ -584,10 +618,7 @@ export class Project {
     // Update the yy files to replace the old name with the new
     // Just read them as text so we don't have to deal with parsing
     const content: string = await yyFile.read({ encoding: 'utf8' });
-    const newContent = content.replaceAll(
-      new RegExp(`"${sourceName}"`, 'gi'),
-      `"${parsed.name}"`,
-    );
+    const newContent = content.replaceAll(new RegExp(`"${sourceName}"`, 'gi'), `"${parsed.name}"`);
     await yyFile.write(newContent);
     // Add the new asset to the yyp file
     const info = await this.addAssetToYyp(yyFile.absolute);
@@ -765,9 +796,7 @@ export class Project {
    * @param newObjectName The POSIX-style path within the asset tree where you want this asset to be created, where the last component is the name of the asset.
    */
   @sequential
-  async createObject(
-    newObjectName: string,
-  ): Promise<Asset<'objects'> | undefined> {
+  async createObject(newObjectName: string): Promise<Asset<'objects'> | undefined> {
     // Create the yy file
     const parsed = await this.parseNewAssetPath(newObjectName);
     if (!parsed) {
@@ -901,9 +930,7 @@ export class Project {
     assertIsValidIdentifier(name);
     const existingAsset = this.getAssetByName(name);
     if (existingAsset) {
-      logger.error(
-        `An asset named ${path} (${existingAsset.assetKind}) already exists`,
-      );
+      logger.error(`An asset named ${path} (${existingAsset.assetKind}) already exists`);
       return;
     }
     if (!parts.length) {
@@ -917,16 +944,10 @@ export class Project {
   /**
    * Given the path to a yy file for an asset, ensure
    * it has an entry in the yyp file. */
-  async addAssetToYyp(
-    yyPath: string,
-    options?: { skipSave?: boolean },
-  ): Promise<YypResource> {
+  async addAssetToYyp(yyPath: string, options?: { skipSave?: boolean }): Promise<YypResource> {
     assert(yyPath.endsWith('.yy'), `Expected yy file, got ${yyPath}`);
     const parts = yyPath.split(/[/\\]+/).slice(-3);
-    assert(
-      parts.length === 3,
-      `Expected path with at least 3 parts, got ${yyPath}`,
-    );
+    assert(parts.length === 3, `Expected path with at least 3 parts, got ${yyPath}`);
     const [type, name, basename] = parts;
     const resourceEntry: YypResource = {
       id: {
@@ -953,10 +974,7 @@ export class Project {
     return { parts, full, prefix };
   }
 
-  listAssetsInFolder(
-    path: string | string[],
-    options?: { recursive: boolean },
-  ) {
+  listAssetsInFolder(path: string | string[], options?: { recursive: boolean }) {
     const { full, prefix } = this.parseFolderPath(path);
     const foundAssets: Asset[] = [];
 
@@ -983,10 +1001,7 @@ export class Project {
     for (let f = this.yyp.Folders.length - 1; f >= 0; f--) {
       const currentFolder = this.yyp.Folders[f];
       // If this is the "old" folder, delete it
-      if (
-        full === currentFolder.folderPath ||
-        currentFolder.folderPath.startsWith(prefix)
-      ) {
+      if (full === currentFolder.folderPath || currentFolder.folderPath.startsWith(prefix)) {
         this.yyp.Folders.splice(f, 1);
         continue;
       }
@@ -1035,10 +1050,7 @@ export class Project {
       }
       // If this is a subfolder of the old folder, move it
       if (currentFolder.folderPath.startsWith(oldPathPrefix)) {
-        const newPath = currentFolder.folderPath.replace(
-          oldPathPrefix,
-          newPathPrefix,
-        );
+        const newPath = currentFolder.folderPath.replace(oldPathPrefix, newPathPrefix);
         this.yyp.Folders[f] = {
           ...currentFolder,
           folderPath: newPath,
@@ -1089,10 +1101,7 @@ export class Project {
     let folder: YypFolder | undefined;
     /** A random location in the list where this new folder should be put,
      * to reduce git conflicts.*/
-    const insertAt = Math.max(
-      Math.floor(Math.random() * folders.length - 1),
-      0,
-    );
+    const insertAt = Math.max(Math.floor(Math.random() * folders.length - 1), 0);
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       if (!part) {
@@ -1128,8 +1137,43 @@ export class Project {
    * that folder.
    */
   assetNameFromPath(path: Pathy<any>): string {
-    const parts = path.relativeFrom(this.dir).split(/[/\\]+/);
+    const projectRelativePath = this.toProjectRelativePath(path);
+    if (!projectRelativePath) {
+      return '';
+    }
+    const parts = projectRelativePath.split(/[/\\]+/).filter((part) => part && part !== '.');
     return parts[1]?.toLocaleLowerCase?.();
+  }
+
+  private toProjectRelativePath(path: Pathy<any>): string | undefined {
+    const projectRoot = this.dir.absolute.replace(/\\/g, '/').replace(/\/+$/, '');
+    const absolutePath = path.absolute.replace(/\\/g, '/');
+
+    const lowerRoot = projectRoot.toLocaleLowerCase();
+    const lowerAbsolute = absolutePath.toLocaleLowerCase();
+    if (lowerAbsolute.startsWith(lowerRoot + '/')) {
+      return absolutePath.slice(projectRoot.length + 1);
+    }
+    if (lowerAbsolute === lowerRoot) {
+      return '';
+    }
+
+    const relative = path
+      .relativeFrom(this.dir)
+      .replace(/\\/g, '/')
+      .replace(/^\.?\//, '');
+    if (!relative || relative.startsWith('..') || /^[a-z]:$/i.test(relative.split('/')[0])) {
+      return;
+    }
+    return relative;
+  }
+
+  /**
+   * Generate a unique composite key for asset lookup: "name#type"
+   * This allows same-named resources of different types (e.g., "game#objects" and "game#notes")
+   */
+  private assetKeyFromResource(resource: Asset): string {
+    return `${resource.name.toLocaleLowerCase()}#${resource.assetKind}`;
   }
 
   /**
@@ -1149,11 +1193,7 @@ export class Project {
     // Load AudioGroup assets
     for (const audioGroup of this.yyp.AudioGroups) {
       if (!this.self.getMember(audioGroup.name)) {
-        const signifier = new Signifier(
-          this.self,
-          audioGroup.name,
-          new Type('Asset.GMAudioGroup'),
-        );
+        const signifier = new Signifier(this.self, audioGroup.name, new Type('Asset.GMAudioGroup'));
         signifier.global = true;
         signifier.writable = false;
         this.self.addMember(signifier);
@@ -1165,13 +1205,13 @@ export class Project {
     const perAssetIncrement = this.yyp.resources.length / 80;
     const resourceWaits: Promise<Asset | undefined>[] = [];
     for (const resourceInfo of this.yyp.resources) {
-      assert(
-        resourceInfo.id.name,
-        `Resource ${resourceInfo.id.path} has no name`,
-      );
+      assert(resourceInfo.id.name, `Resource ${resourceInfo.id.path} has no name`);
       const name = resourceInfo.id.name.toLocaleLowerCase();
+      // Extract the asset kind from the path (e.g., "objects/Game/Game.yy" -> "objects")
+      const assetKind = resourceInfo.id.path.split('/')[0];
+      const assetKey = `${name}#${assetKind}`;
       // Skip it if we already have it
-      if (this.assets.has(name)) {
+      if (this.assets.has(assetKey)) {
         continue;
       }
 
@@ -1222,9 +1262,7 @@ export class Project {
 
   @sequential
   async getWindowsName(): Promise<string | undefined> {
-    const windowOptionsFile = this.dir.join(
-      'options/windows/options_windows.yy',
-    );
+    const windowOptionsFile = this.dir.join('options/windows/options_windows.yy');
     if (!(await windowOptionsFile.exists())) {
       return;
     }
@@ -1368,20 +1406,10 @@ export class Project {
       options?.onLoadProgress?.(5, 'Loaded GML spec');
     });
     log.log('Loading asset files...');
-    await Promise.all([
-      this.nativeWaiter,
-      this.yypWaiter,
-      this.loadHelpLinks(),
-    ]);
+    await Promise.all([this.nativeWaiter, this.yypWaiter, this.loadHelpLinks()]);
 
     const assets = await this.loadAssets(options);
-    log.log(
-      'Resources',
-      this.assets.size,
-      'loaded files in',
-      Date.now() - t,
-      'ms',
-    );
+    log.log('Resources', this.assets.size, 'loaded files in', Date.now() - t, 'ms');
 
     t = Date.now();
     // Discover all globals
@@ -1396,10 +1424,7 @@ export class Project {
   /**
    * Create a new project instance and initialize it.
    */
-  static async initialize(
-    yypPath: string,
-    options?: ProjectOptions,
-  ): Promise<Project> {
+  static async initialize(yypPath: string, options?: ProjectOptions): Promise<Project> {
     let path = pathy(yypPath);
     if (await path.isDirectory()) {
       const children = await path.listChildren();
@@ -1415,4 +1440,17 @@ export class Project {
   static readonly fallbackGmlSpecPath = pathy(import.meta.url).resolveTo(
     '../../assets/GmlSpec.xml',
   );
+}
+
+function normalizeMaskValue(value: unknown): bigint {
+  if (typeof value === 'bigint') {
+    return value;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return BigInt(Math.trunc(value));
+  }
+  if (typeof value === 'string' && value.trim().match(/^-?\d+$/)) {
+    return BigInt(value.trim());
+  }
+  return -1n;
 }

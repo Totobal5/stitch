@@ -68,8 +68,7 @@ export class GameMakerRunningIde {
   }
 }
 
-const ideClassStaticTracer = (methodName: string) =>
-  createStaticTracer('GameMakerIde', methodName);
+const ideClassStaticTracer = (methodName: string) => createStaticTracer('GameMakerIde', methodName);
 
 export type GameMakerIdeErrorCode =
   | 'LOGIN_REQUIRED'
@@ -124,11 +123,7 @@ export class GameMakerIde extends GameMakerComponent {
     );
     // Assert that this runtime version is in the feed
     const release = await GameMakerComponent.findRelease({ runtimeVersion });
-    assert(
-      release,
-      `Could not find runtime version ${runtimeVersion}`,
-      'RUNTIME_NOT_FOUND',
-    );
+    assert(release, `Could not find runtime version ${runtimeVersion}`, 'RUNTIME_NOT_FOUND');
 
     // If the runtime version is the paired one,
     // and it is not already installed, then the IDE
@@ -176,10 +171,7 @@ export class GameMakerIde extends GameMakerComponent {
     // Get the value specified in the actual install (this is the most-correct one)
     if (await runtimeVersionFile.exists()) {
       const version = (await runtimeVersionFile.read()).trim();
-      ok(
-        version.match(/^\d+\.\d+\.\d+\.\d+$/),
-        `Invalid runtime version: ${version}`,
-      );
+      ok(version.match(/^\d+\.\d+\.\d+\.\d+$/), `Invalid runtime version: ${version}`);
       return version;
     }
     // If that fails, fall back on the version in the feed
@@ -211,10 +203,7 @@ export class GameMakerIde extends GameMakerComponent {
       ideVersion: version,
     });
     ok(release, `Could not find version ${version} in the IDE feed`);
-    ok(
-      release.ide.link,
-      `Could not find a download link for version ${version}`,
-    );
+    ok(release.ide.link, `Could not find a download link for version ${version}`);
     let installedVersion = await GameMakerIde.findInstalled(version);
     if (!installedVersion || options?.force) {
       // See if it's installed to PROGRAMFILES,
@@ -241,15 +230,10 @@ export class GameMakerIde extends GameMakerComponent {
       }
       // Copy over to Stitch
       console.log("Copying installed files to Stitch's cache...");
-      await directlyInstalled.directory.copy(
-        GameMakerIde.cachedIdeDirectory(version),
-      );
+      await directlyInstalled.directory.copy(GameMakerIde.cachedIdeDirectory(version));
       installedVersion = await GameMakerIde.findInstalled(version);
     }
-    ok(
-      installedVersion,
-      `Could not find version ${version} after installation.`,
-    );
+    ok(installedVersion, `Could not find version ${version} after installation.`);
     return installedVersion;
   }
 
@@ -262,9 +246,7 @@ export class GameMakerIde extends GameMakerComponent {
   @trace
   static async listInstalled() {
     await GameMakerIde.defaultCachedIdeParentDirectory.ensureDirectory();
-    return await GameMakerIde.listInstalledInDir(
-      GameMakerIde.defaultCachedIdeParentDirectory,
-    );
+    return await GameMakerIde.listInstalledInDir(GameMakerIde.defaultCachedIdeParentDirectory);
   }
 
   /**
@@ -273,28 +255,21 @@ export class GameMakerIde extends GameMakerComponent {
   protected static async disableUpdatePrompt() {
     const macroFilePaths = await listDefaultMacrosPaths();
     for (const path of macroFilePaths) {
-      const macros: GameMakerDefaultMacros = (await path.exists())
-        ? await path.read()
-        : {};
+      const macros: GameMakerDefaultMacros = (await path.exists()) ? await path.read() : {};
       const backupPath = path.changeExtension('.bk.json');
       if (Object.keys(macros).length > 0 && !(await backupPath.exists())) {
         await path.copy(backupPath);
       }
       // Set it to a syntactically correct, but
       // non-existent RSS feed.
-      macros.updateURI =
-        'http://gms.yoyogames.com/update-win-NuBeta-TOTALLY-FAKE.rss';
+      macros.updateURI = 'http://gms.yoyogames.com/update-win-NuBeta-TOTALLY-FAKE.rss';
       await path.write(macros);
     }
   }
 
   @trace
-  protected static async findDirectlyInstalled(
-    version: string,
-    programFiles?: string,
-  ) {
-    const installedIdeVersions =
-      await GameMakerIde.listDirectlyInstalled(programFiles);
+  protected static async findDirectlyInstalled(version: string, programFiles?: string) {
+    const installedIdeVersions = await GameMakerIde.listDirectlyInstalled(programFiles);
     return installedIdeVersions.find((v) => v.version === version);
   }
 
@@ -306,16 +281,12 @@ export class GameMakerIde extends GameMakerComponent {
    * (see {@link listInstalled}).
    */
   @trace
-  protected static async listDirectlyInstalled(
-    programFiles = process.env.PROGRAMFILES!,
-  ) {
+  protected static async listDirectlyInstalled(programFiles = process.env.PROGRAMFILES!) {
     return await GameMakerIde.listInstalledInDir(programFiles);
   }
 
   @trace
-  protected static async listInstalledInDir(
-    parentDir: string | Pathy,
-  ): Promise<GameMakerIde[]> {
+  protected static async listInstalledInDir(parentDir: string | Pathy): Promise<GameMakerIde[]> {
     const tracer = ideClassStaticTracer('listInstalledInDir');
     const releases = await GameMakerIde.listReleases();
     tracer(`Searching for folders with GameMaker .exe files in "${parentDir}"`);
@@ -324,30 +295,22 @@ export class GameMakerIde extends GameMakerComponent {
 
     const ideVersions: (GameMakerIde | undefined)[] = await Promise.all(
       ideExecutables.map(async (executablePath) => {
-        const possibleFileNames =
-          /^(IDE|GameMaker(Studio2?)?(-(Beta|LTS))?)\.dll$/;
+        const possibleFileNames = /^(IDE|GameMaker(Studio2?)?(-(Beta|LTS))?)\.dll$/;
         const parentDir = executablePath.up();
-        tracer(
-          `Parsing version information from GameMaker installation in "${parentDir}"`,
-        );
+        tracer(`Parsing version information from GameMaker installation in "${parentDir}"`);
 
         const dllFile = (await parentDir.listChildren()).filter((p) => {
           const match = p.basename.match(possibleFileNames);
           return !!match;
         })[0];
-        ok(
-          await dllFile?.exists(),
-          `Could not find DLL file for ${executablePath}`,
-        );
+        ok(await dllFile?.exists(), `Could not find DLL file for ${executablePath}`);
         // The main DLL file is binary, but it contains
         // plaintext version strings for the IDE version.
         const version = (await dllFile.read<string>()).match(
           /\b((23|2|20\d{2})\.\d{1,4}\.\d{1,4}\.\d{1,4})\b/u,
         )?.[1];
         ok(version, `Could not find a version string in ${dllFile.absolute}`);
-        const matchingFeedVersion = releases.find(
-          (v) => v.ide.version === version,
-        );
+        const matchingFeedVersion = releases.find((v) => v.ide.version === version);
         if (!matchingFeedVersion) {
           logger.warn(
             `Found local install of GameMaker ${version}, but that version is not in the feed.`,
@@ -378,14 +341,10 @@ export class GameMakerIde extends GameMakerComponent {
   }
 
   static cachedIdeInstallerPath(version: string) {
-    return GameMakerIde.defaultCachedIdeParentDirectory.join(
-      `gamemaker-${version}.exe`,
-    );
+    return GameMakerIde.defaultCachedIdeParentDirectory.join(`gamemaker-${version}.exe`);
   }
 
   static cachedIdeDirectory(version: string) {
-    return GameMakerIde.defaultCachedIdeParentDirectory.join(
-      `gamemaker-${version}`,
-    );
+    return GameMakerIde.defaultCachedIdeParentDirectory.join(`gamemaker-${version}`);
   }
 }

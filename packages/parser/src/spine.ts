@@ -27,20 +27,11 @@ export class Spine<
   AttachmentName extends string = string,
 > {
   path: Pathy;
-  protected _content?: SpineJson<
-    AnimationName,
-    SlotName,
-    BoneName,
-    EventName,
-    AttachmentName
-  >;
+  protected _content?: SpineJson<AnimationName, SlotName, BoneName, EventName, AttachmentName>;
 
   constructor(path: string | Pathy) {
     this.path = pathy(path);
-    assert(
-      this.path.hasExtension('json'),
-      `Spine file must be a JSON file: ${this.path}`,
-    );
+    assert(this.path.hasExtension('json'), `Spine file must be a JSON file: ${this.path}`);
   }
 
   /**
@@ -54,8 +45,7 @@ export class Spine<
       eventNames: Object.keys(content.events || {}) as EventName[],
       slotNames: content.slots?.map((slot) => slot.name) || [],
       animations: Object.keys(content.animations || {}).map((animationName) => {
-        const animation: SpineAnimation =
-          content.animations![animationName as AnimationName];
+        const animation: SpineAnimation = content.animations![animationName as AnimationName];
         const summary = {
           name: animationName,
           duration: recursivelyFindMaxTime(animation),
@@ -105,14 +95,12 @@ export class Spine<
       `Spine file has invalid 'skins' data: ${this.path}`,
     );
     assert(
-      !content.events ||
-        (typeof content.events === 'object' && !Array.isArray(content.events)),
+      !content.events || (typeof content.events === 'object' && !Array.isArray(content.events)),
       `Spine file has invalid 'events' data: ${this.path}`,
     );
     assert(
       !content.animations ||
-        (typeof content.animations === 'object' &&
-          !Array.isArray(content.animations)),
+        (typeof content.animations === 'object' && !Array.isArray(content.animations)),
       `Spine file has invalid 'animations' data: ${this.path}`,
     );
     this._content = content;
@@ -124,18 +112,13 @@ function recursivelyFindMaxTime(data: SpineAnimation, current_max = 0): number {
     return current_max;
   }
   if (Array.isArray(data)) {
-    return Math.max(
-      ...data.map((d) => recursivelyFindMaxTime(d, current_max)),
-      current_max,
-    );
+    return Math.max(...data.map((d) => recursivelyFindMaxTime(d, current_max)), current_max);
   }
   if ('time' in data && typeof data.time === 'number') {
     return Math.max(data.time, current_max);
   }
   return Math.max(
-    ...Object.values(data).map((d) =>
-      recursivelyFindMaxTime(d as any, current_max),
-    ),
+    ...Object.values(data).map((d) => recursivelyFindMaxTime(d as any, current_max)),
     current_max,
   );
 }

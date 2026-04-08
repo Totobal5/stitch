@@ -25,11 +25,7 @@ import {
 } from './cl2.shared.parse.js';
 import { questSchemaId } from './cl2.shared.types.js';
 import { Crashlands2 } from './cl2.types.auto.js';
-import {
-  bsArrayToArray,
-  changedPosition,
-  updateBsArrayOrder,
-} from './helpers.js';
+import { bsArrayToArray, changedPosition, updateBsArrayOrder } from './helpers.js';
 import type { Position } from './types.editor.js';
 import type { Mote } from './types.js';
 
@@ -50,9 +46,7 @@ export function parseStringifiedQuest(
   const requirementQuestStatuses = getRequirementQuestStatuses(packed.working);
   const requirementCompletions = [...requirementStyles];
   requirementCompletions.splice(requirementCompletions.indexOf('Quest'), 1);
-  requirementCompletions.push(
-    ...requirementQuestStatuses.map((s) => `Quest ${s}`),
-  );
+  requirementCompletions.push(...requirementQuestStatuses.map((s) => `Quest ${s}`));
 
   const result: QuestUpdateResult = {
     diagnostics: [],
@@ -542,26 +536,17 @@ export async function updateChangesFromParsedQuest(
     }
     // Delete clues that were removed
     trace(`Deleting removed clues`);
-    for (const existingClue of bsArrayToArray(
-      questMoteBase?.data.clues || {},
-    )) {
+    for (const existingClue of bsArrayToArray(questMoteBase?.data.clues || {})) {
       const parsedClue = parsedClues.find((c) => c.id === existingClue.id);
       if (!parsedClue) {
         trace(`Deleting clue ${existingClue.id}`);
         updateMote(`data/clues/${existingClue.id}`, null);
       } else {
         // Delete phrases that were removed
-        for (const existingPhrase of bsArrayToArray(
-          existingClue.element.phrases,
-        )) {
+        for (const existingPhrase of bsArrayToArray(existingClue.element.phrases)) {
           if (!parsedClue.phrases.find((p) => p.id === existingPhrase.id)) {
-            trace(
-              `Deleting phrase ${existingPhrase.id} from clue ${existingClue.id}`,
-            );
-            updateMote(
-              `data/clues/${existingClue.id}/element/phrases/${existingPhrase.id}`,
-              null,
-            );
+            trace(`Deleting phrase ${existingPhrase.id} from clue ${existingClue.id}`);
+            updateMote(`data/clues/${existingClue.id}/element/phrases/${existingPhrase.id}`, null);
           }
         }
       }
@@ -578,11 +563,9 @@ export async function updateChangesFromParsedQuest(
       }
       assert(clue, `Clue ${c.id} not found in base or working mote`);
       const phrases = c.phrases.map((p) => {
-        let phrase =
-          questMoteBase?.data.clues?.[c.id!]?.element?.phrases?.[p.id!];
+        let phrase = questMoteBase?.data.clues?.[c.id!]?.element?.phrases?.[p.id!];
         if (!phrase) {
-          phrase =
-            questMoteWorking?.data.clues?.[c.id!]?.element?.phrases?.[p.id!];
+          phrase = questMoteWorking?.data.clues?.[c.id!]?.element?.phrases?.[p.id!];
           // @ts-expect-error - order is a required field, but it'll be re-added
           delete phrase?.order;
         }
@@ -599,10 +582,7 @@ export async function updateChangesFromParsedQuest(
       updateMote(`data/clues/${clue.id}/order`, clue.order);
       clue.phrases.forEach((phrase) => {
         trace(`Updating phrase ${phrase.id} order to ${phrase.order}`);
-        updateMote(
-          `data/clues/${clue.id}/element/phrases/${phrase.id}/order`,
-          phrase.order,
-        );
+        updateMote(`data/clues/${clue.id}/element/phrases/${phrase.id}/order`, phrase.order);
       });
     });
     //#endregion
@@ -617,15 +597,9 @@ export async function updateChangesFromParsedQuest(
       trace('Adding/updating requirements');
       for (const requirement of parsedRequirements) {
         trace(`Updating requirement ${requirement.id}`);
-        updateMote(
-          `data/${requirementGroup}/${requirement.id}/element/style`,
-          requirement.style,
-        );
+        updateMote(`data/${requirementGroup}/${requirement.id}/element/style`, requirement.style);
         if (requirement.kind === 'quest') {
-          updateMote(
-            `data/${requirementGroup}/${requirement.id}/element/quest`,
-            requirement.quest,
-          );
+          updateMote(`data/${requirementGroup}/${requirement.id}/element/quest`, requirement.quest);
           updateMote(
             `data/${requirementGroup}/${requirement.id}/element/quest_status`,
             requirement.status,
@@ -637,15 +611,10 @@ export async function updateChangesFromParsedQuest(
       for (const existingRequirement of bsArrayToArray(
         questMoteBase?.data[requirementGroup] || {},
       )) {
-        const parsedRequirement = parsedRequirements.find(
-          (r) => r.id === existingRequirement.id,
-        );
+        const parsedRequirement = parsedRequirements.find((r) => r.id === existingRequirement.id);
         if (!parsedRequirement) {
           trace(`Deleting removed requirement ${existingRequirement.id}`);
-          updateMote(
-            `data/${requirementGroup}/${existingRequirement.id}`,
-            null,
-          );
+          updateMote(`data/${requirementGroup}/${existingRequirement.id}`, null);
         }
       }
       // Update the requirement order
@@ -657,10 +626,7 @@ export async function updateChangesFromParsedQuest(
           // @ts-expect-error - order is a required field, but it'll be re-added
           delete requirement?.order;
         }
-        assert(
-          requirement,
-          `Requirement ${r.id} not found in base or working mote`,
-        );
+        assert(requirement, `Requirement ${r.id} not found in base or working mote`);
         return { ...requirement, id: r.id! };
       });
       updateBsArrayOrder(requirements);
@@ -671,10 +637,7 @@ export async function updateChangesFromParsedQuest(
     }
 
     //#region QUEST MOMENTS
-    for (const momentGroup of [
-      'quest_start_moments',
-      'quest_end_moments',
-    ] as const) {
+    for (const momentGroup of ['quest_start_moments', 'quest_end_moments'] as const) {
       trace(`Updating Moment Group ${momentGroup}`);
       const parsedMoments = parsed[momentGroup];
       // Add/Update moments
@@ -690,20 +653,11 @@ export async function updateChangesFromParsedQuest(
         } else if (moment.kind === 'dialogue') {
           trace('Updating speaker');
           setStyle('Dialogue');
-          updateMote(
-            `data/${momentGroup}/${moment.id}/element/speech/speaker`,
-            moment.speaker,
-          );
+          updateMote(`data/${momentGroup}/${moment.id}/element/speech/speaker`, moment.speaker);
           trace('Updating emoji');
-          updateMote(
-            `data/${momentGroup}/${moment.id}/element/speech/emotion`,
-            moment.emoji,
-          );
+          updateMote(`data/${momentGroup}/${moment.id}/element/speech/emotion`, moment.emoji);
           trace('Updating text');
-          updateMote(
-            `data/${momentGroup}/${moment.id}/element/speech/text/text`,
-            moment.text,
-          );
+          updateMote(`data/${momentGroup}/${moment.id}/element/speech/text/text`, moment.text);
         } else if (moment.kind === 'emote') {
           setStyle('Emote');
           for (const emote of moment.emotes) {
@@ -721,12 +675,8 @@ export async function updateChangesFromParsedQuest(
       }
       // Delete moments that were removed
       trace('Deleting removed moments');
-      for (const existingMoment of bsArrayToArray(
-        questMoteBase?.data[momentGroup] || {},
-      )) {
-        const parsedMoment = parsedMoments.find(
-          (m) => m.id === existingMoment.id,
-        );
+      for (const existingMoment of bsArrayToArray(questMoteBase?.data[momentGroup] || {})) {
+        const parsedMoment = parsedMoments.find((m) => m.id === existingMoment.id);
         const existingElement = existingMoment.element;
         if (!parsedMoment) {
           trace(`Deleting removed moment ${existingMoment.id}`);
@@ -740,9 +690,7 @@ export async function updateChangesFromParsedQuest(
           );
           for (const existingEmote of bsArrayToArray(existingElement.emotes)) {
             if (!parsedMoment.emotes.find((e) => e.id === existingEmote.id)) {
-              trace(
-                `Deleting removed emote ${existingEmote.id} from moment ${existingMoment.id}`,
-              );
+              trace(`Deleting removed emote ${existingEmote.id} from moment ${existingMoment.id}`);
               updateMote(
                 `data/${momentGroup}/${existingMoment.id}/element/emotes/${existingEmote.id}`,
                 null,
@@ -767,15 +715,13 @@ export async function updateChangesFromParsedQuest(
           assert(m.kind === 'emote', `Expected moment ${m.id} to be an emote`);
           // Then make sure the emotes are in the right order
           const emotes = m.emotes.map((e) => {
-            let emoteElement =
-              questMoteBase?.data[momentGroup]?.[m.id!]?.element;
+            let emoteElement = questMoteBase?.data[momentGroup]?.[m.id!]?.element;
             let emote: Crashlands2.Emotes1[string] | undefined;
             if (emoteElement && isEmoteMoment(emoteElement)) {
               emote = emoteElement.emotes[e.id!];
             }
             if (!emote) {
-              emoteElement =
-                questMoteWorking?.data[momentGroup]?.[m.id!]?.element;
+              emoteElement = questMoteWorking?.data[momentGroup]?.[m.id!]?.element;
               if (emoteElement && isEmoteMoment(emoteElement)) {
                 emote = emoteElement.emotes[e.id!];
               }
@@ -798,10 +744,7 @@ export async function updateChangesFromParsedQuest(
         if ('emotes' in m) {
           m.emotes.forEach((e) => {
             trace(`Updating emote ${e.id} order to ${e.order}`);
-            updateMote(
-              `data/${momentGroup}/${m.id}/element/emotes/${e.id}/order`,
-              e.order,
-            );
+            updateMote(`data/${momentGroup}/${m.id}/element/emotes/${e.id}/order`, e.order);
           });
         }
       });
@@ -819,14 +762,10 @@ export async function updateChangesFromParsedQuest(
   }
 }
 
-function isQuestRequirementLabel(
-  label: string | undefined,
-): label is QuestRequirementsLabel {
+function isQuestRequirementLabel(label: string | undefined): label is QuestRequirementsLabel {
   return !!(label?.startsWith('quest_') && label.endsWith('_requirements'));
 }
 
-function isQuestMomentLabel(
-  label: string | undefined,
-): label is QuestMomentsLabel {
+function isQuestMomentLabel(label: string | undefined): label is QuestMomentsLabel {
   return !!(label?.startsWith('quest_') && label.endsWith('_moments'));
 }

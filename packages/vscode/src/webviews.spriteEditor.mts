@@ -21,11 +21,7 @@ export class StitchSpriteEditorProvider {
   constructor(readonly workspace: StitchWorkspace) {}
 
   protected async getWebviewContent() {
-    return await compile(
-      this.editing!,
-      this.panel!,
-      this.zooms.get(this.editing!),
-    );
+    return await compile(this.editing!, this.panel!, this.zooms.get(this.editing!));
   }
 
   protected createPanel(): vscode.WebviewPanel {
@@ -46,14 +42,8 @@ export class StitchSpriteEditorProvider {
 
       timeoutId = setTimeout(async () => {
         const { xorigin, yorigin, zoom } = message;
-        assertInternalClaim(
-          typeof xorigin === 'number',
-          'xorigin is not a number',
-        );
-        assertInternalClaim(
-          typeof yorigin === 'number',
-          'yorigin is not a number',
-        );
+        assertInternalClaim(typeof xorigin === 'number', 'xorigin is not a number');
+        assertInternalClaim(typeof yorigin === 'number', 'yorigin is not a number');
         if (this.editing) {
           if (
             xorigin !== this.editing.yy.sequence.xorigin ||
@@ -90,10 +80,7 @@ export class StitchSpriteEditorProvider {
       await spriteEditorProvider.revealPanel(asset);
     });
     stitchEvents.on('asset-changed', async (asset) => {
-      if (
-        spriteEditorProvider.panel &&
-        spriteEditorProvider.editing?.name === asset.name
-      ) {
+      if (spriteEditorProvider.panel && spriteEditorProvider.editing?.name === asset.name) {
         await spriteEditorProvider.revealPanel(spriteEditorProvider.editing);
       }
     });

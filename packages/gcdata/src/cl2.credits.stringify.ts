@@ -3,10 +3,7 @@ import { CreditsMote } from './cl2.shared.types.js';
 import type { GameChanger } from './GameChanger.js';
 import { bsArrayToArray } from './helpers.js';
 
-export function stringifyCredits(
-  mote: CreditsMote,
-  packed: GameChanger,
-): string {
+export function stringifyCredits(mote: CreditsMote, packed: GameChanger): string {
   const blocks: string[] = [];
 
   // Have each section appear as a Markdown-style # header,

@@ -14,30 +14,20 @@ import vscode from 'vscode';
 import { assertLoudly } from './assert.mjs';
 import { ChangeTracker } from './changes.mjs';
 import { stitchConfig } from './config.mjs';
-import {
-  diagnosticCollection,
-  normalizeDiagnosticsEvents,
-} from './diagnostics.mjs';
+import { diagnosticCollection, normalizeDiagnosticsEvents } from './diagnostics.mjs';
 import { stitchEvents } from './events.mjs';
 import { activateStitchExtension } from './extension.activate.mjs';
 import { completionTriggerCharacters } from './extension.completions.mjs';
 import { GameMakerSemanticTokenProvider } from './extension.highlighting.mjs';
 import { GameMakerProject } from './extension.project.mjs';
-import {
-  activeTab,
-  isSpriteTab,
-  openPath,
-  pathyFromUri,
-  showProgress,
-} from './lib.mjs';
+import { activeTab, isSpriteTab, openPath, pathyFromUri, showProgress } from './lib.mjs';
 import { info, logger, warn } from './log.mjs';
 
 export class StitchWorkspace implements vscode.SignatureHelpProvider {
   readonly semanticHighlightProvider = new GameMakerSemanticTokenProvider(this);
   readonly signatureHelpStatus = vscode.window.createStatusBarItem(
     stitchConfig.functionSignatureStatusAlignment,
-    stitchConfig.functionSignatureStatusAlignment ===
-      vscode.StatusBarAlignment.Left
+    stitchConfig.functionSignatureStatusAlignment === vscode.StatusBarAlignment.Left
       ? -Infinity
       : Infinity,
   );
@@ -60,9 +50,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
         for (const group of groups) {
           if (asset.isInFolder(group)) {
             for (const [, code] of asset.gmlFiles) {
-              this.diagnosticCollection.delete(
-                vscode.Uri.file(code.path.absolute),
-              );
+              this.diagnosticCollection.delete(vscode.Uri.file(code.path.absolute));
             }
           }
         }
@@ -88,11 +76,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
 
   clearProjects() {
     this.projects = [];
-    void vscode.commands.executeCommand(
-      'setContext',
-      'stitch.projectCount',
-      this.projects.length,
-    );
+    void vscode.commands.executeCommand('setContext', 'stitch.projectCount', this.projects.length);
   }
 
   async loadProject(yypPath: vscode.Uri, onDiagnostics: OnDiagnostics) {
@@ -107,16 +91,12 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
         progress.report({
           increment: 0,
         });
-        project = await GameMakerProject.from(
-          yypPath,
-          onDiagnostics,
-          (percent, message) => {
-            progress.report({
-              increment: percent,
-              message,
-            });
-          },
-        );
+        project = await GameMakerProject.from(yypPath, onDiagnostics, (percent, message) => {
+          progress.report({
+            increment: percent,
+            message,
+          });
+        });
         try {
           await project.syncIncludedFiles();
         } catch {}
@@ -127,11 +107,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
       },
     );
     this.projects.push(project);
-    void vscode.commands.executeCommand(
-      'setContext',
-      'stitch.projectCount',
-      this.projects.length,
-    );
+    void vscode.commands.executeCommand('setContext', 'stitch.projectCount', this.projects.length);
     return project;
   }
 
@@ -151,16 +127,10 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
     const param = argRange.param;
     const func = argRange.type;
     // Create the signature help
-    const signature = new vscode.SignatureInformation(
-      func.code,
-      func.description,
-    );
+    const signature = new vscode.SignatureInformation(func.code, func.description);
     signature.activeParameter = param.idx!;
     signature.parameters = func.listParameters().map((p) => {
-      return new vscode.ParameterInformation(
-        p?.name || 'unknown',
-        p?.description,
-      );
+      return new vscode.ParameterInformation(p?.name || 'unknown', p?.description);
     });
     const help = new vscode.SignatureHelp();
     help.signatures = [signature];
@@ -192,9 +162,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
   }
 
   /** Given a URI, get the project that contains that file */
-  getProject(
-    document: vscode.TextDocument | vscode.Uri,
-  ): GameMakerProject | undefined {
+  getProject(document: vscode.TextDocument | vscode.Uri): GameMakerProject | undefined {
     if (!document) {
       return;
     }
@@ -202,9 +170,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
   }
 
   /** If there is only one project in the workspace, return it. Otherwise prompt the user. */
-  async chooseProject(
-    title = 'Choose a project',
-  ): Promise<GameMakerProject | undefined> {
+  async chooseProject(title = 'Choose a project'): Promise<GameMakerProject | undefined> {
     if (this.projects.length === 1) {
       return this.projects[0];
     }
@@ -231,9 +197,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
   ): Reference | undefined {
     const document =
       where instanceof vscode.Uri
-        ? vscode.workspace.textDocuments.find(
-            (d) => d.uri.fsPath === where.fsPath,
-          )
+        ? vscode.workspace.textDocuments.find((d) => d.uri.fsPath === where.fsPath)
         : where;
     if (!document) {
       return;
@@ -268,10 +232,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
     return item;
   }
 
-  getSprite(
-    document: vscode.TextDocument,
-    name: string,
-  ): Asset<'sprites'> | undefined {
+  getSprite(document: vscode.TextDocument, name: string): Asset<'sprites'> | undefined {
     const asset = this.getAsset(document, name);
     if (asset && asset.assetKind === 'sprites') {
       return asset as Asset<'sprites'>;
@@ -287,9 +248,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
     if (isSpriteTab(tab)) {
       // Then we have the asset name, get the first project
       // that has that name.
-      const project = this.projects.find((p) =>
-        p.getAssetByName(tab.assetName),
-      );
+      const project = this.projects.find((p) => p.getAssetByName(tab.assetName));
       return project?.getAssetByName(tab.assetName);
     }
     // Otherwise we have a full URI so we can find the project
@@ -309,9 +268,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
     return asset;
   }
 
-  getGmlFile(
-    document: vscode.TextDocument | vscode.Uri | undefined,
-  ): Code | undefined {
+  getGmlFile(document: vscode.TextDocument | vscode.Uri | undefined): Code | undefined {
     document ||= this.getActiveDocument();
     if (!document) {
       // warn(`getGmlFile: Could not find document`);
@@ -332,16 +289,9 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
     return file;
   }
 
-  getRefFromSelection(
-    document?: vscode.TextDocument,
-    selection?: readonly vscode.Selection[],
-  ) {
+  getRefFromSelection(document?: vscode.TextDocument, selection?: readonly vscode.Selection[]) {
     document ||= vscode.window.activeTextEditor?.document;
-    if (
-      !document ||
-      document.uri.scheme !== 'file' ||
-      !document.uri.fsPath.endsWith('.gml')
-    ) {
+    if (!document || document.uri.scheme !== 'file' || !document.uri.fsPath.endsWith('.gml')) {
       return;
     }
     const file = this.getGmlFile(document);
@@ -359,9 +309,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
    * A general function for reprocessing files upon change. Handles
    * debounding and the like.
    */
-  async onChangeDoc(
-    event: vscode.TextDocumentChangeEvent | vscode.TextDocument | undefined,
-  ) {
+  async onChangeDoc(event: vscode.TextDocumentChangeEvent | vscode.TextDocument | undefined) {
     if (!event) {
       return;
     }
@@ -495,8 +443,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
             option_steam_app_id: '0',
             option_template_description: null,
             option_template_icon: '${base_options_dir}/main/template_icon.png',
-            option_template_image:
-              '${base_options_dir}/main/template_image.png',
+            option_template_image: '${base_options_dir}/main/template_image.png',
             option_window_colour: 255,
             resourceType: 'GMMainOptions',
             resourceVersion: '2.0',

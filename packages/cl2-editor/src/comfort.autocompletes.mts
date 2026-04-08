@@ -2,17 +2,13 @@ import vscode from 'vscode';
 import { ComfortDocument } from './comfort.doc.mjs';
 import { CrashlandsWorkspace } from './workspace.mjs';
 
-export class ComfortCompletionProvider
-  implements vscode.CompletionItemProvider
-{
+export class ComfortCompletionProvider implements vscode.CompletionItemProvider {
   protected constructor(readonly workspace: CrashlandsWorkspace) {}
 
   provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-  ): vscode.ProviderResult<
-    vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>
-  > {
+  ): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
     const comfortDoc = ComfortDocument.from(document.uri, this.workspace);
     if (comfortDoc) {
       return comfortDoc.getAutoCompleteItems(position);

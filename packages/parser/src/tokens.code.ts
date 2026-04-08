@@ -78,24 +78,14 @@ export const codeTokens = [
     name: 'MultilineDoubleStringStart',
     pattern: /@"/,
     start_chars_hint: ['@'],
-    categories: [
-      c.Separators,
-      c.StringLiteral,
-      c.MultilineStringLiteral,
-      c.DoubleQuoted,
-    ],
+    categories: [c.Separators, c.StringLiteral, c.MultilineStringLiteral, c.DoubleQuoted],
     push_mode: 'multilineDoubleString',
   }),
   createToken({
     name: 'MultilineSingleStringStart',
     pattern: /@'/,
     start_chars_hint: ['@'],
-    categories: [
-      c.Separators,
-      c.StringLiteral,
-      c.MultilineStringLiteral,
-      c.SingleQuoted,
-    ],
+    categories: [c.Separators, c.StringLiteral, c.MultilineStringLiteral, c.SingleQuoted],
     push_mode: 'multilineSingleString',
   }),
   //#endregion
@@ -194,11 +184,7 @@ export const codeTokens = [
   createToken({
     name: 'Not',
     pattern: /\bnot\b/,
-    categories: [
-      c.Keyword,
-      c.UnaryPrefixOperator,
-      c.UnaryPrefixOperatorNotPlusMinus,
-    ],
+    categories: [c.Keyword, c.UnaryPrefixOperator, c.UnaryPrefixOperatorNotPlusMinus],
   }),
   createToken({
     name: 'Return',
@@ -263,11 +249,7 @@ export const codeTokens = [
   createToken({
     name: 'Delete',
     pattern: /\bdelete\b/,
-    categories: [
-      c.Keyword,
-      c.UnaryPrefixOperator,
-      c.UnaryPrefixOperatorNotPlusMinus,
-    ],
+    categories: [c.Keyword, c.UnaryPrefixOperator, c.UnaryPrefixOperatorNotPlusMinus],
   }),
   createToken({
     name: 'Constructor',
@@ -361,20 +343,12 @@ export const codeTokens = [
   createToken({
     name: 'Increment',
     pattern: /\+\+/,
-    categories: [
-      c.UnaryPrefixOperator,
-      c.UnarySuffixOperator,
-      c.UnaryPrefixOperatorNotPlusMinus,
-    ],
+    categories: [c.UnaryPrefixOperator, c.UnarySuffixOperator, c.UnaryPrefixOperatorNotPlusMinus],
   }),
   createToken({
     name: 'Decrement',
     pattern: /--/,
-    categories: [
-      c.UnaryPrefixOperator,
-      c.UnarySuffixOperator,
-      c.UnaryPrefixOperatorNotPlusMinus,
-    ],
+    categories: [c.UnaryPrefixOperator, c.UnarySuffixOperator, c.UnaryPrefixOperatorNotPlusMinus],
   }),
   createToken({
     name: 'LessThanOrEqual',

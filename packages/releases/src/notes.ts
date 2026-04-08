@@ -15,13 +15,8 @@ export async function listReleaseNotes(
   releases: GameMakerRelease[],
   cache: Pathy | string = defaultNotesCachePath,
 ) {
-  const cachePath = Pathy.asInstance(cache).withValidator(
-    rawReleaseNotesCacheSchema,
-  );
-  assert(
-    cachePath.hasExtension('json'),
-    `Cache path must have a .json extension`,
-  );
+  const cachePath = Pathy.asInstance(cache).withValidator(rawReleaseNotesCacheSchema);
+  assert(cachePath.hasExtension('json'), `Cache path must have a .json extension`);
   const cacheData = await cachePath.read({ fallback: {} });
   for (const release of releases) {
     for (const type of ['ide', 'runtime'] as const) {
@@ -67,9 +62,7 @@ function cleanNotes(cachedNotes: RawReleaseNotesCache) {
     if (!note.changes.since?.match(/^\d+$/)) {
       continue;
     }
-    const possibleMatches = versions.filter((v) =>
-      v.endsWith(`.${note.changes.since}`),
-    );
+    const possibleMatches = versions.filter((v) => v.endsWith(`.${note.changes.since}`));
     if (possibleMatches.length === 1) {
       note.changes.since = possibleMatches[0];
       continue;

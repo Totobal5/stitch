@@ -17,9 +17,6 @@ export const releasesUrl =
  * releases.
  */
 export async function fetchReleasesSummaryWithNotes(url = releasesUrl) {
-  const releases = await fetchJson(
-    url,
-    z.array(gameMakerReleaseWithNotesSchema),
-  );
+  const releases = await fetchJson(url, z.array(gameMakerReleaseWithNotesSchema));
   return releases;
 }

@@ -6,10 +6,7 @@ export type ArrayItemScore<T> = (item: T, idx: number, items: T[]) => number;
 export function findMax<T>(items: T[]): T;
 export function findMax<T>(items: T[], byProperty: keyof T): T;
 export function findMax<T>(items: T[], score: ArrayItemScore<T>): T;
-export function findMax<T>(
-  items: T[],
-  propOrFunc?: ArrayItemScore<T> | keyof T,
-): T {
+export function findMax<T>(items: T[], propOrFunc?: ArrayItemScore<T> | keyof T): T {
   assert(items.length, 'Cannot find max of empty array');
   const score = (item: T, idx: number) =>
     propOrFunc === undefined

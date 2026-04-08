@@ -3,10 +3,7 @@ import { emojiString } from './cl2.shared.stringify.js';
 import type { CharacterMote } from './cl2.shared.types.js';
 import { bsArrayToArray, toArrayTag } from './helpers.js';
 
-export function stringifyCharacter(
-  mote: CharacterMote,
-  packed: GameChanger,
-): string {
+export function stringifyCharacter(mote: CharacterMote, packed: GameChanger): string {
   // METADATA
   const blocks: string[] = [`Name: ${packed.working.getMoteName(mote)}`];
   if (mote.data.wip?.staging) {
@@ -43,17 +40,13 @@ export function stringifyCharacter(
         // Each phrase group has an internal name and a list of
         // phrases. Treat it like Quest dialog, where the "speaker"
         // line is instead the name of the phrase group.
-        blocks.push(
-          `\n\t${toArrayTag(phraseGroup)} ${phraseGroup.element.name}`,
-        );
+        blocks.push(`\n\t${toArrayTag(phraseGroup)} ${phraseGroup.element.name}`);
         for (const phrase of bsArrayToArray(phraseGroup.element.phrases)) {
           // Each phrase has an optional emoji and the text of the phrase.
           // Write it out like Quest dialog, with the phrase group as the speaker.
           const emojiStr = emojiString(phrase.element, packed);
           blocks.push(
-            `>${toArrayTag(phrase)} ${
-              emojiStr ? emojiStr + ' ' : ''
-            }${phrase.element.text.text}`,
+            `>${toArrayTag(phrase)} ${emojiStr ? emojiStr + ' ' : ''}${phrase.element.text.text}`,
           );
         }
       }

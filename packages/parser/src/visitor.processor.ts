@@ -1,17 +1,8 @@
 import type { CstNodeLocation } from 'chevrotain';
 import type { Docs } from './parser.js';
 import type { Code } from './project.code.js';
-import {
-  Diagnostic,
-  DiagnosticCollectionName,
-  DiagnosticSeverity,
-} from './project.diagnostics.js';
-import {
-  Position,
-  Range,
-  type IRange,
-  type Scope,
-} from './project.location.js';
+import { Diagnostic, DiagnosticCollectionName, DiagnosticSeverity } from './project.diagnostics.js';
+import { Position, Range, type IRange, type Scope } from './project.location.js';
 import { Type, WithableType, type EnumType, type StructType } from './types.js';
 import { assert } from './util.js';
 
@@ -41,10 +32,7 @@ export class SignifierProcessor {
 
   constructor(readonly file: Code) {
     this.scope = file.scopes[0];
-    assert(
-      this.scope,
-      'SymbolProcessor constructor: File must have a global scope',
-    );
+    assert(this.scope, 'SymbolProcessor constructor: File must have a global scope');
     this.localScopeStack.push(this.scope.local);
     this.selfStack.push(this.scope.self);
     this.position = this.scope.start;
@@ -74,10 +62,7 @@ export class SignifierProcessor {
     message: string,
     severity: DiagnosticSeverity = 'warning',
   ) {
-    this.file.addDiagnostic(
-      kind,
-      new Diagnostic(message, Range.from(this.file, where), severity),
-    );
+    this.file.addDiagnostic(kind, new Diagnostic(message, Range.from(this.file, where), severity));
   }
 
   get fullScope() {
@@ -153,14 +138,10 @@ export class SignifierProcessor {
     this.scope.local = localScope;
   }
 
-  popScope(
-    nextScopeToken: CstNodeLocation,
-    nextScopeStartsFromTokenEnd: boolean,
-  ) {
+  popScope(nextScopeToken: CstNodeLocation, nextScopeStartsFromTokenEnd: boolean) {
     this.localScopeStack.pop();
     this.selfStack.pop();
-    this.nextScope(nextScopeToken, nextScopeStartsFromTokenEnd).local =
-      this.currentLocalScope;
+    this.nextScope(nextScopeToken, nextScopeStartsFromTokenEnd).local = this.currentLocalScope;
     this.scope.self = this.currentSelf;
   }
 
@@ -187,22 +168,14 @@ export class SignifierProcessor {
     }
   }
 
-  popLocalScope(
-    nextScopeToken: CstNodeLocation,
-    nextScopeStartsFromTokenEnd: boolean,
-  ) {
+  popLocalScope(nextScopeToken: CstNodeLocation, nextScopeStartsFromTokenEnd: boolean) {
     this.localScopeStack.pop();
-    this.nextScope(nextScopeToken, nextScopeStartsFromTokenEnd).local =
-      this.currentLocalScope;
+    this.nextScope(nextScopeToken, nextScopeStartsFromTokenEnd).local = this.currentLocalScope;
   }
 
-  popSelfScope(
-    nextScopeToken: CstNodeLocation,
-    nextScopeStartsFromTokenEnd: boolean,
-  ) {
+  popSelfScope(nextScopeToken: CstNodeLocation, nextScopeStartsFromTokenEnd: boolean) {
     this.selfStack.pop();
-    this.nextScope(nextScopeToken, nextScopeStartsFromTokenEnd).self =
-      this.currentSelf;
+    this.nextScope(nextScopeToken, nextScopeStartsFromTokenEnd).self = this.currentSelf;
   }
 
   pushDefinitiveSelf(self: StructType | undefined) {

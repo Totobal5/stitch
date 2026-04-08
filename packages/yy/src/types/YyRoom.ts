@@ -249,9 +249,7 @@ const yyRoomLayerSchema = z.discriminatedUnion('resourceType', [
 export type YyRoom = z.infer<typeof yyRoomSchema>;
 export const yyRoomSchema = yyBaseSchema.extend({
   layers: z.array(yyRoomLayerSchema).default([]),
-  instanceCreationOrder: z
-    .array(yyRoomInstanceCreationOrderEntrySchema)
-    .default([]),
+  instanceCreationOrder: z.array(yyRoomInstanceCreationOrderEntrySchema).default([]),
   roomSettings: unstable({
     inheritRoomSettings: z.boolean().default(false),
     Width: z.number().default(5000),

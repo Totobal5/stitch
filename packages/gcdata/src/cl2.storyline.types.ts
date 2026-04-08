@@ -9,10 +9,9 @@ import {
 } from './cl2.shared.types.js';
 import type { BschemaRoot } from './types.js';
 
-export interface StorylineUpdateResult
-  extends ParserResult<{
-    description?: string;
-  }> {}
+export interface StorylineUpdateResult extends ParserResult<{
+  description?: string;
+}> {}
 
 export function listStorylines(gcData: Gcdata): StorylineMote[] {
   return gcData.listMotesBySchema<StorylineData>(storylineSchemaId);
@@ -22,10 +21,7 @@ export function isStorylineMote(mote: any): mote is StorylineMote {
   return mote.schema_id === storylineSchemaId;
 }
 
-export function getStorylineMote(
-  gcData: Gcdata,
-  moteId: string,
-): StorylineMote | undefined {
+export function getStorylineMote(gcData: Gcdata, moteId: string): StorylineMote | undefined {
   const mote = gcData.getMote<StorylineData>(moteId);
   assert(!mote || isStorylineMote(mote), `Mote ${moteId} is not a storyline`);
   return mote;

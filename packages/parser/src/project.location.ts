@@ -77,9 +77,7 @@ export class Position implements IPosition {
     if ('offset' in loc) {
       return new Position(file, loc.offset, loc.line, loc.column);
     }
-    return fromTokenEnd
-      ? Position.fromCstEnd(file, loc)
-      : Position.fromCstStart(file, loc);
+    return fromTokenEnd ? Position.fromCstEnd(file, loc) : Position.fromCstStart(file, loc);
   }
 
   static fromFileStart(fileName: Code) {
@@ -135,10 +133,7 @@ export class Range implements IRange {
 
   static from(file: Code, location: IRange | CstNodeLocation): Range {
     if ('start' in location) {
-      return new Range(
-        Position.from(file, location.start),
-        Position.from(file, location.end),
-      );
+      return new Range(Position.from(file, location.start), Position.from(file, location.end));
     }
     return Range.fromCst(file, location);
   }
@@ -231,14 +226,8 @@ export class Scope extends Range {
    * so at least one will need to be changed!
    */
   createNext(atToken: CstNodeLocation, fromTokenEnd = false): Scope {
-    assert(
-      this.end,
-      'Cannot create a next scope range without an end to this one.',
-    );
-    assert(
-      !this._next,
-      'Cannot create a next scope range when one already exists.',
-    );
+    assert(this.end, 'Cannot create a next scope range without an end to this one.');
+    assert(!this._next, 'Cannot create a next scope range when one already exists.');
     const start = Position.from(this.file, atToken, fromTokenEnd);
     this._next = new Scope(start, this.local, this.self);
     return this._next;
@@ -273,10 +262,7 @@ export class Reference extends Range {
    * the text of the item it refers to (e.g. it could be `self` or similar)
    */
   get text(): string {
-    return this.start.file.content.slice(
-      this.start.offset,
-      this.end.offset + 1,
-    );
+    return this.start.file.content.slice(this.start.offset, this.end.offset + 1);
   }
 
   get isRenameable(): boolean {

@@ -1,25 +1,25 @@
 import type { IgorWebviewExtensionPostRun, IgorWebviewLog } from '@local-vscode/shared';
 
 export const running: IgorWebviewExtensionPostRun = {
-	kind: 'run',
-	projectName: 'Fake Project',
-	cleaning: false,
-	cmd: `c:/ProgramData/GameMakerStudio2-Beta/Cache/runtimes/runtime-2024.200.0.516/bin/igor/windows/x64/Igor.exe`,
-	args: [
-		'--project="c:/PROJECT/project.yyp"',
-		'--user="c:/Users/USER/AppData/Roaming/GameMakerStudio2-Beta/unknownUser_unknownUserID"',
-		'--runtimePath="c:/ProgramData/GameMakerStudio2-Beta/Cache/runtimes/runtime-2024.200.0.516"',
-		'--runtime=VM',
-		'--config=dev',
-		'--cache="c:/PROJECT/tmp/igor/cache"',
-		'--temp="c:/PROJECT/tmp/igor/temp"',
-		'--of="c:/PROJECT/tmp/igor/out/project.win"',
-		'--tf="c:/PROJECT/project.zip"',
-		'--',
-		'windows',
-		'Run'
-	],
-	runtimeVersion: '2024.200.0.516'
+  kind: 'run',
+  projectName: 'Fake Project',
+  cleaning: false,
+  cmd: `c:/ProgramData/GameMakerStudio2-Beta/Cache/runtimes/runtime-2024.200.0.516/bin/igor/windows/x64/Igor.exe`,
+  args: [
+    '--project="c:/PROJECT/project.yyp"',
+    '--user="c:/Users/USER/AppData/Roaming/GameMakerStudio2-Beta/unknownUser_unknownUserID"',
+    '--runtimePath="c:/ProgramData/GameMakerStudio2-Beta/Cache/runtimes/runtime-2024.200.0.516"',
+    '--runtime=VM',
+    '--config=dev',
+    '--cache="c:/PROJECT/tmp/igor/cache"',
+    '--temp="c:/PROJECT/tmp/igor/temp"',
+    '--of="c:/PROJECT/tmp/igor/out/project.win"',
+    '--tf="c:/PROJECT/project.zip"',
+    '--',
+    'windows',
+    'Run',
+  ],
+  runtimeVersion: '2024.200.0.516',
 };
 
 const logSample = `Options: c:/ProgramData/GameMakerStudio2-Beta/Cache/runtimes/runtime-2024.200.0.516\\bin\\platform_setting_defaults.json
@@ -224,6 +224,6 @@ Igor complete.
 `;
 
 export const logs: IgorWebviewLog[] = logSample.split(/\r?\n/g).map((line, i) => ({
-	kind: 'stdout',
-	message: line
+  kind: 'stdout',
+  message: line,
 }));

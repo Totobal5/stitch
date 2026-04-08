@@ -1,11 +1,7 @@
 import type { GameChanger } from './GameChanger.js';
 import { assert } from './assert.js';
 import type { ComfortMoteDataPointer } from './cl2.comfort.pointers.js';
-import {
-  getComfortSchema,
-  linePatterns,
-  type ComfortUpdateResult,
-} from './cl2.comfort.types.js';
+import { getComfortSchema, linePatterns, type ComfortUpdateResult } from './cl2.comfort.types.js';
 import {
   isCommentLine,
   isStageLine,
@@ -38,12 +34,7 @@ export function parseStringifiedComfort(
     {
       ...options,
       schemaId: comfortSchemaId,
-      globalLabels: new Set<string>([
-        'Name',
-        'Description',
-        'Unlocked Description',
-        'Stage',
-      ]),
+      globalLabels: new Set<string>(['Name', 'Description', 'Unlocked Description', 'Stage']),
     },
     result,
   );

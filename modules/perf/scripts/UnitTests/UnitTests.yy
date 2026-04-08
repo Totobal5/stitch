@@ -6,6 +6,6 @@
   "isDnD": false,
   "parent": {
     "name": "perf",
-    "path": "perf.yyp",
-  },
+    "path": "perf.yyp"
+  }
 }

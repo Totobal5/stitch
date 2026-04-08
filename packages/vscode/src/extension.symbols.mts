@@ -15,9 +15,7 @@ import { info, warn } from './log.mjs';
 type SearchMatcher = (name: string) => boolean;
 type SymbolResults = Map<Signifier | Code | Asset, vscode.SymbolInformation>;
 
-export class StitchWorkspaceSymbolProvider
-  implements vscode.WorkspaceSymbolProvider
-{
+export class StitchWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
   constructor(readonly provider: StitchWorkspace) {}
 
   get projects() {
@@ -52,12 +50,9 @@ export class StitchWorkspaceSymbolProvider
       // Add the script itself if it doesn't already include
       // a global function within it by the same name.
       const canAdd = isMatch(resource.name) && !symbols.has(resource);
-      const globalVarWithSameName = resource.project.self.getMember(
-        resource.name,
-      );
+      const globalVarWithSameName = resource.project.self.getMember(resource.name);
       const containsGlobalFunctionWithSameName =
-        !!globalVarWithSameName &&
-        globalVarWithSameName.def?.file === resource.gmlFile;
+        !!globalVarWithSameName && globalVarWithSameName.def?.file === resource.gmlFile;
       if (canAdd && !containsGlobalFunctionWithSameName) {
         symbols.set(
           resource,
@@ -65,10 +60,7 @@ export class StitchWorkspaceSymbolProvider
             resource.name,
             vscode.SymbolKind.Module,
             resource.assetKind,
-            new vscode.Location(
-              vscode.Uri.file(resource.gmlFile!.path.absolute),
-              start,
-            ),
+            new vscode.Location(vscode.Uri.file(resource.gmlFile!.path.absolute), start),
           ),
         );
       }
@@ -115,10 +107,7 @@ export class StitchWorkspaceSymbolProvider
             resource.name,
             vscode.SymbolKind.File,
             resource.assetKind,
-            new vscode.Location(
-              vscode.Uri.file(resource.yyPath.absolute),
-              start,
-            ),
+            new vscode.Location(vscode.Uri.file(resource.yyPath.absolute), start),
           ),
         );
       }
@@ -178,12 +167,7 @@ export class StitchWorkspaceSymbolProvider
             : functionType
               ? vscode.SymbolKind.Function
               : vscode.SymbolKind.Variable;
-    return new vscode.SymbolInformation(
-      item.name,
-      kind,
-      type.kind,
-      locationOf(item.def)!,
-    );
+    return new vscode.SymbolInformation(item.name, kind, type.kind, locationOf(item.def)!);
   }
 
   provideWorkspaceSymbols(query: string): vscode.SymbolInformation[] {
@@ -196,8 +180,7 @@ export class StitchWorkspaceSymbolProvider
       const symbols: SymbolResults = new Map();
       query = query.trim();
       const pattern = new RegExp(query.split('').join('.*'));
-      const isMatch: SearchMatcher = (name: string) =>
-        this.scoreResult(query, pattern, name) > 0;
+      const isMatch: SearchMatcher = (name: string) => this.scoreResult(query, pattern, name) > 0;
 
       const project = this.provider.getActiveProject();
       if (!project) {
@@ -219,14 +202,9 @@ export class StitchWorkspaceSymbolProvider
       }
 
       // Sort by match quality and then only return the top results.
-      const filteredSymbols = [...symbols.values()].sort(
-        this.resultSorter(query, pattern),
-      );
+      const filteredSymbols = [...symbols.values()].sort(this.resultSorter(query, pattern));
       info(`Found ${filteredSymbols.length} symbols matching "${query}"`);
-      const results = filteredSymbols.slice(
-        0,
-        stitchConfig.symbolsMaxSearchResults,
-      );
+      const results = filteredSymbols.slice(0, stitchConfig.symbolsMaxSearchResults);
       return results;
     } catch (error) {
       warn(error);

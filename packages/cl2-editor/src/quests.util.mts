@@ -67,9 +67,7 @@ export interface ParsedGameChangerUri {
   ext?: string;
 }
 
-export function parseGameChangerUri(
-  uri: vscode.Uri | string,
-): ParsedGameChangerUri {
+export function parseGameChangerUri(uri: vscode.Uri | string): ParsedGameChangerUri {
   if (typeof uri === 'string') {
     uri = vscode.Uri.parse(uri);
   }

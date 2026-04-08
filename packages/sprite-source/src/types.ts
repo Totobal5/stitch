@@ -17,9 +17,7 @@ export interface Issue {
   cause?: any;
 }
 
-export type AnyFunction<R> = (
-  ...args: any
-) => R extends Promise<infer U> ? Promise<U> : R;
+export type AnyFunction<R> = (...args: any) => R extends Promise<infer U> ? Promise<U> : R;
 
 export type Reporter = {
   report(value: {

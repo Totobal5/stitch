@@ -55,11 +55,7 @@ export class Native {
       false,
     )[0] as Type<'Function'>;
     staticGetType.named('static_get');
-    const staticGet = new Signifier(
-      this.globalSelf,
-      'static_get',
-      staticGetType,
-    );
+    const staticGet = new Signifier(this.globalSelf, 'static_get', staticGetType);
     this.globalSelf.addMember(staticGet);
     this.types.set('Function.static_get', staticGetType);
     staticGet.def = {};
@@ -67,9 +63,7 @@ export class Native {
 
     // The `display_get_frequency` function is not in the spec, so add it manually.
 
-    const displayGetFrequencyType = new Type('Function').named(
-      'display_get_frequency',
-    );
+    const displayGetFrequencyType = new Type('Function').named('display_get_frequency');
     displayGetFrequencyType.addReturnType(Type.Real);
     const displayGetFrequency = new Signifier(
       this.globalSelf,
@@ -142,9 +136,8 @@ export class Native {
       genericType.isGeneric = true;
       const generics = { ArgumentIdentity: [genericType] };
       const usesGenerics =
-        func.parameters?.some((param) =>
-          param.name.includes('ArgumentIdentity'),
-        ) || func.returnType?.includes('ArgumentIdentity');
+        func.parameters?.some((param) => param.name.includes('ArgumentIdentity')) ||
+        func.returnType?.includes('ArgumentIdentity');
       const addGenericToContainer = (typeString: string) => {
         if (!usesGenerics) return typeString;
         const replaced = typeString.replace(
@@ -180,11 +173,9 @@ export class Native {
         ),
       );
 
-      const symbol = new Signifier(
-        this.globalSelf,
-        func.name,
-        functionType,
-      ).deprecate(func.deprecated);
+      const symbol = new Signifier(this.globalSelf, func.name, functionType).deprecate(
+        func.deprecated,
+      );
       symbol.writable = false;
       symbol.native = func.module;
       functionType.signifier = symbol;
@@ -250,9 +241,7 @@ export class Native {
       for (const constant of constants) {
         const symbol =
           this.globalSelf.getMember(constant.name) ||
-          new Signifier(this.globalSelf, constant.name).describe(
-            constant.description,
-          );
+          new Signifier(this.globalSelf, constant.name).describe(constant.description);
         symbol.writable = false;
         symbol.native = constant.module;
         symbol.setType(classType);
@@ -272,8 +261,7 @@ export class Native {
         continue;
       }
       const typeName = `Struct.${struct.name}`;
-      const structType =
-        this.types.get(typeName) || new Type('Struct').named(struct.name);
+      const structType = this.types.get(typeName) || new Type('Struct').named(struct.name);
       ok(!structType.listMembers().length, `Type ${typeName} already exists`);
       this.types.set(typeName, structType);
 
@@ -345,9 +333,7 @@ export class Native {
     try {
       return gmlSpecSchema.parse(asJson);
     } catch (zodError) {
-      const err = new StitchParserError(
-        `Error parsing spec file "${specFilePath}"`,
-      );
+      const err = new StitchParserError(`Error parsing spec file "${specFilePath}"`);
       err.cause = zodError;
       logger.error(err);
       throw err;
@@ -388,12 +374,8 @@ export class Native {
         logger,
       );
       if (installedRuntime) {
-        logger.info(
-          `Looking for spec files in "${installedRuntime.directory?.absolute}"`,
-        );
-        const specs = await pathy(
-          installedRuntime.directory,
-        ).listChildrenRecursively({
+        logger.info(`Looking for spec files in "${installedRuntime.directory?.absolute}"`);
+        const specs = await pathy(installedRuntime.directory).listChildrenRecursively({
           filter(path) {
             return path.basename === 'GmlSpec.xml' || undefined;
           },
@@ -402,14 +384,10 @@ export class Native {
         if (specs.length) {
           return specs;
         } else {
-          logger.warn(
-            'Found runtime, but could not find any GmlSpec.xml files!',
-          );
+          logger.warn('Found runtime, but could not find any GmlSpec.xml files!');
         }
       } else {
-        logger.warn(
-          `Could not find runtime version ${options.runtimeVersion} locally!`,
-        );
+        logger.warn(`Could not find runtime version ${options.runtimeVersion} locally!`);
       }
     }
     logger.warn('Falling back to default GmlSpec.xml included with Stitch.');

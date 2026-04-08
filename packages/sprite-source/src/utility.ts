@@ -11,10 +11,7 @@ export type Checked<T extends AnyFunc> =
 export type AsyncableChecked<T extends AnyFunc> =
   ReturnType<T> extends Promise<any> ? Promise<Checked<T>> : Checked<T>;
 
-export function check<T extends AnyFunc>(
-  func: T,
-  message: string,
-): AsyncableChecked<T> {
+export function check<T extends AnyFunc>(func: T, message: string): AsyncableChecked<T> {
   const handleError = (err: unknown): [Error, null] => {
     const error = new Error(message);
     error.cause = err;
@@ -44,11 +41,7 @@ export class SpriteSourceError extends Error {
   }
 }
 
-export function assert(
-  condition: any,
-  message: string,
-  cause?: any,
-): asserts condition {
+export function assert(condition: any, message: string, cause?: any): asserts condition {
   if (!condition) {
     const err = new SpriteSourceError(message, cause, assert);
     throw err;
@@ -61,10 +54,7 @@ export function rethrow(cause: any, message: string) {
   throw error;
 }
 
-export async function getDirs(
-  rootFolder: string,
-  maxDepth = Infinity,
-): Promise<Pathy[]> {
+export async function getDirs(rootFolder: string, maxDepth = Infinity): Promise<Pathy[]> {
   const spriteDirs: Pathy[] = [];
 
   async function walk(dir: string, depth = 1): Promise<void> {
@@ -112,9 +102,7 @@ export async function deletePngChildren(path: Pathy) {
  * Asynchronously get the size of a PNG image, given its path,
  * with maximal speed.
  */
-export async function getPngSize(
-  path: Pathy,
-): Promise<{ width: number; height: number }> {
+export async function getPngSize(path: Pathy): Promise<{ width: number; height: number }> {
   const size = { width: 0, height: 0 };
   const fd = await fsp.open(path.absolute, 'r');
   try {

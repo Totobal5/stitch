@@ -64,8 +64,7 @@ export class Yy {
   static readonly schemas = yySchemas;
 
   static getSchema<T extends YySchemaRef>(ref: T): YySchema<T> {
-    const schema =
-      typeof ref === 'string' ? Yy.schemas[ref as YySchemaName] : ref;
+    const schema = typeof ref === 'string' ? Yy.schemas[ref as YySchemaName] : ref;
     ok(schema, `No schema found for ${ref}`);
     return schema as any;
   }
@@ -87,23 +86,15 @@ export class Yy {
     return parseYy(yyString, schema && Yy.getSchema(schema)) as any;
   }
 
-  static async read<T extends YySchemaRef>(
-    filePath: string,
-    schema: T,
-  ): Promise<YyData<T>>;
+  static async read<T extends YySchemaRef>(filePath: string, schema: T): Promise<YyData<T>>;
   static async read(filePath: string): Promise<unknown>;
-  static async read<T extends YySchemaRef>(
-    filePath: string,
-    schema?: T,
-  ): Promise<YyData<T>> {
+  static async read<T extends YySchemaRef>(filePath: string, schema?: T): Promise<YyData<T>> {
     try {
       return Yy.parse(await fsp.readFile(filePath, 'utf8'), schema);
     } catch (err) {
       console.log(err);
       const error = new Error(
-        `Error reading file: ${filePath}\n${
-          err && err instanceof Error && err.message
-        }`,
+        `Error reading file: ${filePath}\n${err && err instanceof Error && err.message}`,
       );
       error.cause = err;
       throw error;
@@ -113,15 +104,9 @@ export class Yy {
   /**
    * Synchronous form of {@link Yy.read}.
    */
-  static readSync<T extends YySchemaRef>(
-    filePath: string,
-    schema: T,
-  ): YyData<T>;
+  static readSync<T extends YySchemaRef>(filePath: string, schema: T): YyData<T>;
   static readSync(filePath: string): unknown;
-  static readSync<T extends YySchemaRef>(
-    filePath: string,
-    schema?: T,
-  ): YyData<T> {
+  static readSync<T extends YySchemaRef>(filePath: string, schema?: T): YyData<T> {
     return Yy.parse(fs.readFileSync(filePath, 'utf8'), schema);
   }
 
@@ -272,20 +257,12 @@ export class Yy {
         }
         return true;
       }
-      if (
-        firstYy &&
-        secondYy &&
-        typeof firstYy === 'object' &&
-        typeof secondYy === 'object'
-      ) {
+      if (firstYy && secondYy && typeof firstYy === 'object' && typeof secondYy === 'object') {
         // If both have primitive versions, compare those
         const asPrimitives = [firstYy, secondYy].map((obj: any) =>
           obj[Symbol.toPrimitive]?.('default'),
         );
-        if (
-          asPrimitives[0] !== undefined &&
-          asPrimitives[1] == asPrimitives[0]
-        ) {
+        if (asPrimitives[0] !== undefined && asPrimitives[1] == asPrimitives[0]) {
           return true;
         }
 

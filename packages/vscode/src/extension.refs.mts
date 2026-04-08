@@ -25,10 +25,7 @@ export class StitchReferenceProvider implements vscode.ReferenceProvider {
   static register(workspace: StitchWorkspace) {
     const provider = new StitchReferenceProvider(workspace);
     return [
-      vscode.languages.registerReferenceProvider(
-        { language: 'gml', scheme: 'file' },
-        provider,
-      ),
+      vscode.languages.registerReferenceProvider({ language: 'gml', scheme: 'file' }, provider),
     ];
   }
 }

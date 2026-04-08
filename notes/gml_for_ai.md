@@ -20,7 +20,6 @@ GameMaker Language (GML) has similar grammar and syntax to JavaScript ES3 but do
   - `ds_map` fields are accessed with `[? the_field]`
   - `ds_grid` coordinates are accessed with `[# x_pos, y_pos]`
 
-
 In addition to the differences listed above, GML has some special features:
 
 - The XOR operator: `^^`
@@ -37,7 +36,6 @@ In addition to the differences listed above, GML has some special features:
   - `*=`
   - `/=`
 - Code-folding regions can be created using the `#region` and `#endregion` keywords
-
 
 The following comprehensive list includes all of the GML keywords:
 
@@ -97,4 +95,3 @@ And these are the core GML constants:
 - `undefined`
 - `pointer_invalid`
 - `pointer_null`
-

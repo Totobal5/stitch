@@ -90,10 +90,7 @@ export function isInRange(range: IRange, offset: number | LinePosition) {
     // If we're on the start line, we must be at or after the start column
     if (offset.line === range.start.line) {
       const isAfterStartColumn = offset.column >= range.start.column;
-      return (
-        isAfterStartColumn &&
-        (!isSingleLineRange || offset.column <= range.end.column)
-      );
+      return isAfterStartColumn && (!isSingleLineRange || offset.column <= range.end.column);
     }
     // If we're on the end line, we must be at or before the end column
     if (offset.line === range.end.line) {
@@ -167,9 +164,7 @@ export function neither(a: any, b: any) {
 
 export async function findYyFile(dir: Pathy): Promise<Pathy> {
   const dirName = dir.name;
-  const yyFiles = (await dir.listChildren()).filter((p) =>
-    p.hasExtension('yy'),
-  );
+  const yyFiles = (await dir.listChildren()).filter((p) => p.hasExtension('yy'));
   assert(yyFiles.length, `No .yy files found in ${dir}`);
   if (yyFiles.length === 1) {
     return yyFiles[0];

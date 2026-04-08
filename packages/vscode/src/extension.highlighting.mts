@@ -35,42 +35,30 @@ export const semanticTokensLegend = new vscode.SemanticTokensLegend(
   semanticTokenModifiers,
 );
 
-export class GameMakerSemanticTokenProvider
-  implements vscode.DocumentSemanticTokensProvider
-{
+export class GameMakerSemanticTokenProvider implements vscode.DocumentSemanticTokensProvider {
   constructor(readonly provider: StitchWorkspace) {}
 
-  private _onDidChangeSemanticTokens: vscode.EventEmitter<void> =
-    new vscode.EventEmitter();
+  private _onDidChangeSemanticTokens: vscode.EventEmitter<void> = new vscode.EventEmitter();
   readonly onDidChangeSemanticTokens = this._onDidChangeSemanticTokens.event;
 
   refresh() {
     this._onDidChangeSemanticTokens.fire();
   }
 
-  provideDocumentSemanticTokens(
-    document: vscode.TextDocument,
-  ): vscode.SemanticTokens | undefined {
+  provideDocumentSemanticTokens(document: vscode.TextDocument): vscode.SemanticTokens | undefined {
     try {
       const file = this.provider.getGmlFile(document);
       if (!file) {
         return;
       }
 
-      const tokensBuilder = new vscode.SemanticTokensBuilder(
-        semanticTokensLegend,
-      );
+      const tokensBuilder = new vscode.SemanticTokensBuilder(semanticTokensLegend);
       const cache = new Map<
         ReferenceableType,
         { type: SemanticTokenType; mods: Set<SemanticTokenModifier> }
       >();
       for (const ref of file.refs) {
-        if (
-          !ref.start ||
-          isNaN(ref.start.line) ||
-          !ref.end ||
-          isNaN(ref.end.line)
-        ) {
+        if (!ref.start || isNaN(ref.start.line) || !ref.end || isNaN(ref.end.line)) {
           continue;
         }
         // Get the location as a vscode range
@@ -103,9 +91,7 @@ export class GameMakerSemanticTokenProvider
           tokenType = 'property';
         }
         const tokenModifiers = inferSemanticModifiers(ref);
-        const isAsset = signifier.type.type.find((t) =>
-          t.kind.startsWith('Asset.'),
-        );
+        const isAsset = signifier.type.type.find((t) => t.kind.startsWith('Asset.'));
         if (isAsset) {
           tokenModifiers.add('asset');
         }

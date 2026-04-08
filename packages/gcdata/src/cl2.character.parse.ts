@@ -14,11 +14,7 @@ import {
 } from './cl2.shared.parse.js';
 import { CharacterMote, npcSchemaId } from './cl2.shared.types.js';
 import type { GameChanger } from './GameChanger.js';
-import {
-  bsArrayToArray,
-  changedPosition,
-  updateBsArrayOrder,
-} from './helpers.js';
+import { bsArrayToArray, changedPosition, updateBsArrayOrder } from './helpers.js';
 import { Position } from './types.editor.js';
 import { Mote } from './types.js';
 
@@ -119,11 +115,7 @@ export function parseStringifiedCharacter(
           };
           result.parsed.idles.push(lastIdleTopic);
           // If we don't have a ':' separator, add it as an insert to help
-          if (
-            !parsedLine.sep &&
-            parsedLine._hadArrayTag &&
-            parsedLine.arrayTag?.value
-          ) {
+          if (!parsedLine.sep && parsedLine._hadArrayTag && parsedLine.arrayTag?.value) {
             // Put it right after the array tag
             result.edits.push({
               newText: ': ',
@@ -152,11 +144,7 @@ export function parseStringifiedCharacter(
           };
           lastIdleTopic.groups.push(lastPhraseGroup);
           // If we don't have a ' ' separator, add it as an insert to help
-          if (
-            !parsedLine.sep &&
-            parsedLine._hadArrayTag &&
-            parsedLine.arrayTag?.value
-          ) {
+          if (!parsedLine.sep && parsedLine._hadArrayTag && parsedLine.arrayTag?.value) {
             // Put it right after the array tag
             result.edits.push({
               newText: ' ',
@@ -279,8 +267,7 @@ export async function updateChangesFromParsedCharacter(
       assert(idle.id, `Idle must have an ID`);
       parsedIdleIds.set(idle.id, parsedIdleIds.get(idle.id) ?? new Map());
       const parsedGroupIds = parsedIdleIds.get(idle.id)!;
-      const basePointer =
-        `data/idle_text/${idle.id}` satisfies CharacterMoteDataPointer;
+      const basePointer = `data/idle_text/${idle.id}` satisfies CharacterMoteDataPointer;
       updateMote(`${basePointer}/element/name`, idle.name);
       for (const group of idle.groups) {
         assert(group.id, `Phrase Group must have an ID`);
@@ -310,9 +297,7 @@ export async function updateChangesFromParsedCharacter(
         continue;
       }
       const parsedGroups = parsedIdleIds.get(existingIdle.id)!;
-      for (const existingGroup of bsArrayToArray(
-        existingIdle.element?.phrase_groups || {},
-      )) {
+      for (const existingGroup of bsArrayToArray(existingIdle.element?.phrase_groups || {})) {
         isInParsed = parsedGroups.has(existingGroup.id);
         if (!isInParsed) {
           trace(`Deleting idle phrase group ${existingGroup.id}`);
@@ -323,9 +308,7 @@ export async function updateChangesFromParsedCharacter(
           continue;
         }
         const parsedPhrases = parsedGroups.get(existingGroup.id)!;
-        for (const existingPhrase of bsArrayToArray(
-          existingGroup.element?.phrases || {},
-        )) {
+        for (const existingPhrase of bsArrayToArray(existingGroup.element?.phrases || {})) {
           isInParsed = parsedPhrases.has(existingPhrase.id);
           if (!isInParsed) {
             trace(`Deleting idle phrase ${existingPhrase.id}`);
@@ -352,12 +335,8 @@ export async function updateChangesFromParsedCharacter(
         let group = idle.element?.phrase_groups?.[parsedGroup.id];
         if (!group) {
           group =
-            moteWorking?.data.idle_text?.[parsedIdle.id!]?.element
-              ?.phrase_groups?.[parsedGroup.id];
-          assert(
-            group,
-            `Group ${parsedGroup.id} not found in idle ${parsedIdle.id}`,
-          );
+            moteWorking?.data.idle_text?.[parsedIdle.id!]?.element?.phrase_groups?.[parsedGroup.id];
+          assert(group, `Group ${parsedGroup.id} not found in idle ${parsedIdle.id}`);
           // @ts-expect-error - order is a required field, but it'll be re-added
           delete group?.order;
         }
@@ -366,14 +345,10 @@ export async function updateChangesFromParsedCharacter(
           let phrase = group.element?.phrases?.[parsedPhrase.id];
           if (!phrase) {
             phrase =
-              moteWorking?.data.idle_text?.[parsedIdle.id!]?.element
-                ?.phrase_groups?.[parsedGroup.id!]?.element?.phrases?.[
-                parsedPhrase.id
-              ];
-            assert(
-              phrase,
-              `Phrase ${parsedPhrase.id} not found in group ${parsedGroup.id}`,
-            );
+              moteWorking?.data.idle_text?.[parsedIdle.id!]?.element?.phrase_groups?.[
+                parsedGroup.id!
+              ]?.element?.phrases?.[parsedPhrase.id];
+            assert(phrase, `Phrase ${parsedPhrase.id} not found in group ${parsedGroup.id}`);
             // @ts-expect-error - order is a required field, but it'll be re-added
             delete phrase?.order;
           }
@@ -391,17 +366,13 @@ export async function updateChangesFromParsedCharacter(
       trace(`Updating idle order ${orderedIdle.id} to ${orderedIdle.order}`);
       updateMote(`data/idle_text/${orderedIdle.id}/order`, orderedIdle.order);
       for (const orderedGroup of orderedIdle.phraseGroups) {
-        trace(
-          `Updating idle group order ${orderedGroup.id} to ${orderedGroup.order}`,
-        );
+        trace(`Updating idle group order ${orderedGroup.id} to ${orderedGroup.order}`);
         updateMote(
           `data/idle_text/${orderedIdle.id}/element/phrase_groups/${orderedGroup.id}/order`,
           orderedGroup.order,
         );
         for (const orderedPhrase of orderedGroup.phrases) {
-          trace(
-            `Updating idle phrase order ${orderedPhrase.id} to ${orderedPhrase.order}`,
-          );
+          trace(`Updating idle phrase order ${orderedPhrase.id} to ${orderedPhrase.order}`);
           updateMote(
             `data/idle_text/${orderedIdle.id}/element/phrase_groups/${orderedGroup.id}/element/phrases/${orderedPhrase.id}/order`,
             orderedPhrase.order,

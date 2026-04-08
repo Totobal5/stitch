@@ -1,5 +1,6 @@
 export type StorylineMoteDataPointer = `data/${StorylineMotePointer}`;
-export type StorylineMotePointer = ``
+export type StorylineMotePointer =
+  | ``
   | `description/description`
   | `description/skip`
   | `description/text`

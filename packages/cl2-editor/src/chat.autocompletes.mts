@@ -8,9 +8,7 @@ export class ChatCompletionProvider implements vscode.CompletionItemProvider {
   provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-  ): vscode.ProviderResult<
-    vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>
-  > {
+  ): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
     const comfortDoc = ChatDocument.from(document.uri, this.workspace);
     if (comfortDoc) {
       return comfortDoc.getAutoCompleteItems(position);

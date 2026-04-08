@@ -10,14 +10,10 @@ async function addButtons() {
 
   // Steam creates a custom script per application + query params that contains
   // the data we need. So we need to extract it out of the script tag.
-  const scriptText = document.querySelector(
-    'head > script:last-of-type',
-  )?.innerHTML;
+  const scriptText = document.querySelector('head > script:last-of-type')?.innerHTML;
   assert(scriptText, 'Could not find script tag');
 
-  const viewSegments = extractSegments(
-    defined(scriptText.match(/var dataViews = ([^;]+)/))[1],
-  );
+  const viewSegments = extractSegments(defined(scriptText.match(/var dataViews = ([^;]+)/))[1]);
 
   const impressionSegments = extractSegments(
     defined(scriptText.match(/var dataImpressions = ([^;]+)/))[1],
@@ -36,17 +32,13 @@ async function addButtons() {
 
   const viewSegmentTitles = /** @type {SegmentTitle[]} */ (
     extractedArrayStringToArray(
-      defined(
-        viewsTitlesString.match(/options\[['"]series['"]\] = ([^;]+)/),
-      )[1],
+      defined(viewsTitlesString.match(/options\[['"]series['"]\] = ([^;]+)/))[1],
     )
   ).map((t) => t.label);
 
   const impressionSegmentTitles = /** @type {SegmentTitle[]} */ (
     extractedArrayStringToArray(
-      defined(
-        impressionsTitlesString.match(/options\[['"]series['"]\] = ([^;]+)/),
-      )[1],
+      defined(impressionsTitlesString.match(/options\[['"]series['"]\] = ([^;]+)/))[1],
     )
   ).map((t) => t.label);
 
@@ -123,9 +115,7 @@ function datesFromSegments(segments) {
       dates.add(date);
     }
   }
-  const sorted = [...dates].sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime(),
-  );
+  const sorted = [...dates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   const range = [sorted[0], sorted[sorted.length - 1]];
   // Return an array that starts with the first date in the range and
   // adds one day at a time until we reach the last date in the range.

@@ -4,9 +4,7 @@ import { v4 as uuidV4 } from 'uuid';
 import { YySprite } from './YySprite.js';
 import { getYyResourceId } from './utility.js';
 
-export function ensureTrackKeyFrames(
-  sprite: PartialDeep<YySprite, { recurseIntoArrays: true }>,
-) {
+export function ensureTrackKeyFrames(sprite: PartialDeep<YySprite, { recurseIntoArrays: true }>) {
   const spriteId = getYyResourceId('sprites', sprite.name!);
   const frames = sprite.frames;
   const spritePointable = pointable(sprite);
@@ -31,9 +29,7 @@ export function ensureTrackKeyFrames(
       keyframePointable
         .at(['Channels', '0', 'Id', 'name'])
         .set(frame.name, { noClobber: true, createMissing: true });
-      keyframePointable
-        .at(['Channels', '0', 'Id', 'path'])
-        .set(spriteId.path, { noClobber: true });
+      keyframePointable.at(['Channels', '0', 'Id', 'path']).set(spriteId.path, { noClobber: true });
     }
   }
   return sprite;

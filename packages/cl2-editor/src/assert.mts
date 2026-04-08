@@ -56,10 +56,7 @@ export function swallowThrown<A extends any[], T extends (...args: A) => any>(
   return;
 }
 
-export function assertInternalClaim(
-  condition: any,
-  message: string,
-): asserts condition {
+export function assertInternalClaim(condition: any, message: string): asserts condition {
   if (!condition) {
     const err = new CrashlandsUserError(message, assertInternalClaim);
     // VSCode swallows error messages, so we need to log them
@@ -68,10 +65,7 @@ export function assertInternalClaim(
   }
 }
 
-export function assertUserClaim(
-  condition: any,
-  message: string,
-): asserts condition {
+export function assertUserClaim(condition: any, message: string): asserts condition {
   if (!condition) {
     const err = new CrashlandsUserError(message, assertUserClaim);
     // VSCode swallows error messages, so we need to log them
@@ -84,10 +78,7 @@ export function assertUserClaim(
  * Assert a claim and, if it fails, both throw an error
  * and show the error in vscode.
  */
-export function assertLoudly(
-  condition: any,
-  message: string,
-): asserts condition {
+export function assertLoudly(condition: any, message: string): asserts condition {
   if (!condition) {
     showErrorMessage(message);
     throw new Error(message);

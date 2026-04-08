@@ -39,17 +39,13 @@ export class StitchIgorView implements vscode.WebviewViewProvider {
     webview.onDidReceiveMessage(async (e: IgorWebviewPosts) => {
       if (e.kind === 'open') {
         // Go to the asset in the editor
-        const asset = this.workspace
-          .getActiveProject()
-          ?.getAssetByName(e.asset);
+        const asset = this.workspace.getActiveProject()?.getAssetByName(e.asset);
         assertLoudly(asset, `Asset not found: ${e.asset}`);
         const file =
           e.type === 'objects' && e.event
             ? (asset.getEventByName(e.event as any) ?? asset.gmlFile)
             : asset.gmlFile;
-        const editor = await vscode.window.showTextDocument(
-          uriFromCodeFile(file),
-        );
+        const editor = await vscode.window.showTextDocument(uriFromCodeFile(file));
         // Go to the line
         if (e.line) {
           const line = e.line - 1;
@@ -64,16 +60,9 @@ export class StitchIgorView implements vscode.WebviewViewProvider {
   protected getWebviewContent(webview: vscode.Webview) {
     let preparedHtml = html;
     // Add the <base> tag so that relative paths work
-    const basePath = vscode.Uri.joinPath(
-      this.workspace.ctx.extensionUri,
-      'webviews',
-      'build',
-    );
+    const basePath = vscode.Uri.joinPath(this.workspace.ctx.extensionUri, 'webviews', 'build');
     const compatibleBasePath = webview.asWebviewUri(basePath);
-    preparedHtml = preparedHtml.replace(
-      '<head>',
-      `<head><base href="${compatibleBasePath}/">`,
-    );
+    preparedHtml = preparedHtml.replace('<head>', `<head><base href="${compatibleBasePath}/">`);
     return preparedHtml;
   }
 
@@ -110,10 +99,7 @@ export class StitchIgorView implements vscode.WebviewViewProvider {
 
   async run(event: StitchEvents.RequestRunInWebview['payload'][0]) {
     await this.reveal(); // So that VSCode creates the container
-    assertLoudly(
-      this.container,
-      'Runner container not initialized! Please try again.',
-    );
+    assertLoudly(this.container, 'Runner container not initialized! Please try again.');
     this.kill();
     // Make sure our config is up to date for styling
     this.lastRequest = event;

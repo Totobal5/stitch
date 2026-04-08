@@ -11,7 +11,7 @@ const summaryPath = artifactsDir.join('releases-summary.json');
 
 // Download the latest cache to reduce calls and speed up the process.
 const cache = await (
-	await fetch('https://bscotch.github.io/stitch/artifacts/gamemaker/release-notes-cache.json')
+  await fetch('https://bscotch.github.io/stitch/artifacts/gamemaker/release-notes-cache.json')
 ).json();
 await notesCache.write(cache);
 

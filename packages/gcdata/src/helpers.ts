@@ -45,10 +45,7 @@ export function createBsArrayKey(length = 4) {
   return key;
 }
 
-export function changedPosition(
-  start: Position,
-  change: { characters: number },
-) {
+export function changedPosition(start: Position, change: { characters: number }) {
   const position = { ...start };
   if (change.characters < 0 && position.character < -change.characters) {
     position.index -= position.character;
@@ -74,10 +71,8 @@ export function updateBsArrayOrder(sorted: BsArrayItem[]) {
   ) as Required<BsArrayItem>[];
   if (sortedWithDefinedOrder.length > 1) {
     for (const [index, item] of sortedWithDefinedOrder.entries()) {
-      const priorItem: Required<BsArrayItem> | undefined =
-        sortedWithDefinedOrder[index - 1];
-      const nextItem: Required<BsArrayItem> | undefined =
-        sortedWithDefinedOrder[index + 1];
+      const priorItem: Required<BsArrayItem> | undefined = sortedWithDefinedOrder[index - 1];
+      const nextItem: Required<BsArrayItem> | undefined = sortedWithDefinedOrder[index + 1];
       const isFirstItem = index === 0;
       const isLastItem = index === sortedWithDefinedOrder.length - 1;
 
@@ -149,15 +144,9 @@ export function updateBsArrayOrder(sorted: BsArrayItem[]) {
 
   // Make sure the order values are INCREMENTING and EXIST
   for (const [index, item] of sorted.entries()) {
-    assert(
-      item.order !== undefined,
-      `Order value should be defined at this point`,
-    );
+    assert(item.order !== undefined, `Order value should be defined at this point`);
     if (index > 0) {
-      assert(
-        item.order > sorted[index - 1].order!,
-        `Order values should be incrementing`,
-      );
+      assert(item.order > sorted[index - 1].order!, `Order values should be incrementing`);
     }
   }
   return sorted;
@@ -178,10 +167,7 @@ export function toMoteTag(item: string | { id: string } | undefined): string {
  * Given a BschemaArray element ID (or an element), return `#${elementId}`.
  */
 export function toArrayTag(item: string | { id: string }): string {
-  assert(
-    typeof item === 'string' || 'id' in item,
-    'ID must be a string or Mote',
-  );
+  assert(typeof item === 'string' || 'id' in item, 'ID must be a string or Mote');
   const idStr = typeof item === 'string' ? item : item.id;
   return `#${idStr}`;
 }

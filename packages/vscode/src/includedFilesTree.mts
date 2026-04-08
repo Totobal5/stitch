@@ -7,9 +7,7 @@ import { StitchTreeItemBase } from './tree.base.mjs';
 
 type IncludedFileTreeItem = IncludedFileFolder | IncludedFile;
 
-export class StitchIncludedFilesTree
-  implements vscode.TreeDataProvider<IncludedFileTreeItem>
-{
+export class StitchIncludedFilesTree implements vscode.TreeDataProvider<IncludedFileTreeItem> {
   project: GameMakerProject | undefined;
   view!: vscode.TreeView<IncludedFileTreeItem>;
   private _onDidChangeTreeData: vscode.EventEmitter<
@@ -45,9 +43,7 @@ export class StitchIncludedFilesTree
     return element;
   }
 
-  getChildren(
-    element?: IncludedFileTreeItem | undefined,
-  ): IncludedFileTreeItem[] | undefined {
+  getChildren(element?: IncludedFileTreeItem | undefined): IncludedFileTreeItem[] | undefined {
     if (!this.project) {
       return;
     }
@@ -58,8 +54,7 @@ export class StitchIncludedFilesTree
     element ||= IncludedFileFolder.lookup.get('datafiles');
 
     // Then we're at the root.
-    const children =
-      element?.subfolders || ([] as (IncludedFile | IncludedFileFolder)[]);
+    const children = element?.subfolders || ([] as (IncludedFile | IncludedFileFolder)[]);
     children.push(...(element?.files || []));
     return [...children].sort((a, b) => {
       if (a instanceof IncludedFileFolder && b instanceof IncludedFile) {
@@ -83,11 +78,7 @@ export class StitchIncludedFilesTree
       return;
     }
     for (const file of this.project.yyp.IncludedFiles || []) {
-      IncludedFile.from(
-        this.project,
-        file.filePath as IncludedFilePath,
-        file.name,
-      );
+      IncludedFile.from(this.project, file.filePath as IncludedFilePath, file.name);
     }
 
     this._onDidChangeTreeData.fire(undefined);
@@ -96,16 +87,14 @@ export class StitchIncludedFilesTree
   static register(workspace: StitchWorkspace): vscode.Disposable[] {
     const tree = new StitchIncludedFilesTree(workspace);
     tree.project = workspace.getActiveProject();
-    const activeEditorMonitor = vscode.window.onDidChangeActiveTextEditor(
-      () => {
-        // Rebuild if we switched projects
-        const nowActiveProject = workspace.getActiveProject();
-        if (nowActiveProject && nowActiveProject !== tree.project) {
-          tree.project = nowActiveProject;
-          tree.rebuild();
-        }
-      },
-    );
+    const activeEditorMonitor = vscode.window.onDidChangeActiveTextEditor(() => {
+      // Rebuild if we switched projects
+      const nowActiveProject = workspace.getActiveProject();
+      if (nowActiveProject && nowActiveProject !== tree.project) {
+        tree.project = nowActiveProject;
+        tree.rebuild();
+      }
+    });
 
     tree.rebuild();
 
@@ -119,18 +108,12 @@ export class StitchIncludedFilesTree
     const subscriptions = [
       tree.view,
       activeEditorMonitor,
-      registerCommand(
-        'stitch.includedFiles.revealInExplorerView',
-        (item?: IncludedFile) => {
-          if (item instanceof IncludedFile) {
-            // Call the vscode command to show the file in the explorer view
-            vscode.commands.executeCommand(
-              'revealInExplorer',
-              vscode.Uri.file(item.path.absolute),
-            );
-          }
-        },
-      ),
+      registerCommand('stitch.includedFiles.revealInExplorerView', (item?: IncludedFile) => {
+        if (item instanceof IncludedFile) {
+          // Call the vscode command to show the file in the explorer view
+          vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(item.path.absolute));
+        }
+      }),
     ];
     return subscriptions;
   }
@@ -194,9 +177,7 @@ class IncludedFile extends StitchTreeItemBase<'datafiles-file'> {
     this.command = {
       title: 'Open',
       command: 'vscode.open',
-      arguments: [
-        vscode.Uri.file(this.project.dir.join(folder).join(name).absolute),
-      ],
+      arguments: [vscode.Uri.file(this.project.dir.join(folder).join(name).absolute)],
     };
     this.iconPath = new vscode.ThemeIcon('file');
   }
@@ -205,11 +186,7 @@ class IncludedFile extends StitchTreeItemBase<'datafiles-file'> {
     return this.project.dir.join(this.folder).join(this.name);
   }
 
-  static from(
-    project: GameMakerProject,
-    folderPath: IncludedFilePath,
-    name: string,
-  ): IncludedFile {
+  static from(project: GameMakerProject, folderPath: IncludedFilePath, name: string): IncludedFile {
     const fullPath = `${folderPath}/${name}`;
     if (this.lookup.has(fullPath)) {
       return this.lookup.get(fullPath)!;

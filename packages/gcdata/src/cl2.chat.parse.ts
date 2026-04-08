@@ -12,11 +12,7 @@ import {
   prepareParserHelpers,
   updateWipChangesFromParsed,
 } from './cl2.shared.parse.js';
-import {
-  ChatMote,
-  chatSchemaId,
-  listAllCharacters,
-} from './cl2.shared.types.js';
+import { ChatMote, chatSchemaId, listAllCharacters } from './cl2.shared.types.js';
 import type { GameChanger } from './GameChanger.js';
 import {
   bsArrayToArray,
@@ -112,9 +108,7 @@ export function parseStringifiedChat(
           // Then we're in a moments header, e.g. "#rt10#kqbq RONXX@brubus_northwatch3"
           // Need to auto-insert array tags if missing
           let momentId: string =
-            parsedLine.arrayTag?.value ||
-            currentMoment?.id ||
-            createBsArrayKey();
+            parsedLine.arrayTag?.value || currentMoment?.id || createBsArrayKey();
 
           if (!currentMoment || currentMoment.id !== momentId) {
             currentMoment = {
@@ -146,11 +140,7 @@ export function parseStringifiedChat(
             });
           }
           // Handle mote autocompltes
-          if (
-            !insertedTags &&
-            parsedLine.sep &&
-            (!parsedLine.moteName || !parsedLine.moteTag)
-          ) {
+          if (!insertedTags && parsedLine.sep && (!parsedLine.moteName || !parsedLine.moteTag)) {
             const where = {
               start: parsedLine.sep.end,
               end: parsedLine.emojiGroup?.start || lineRange.end,
@@ -281,37 +271,24 @@ export async function updateChangesFromParsedChat(
     const parsedMomentIds: Map<string, Set<string>> = new Map();
     for (const moment of parsed.moments) {
       assert(moment.id, `Moment ID required`);
-      parsedMomentIds.set(
-        moment.id,
-        parsedMomentIds.get(moment.id) || new Set(),
-      );
+      parsedMomentIds.set(moment.id, parsedMomentIds.get(moment.id) || new Set());
       for (const phrase of moment.phrases) {
         assert(phrase.id, `Phrase ID required`);
         parsedMomentIds.get(moment.id)!.add(phrase.id);
         // update emoji, speaker, and text
-        updateMote(
-          `data/moments/${moment.id}/element/${phrase.id}/element/emoji`,
-          phrase.emoji,
-        );
+        updateMote(`data/moments/${moment.id}/element/${phrase.id}/element/emoji`, phrase.emoji);
         updateMote(
           `data/moments/${moment.id}/element/${phrase.id}/element/speaker`,
           phrase.speaker,
         );
-        updateMote(
-          `data/moments/${moment.id}/element/${phrase.id}/element/text/text`,
-          phrase.text,
-        );
+        updateMote(`data/moments/${moment.id}/element/${phrase.id}/element/text/text`, phrase.text);
       }
     }
     // Delete any moments/phrases that are no longer in the parsed data
     for (const existingMoment of bsArrayToArray(moteBase?.data.moments || {})) {
       const isInParsed = parsedMomentIds.has(existingMoment.id);
       if (!isInParsed) {
-        packed.updateMoteData(
-          moteId,
-          `data/moments/${existingMoment.id}`,
-          null,
-        );
+        packed.updateMoteData(moteId, `data/moments/${existingMoment.id}`, null);
         continue;
       } else {
         const parsedPhraseIds = parsedMomentIds.get(existingMoment.id)!;
@@ -358,10 +335,7 @@ export async function updateChangesFromParsedChat(
       updateMote(`data/moments/${moment.id}/order`, moment.order);
       for (const phrase of moment.phrases) {
         trace(`Updating phrase ${phrase.id} order to ${phrase.order}`);
-        updateMote(
-          `data/moments/${moment.id}/element/${phrase.id}/order`,
-          phrase.order,
-        );
+        updateMote(`data/moments/${moment.id}/element/${phrase.id}/order`, phrase.order);
       }
     }
 

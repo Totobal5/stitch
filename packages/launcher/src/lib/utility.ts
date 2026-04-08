@@ -78,10 +78,7 @@ export function projectFolder(projectPath: string | Pathy): Pathy {
   return path;
 }
 
-export async function projectLogDirectory(
-  project?: string | Pathy,
-  options?: GameMakerLogOptions,
-) {
+export async function projectLogDirectory(project?: string | Pathy, options?: GameMakerLogOptions) {
   const logDir = new Pathy(
     options?.logDir ||
       (project && projectFolder(project).join('logs')) ||
@@ -94,10 +91,10 @@ export async function projectLogDirectory(
 /**
  * Sorts *in place*, descending (most recent date first).
  */
-export function sortByDateField<
-  F extends string,
-  T extends Record<F, Date | undefined>,
->(entries: T[], dateField: F): T[] {
+export function sortByDateField<F extends string, T extends Record<F, Date | undefined>>(
+  entries: T[],
+  dateField: F,
+): T[] {
   // Sort the combined feed by date, ascending
   entries.sort((a, b) => {
     if (a[dateField] === undefined && b[dateField] === undefined) {
@@ -155,22 +152,13 @@ export async function cachedFileIsExpired(
  */
 export function cleanVersionString(version: string): string {
   version = version.replace(/^v/, '');
-  ok(
-    version.match(/^\d+\.\d+\.\d+\.\d+$/),
-    `Invalid version string: ${version}`,
-  );
+  ok(version.match(/^\d+\.\d+\.\d+\.\d+$/), `Invalid version string: ${version}`);
   return version;
 }
 
-export async function download(
-  url: string,
-  to: Pathy,
-  options?: { force: boolean },
-) {
+export async function download(url: string, to: Pathy, options?: { force: boolean }) {
   if ((await to.exists()) && !options?.force) {
-    console.log(
-      `Download target path already exists, skipping download: "${to}"`,
-    );
+    console.log(`Download target path already exists, skipping download: "${to}"`);
     return;
   }
   await to.up().ensureDirectory();
@@ -214,14 +202,9 @@ export async function runIdeInstaller(idePath: Pathy) {
  */
 export async function listInstalledRuntimes(options?: {
   logger?: Logger;
-}): Promise<
-  Omit<GameMakerInstalledVersion, 'channel' | 'publishedAt' | 'feedUrl'>[]
-> {
+}): Promise<Omit<GameMakerInstalledVersion, 'channel' | 'publishedAt' | 'feedUrl'>[]> {
   const runtimeDirs = await listGameMakerRuntimeDirs(options);
-  const runtimes: Omit<
-    GameMakerInstalledVersion,
-    'channel' | 'publishedAt' | 'feedUrl'
-  >[] = [];
+  const runtimes: Omit<GameMakerInstalledVersion, 'channel' | 'publishedAt' | 'feedUrl'>[] = [];
   for (const runtimeDir of runtimeDirs) {
     const version = runtimeDir.basename.replace(/^runtime-/, '');
     if (!version.match(/^\d+\.\d+\.\d+\.\d+$/)) {
@@ -261,9 +244,7 @@ export async function listInstalledRuntimes(options?: {
   return runtimes;
 }
 
-async function listGameMakerRuntimeDirs(options?: {
-  logger?: Logger;
-}): Promise<Pathy[]> {
+async function listGameMakerRuntimeDirs(options?: { logger?: Logger }): Promise<Pathy[]> {
   options?.logger?.log('Finding local GameMaker data directories...');
   const channelFolders = await listGameMakerDataDirs();
   options?.logger?.log('Found', channelFolders.length, 'data directories');
@@ -274,9 +255,7 @@ async function listGameMakerRuntimeDirs(options?: {
       continue;
     }
     runtimesDirs.push(
-      ...(await cacheDir.listChildren()).filter((p) =>
-        p.basename.match(/^runtime-/),
-      ),
+      ...(await cacheDir.listChildren()).filter((p) => p.basename.match(/^runtime-/)),
     );
   }
   options?.logger?.log('Found', runtimesDirs.length, 'runtime directories');
@@ -288,14 +267,12 @@ async function listGameMakerRuntimeDirs(options?: {
  * program data files. This sets the active runtime
  * for *all* installed IDEs!
  */
-export async function setActiveRuntime(runtime: {
-  version: string;
-  directory: Pathy;
-}) {
+export async function setActiveRuntime(runtime: { version: string; directory: Pathy }) {
   for (const dataDir of await listGameMakerDataDirs()) {
     const runtimeConfigFile = dataDir.join('runtime.json');
-    const currentConfig: Record<string, string> =
-      (await runtimeConfigFile.exists()) ? await runtimeConfigFile.read() : {};
+    const currentConfig: Record<string, string> = (await runtimeConfigFile.exists())
+      ? await runtimeConfigFile.read()
+      : {};
     currentConfig.active = runtime.version;
     currentConfig[runtime.version] = runtime.directory.toString({
       format: 'win32',
@@ -308,20 +285,14 @@ export async function setActiveRuntime(runtime: {
  * Note that these paths are not populated by
  * default, so they may point to non-existent files.
  */
-export async function listDefaultMacrosPaths(): Promise<
-  Pathy<GameMakerDefaultMacros>[]
-> {
+export async function listDefaultMacrosPaths(): Promise<Pathy<GameMakerDefaultMacros>[]> {
   const paths = await listGameMakerDataDirs();
   return paths.map((p) => p.join('default_macros.json'));
 }
 
-export async function listRuntimeFeedsConfigPaths(): Promise<
-  Pathy<RuntimeFeedsFile>[]
-> {
+export async function listRuntimeFeedsConfigPaths(): Promise<Pathy<RuntimeFeedsFile>[]> {
   const paths = await listGameMakerDataDirs();
-  return paths.map((p) =>
-    p.join('runtime_feeds.json').withValidator(runtimeFeedsFileSchema),
-  );
+  return paths.map((p) => p.join('runtime_feeds.json').withValidator(runtimeFeedsFileSchema));
 }
 
 /**
@@ -337,9 +308,9 @@ export async function listGameMakerDataDirs(): Promise<Pathy[]> {
   // $PROGRAMDATA/GameMakerStudio2(-(Beta|LTS))?/Cache
   // With the rename, this could change to just GameMaker,
   // so we'll use some simple discovery heuristics.
-  const potentialDataDirs = (
-    await new Pathy(process.env.PROGRAMDATA).listChildren()
-  ).filter((p) => p.basename.match(/^GameMaker/));
+  const potentialDataDirs = (await new Pathy(process.env.PROGRAMDATA).listChildren()).filter((p) =>
+    p.basename.match(/^GameMaker/),
+  );
   const dataDirs: Pathy[] = [];
   for (const potentialDataDir of potentialDataDirs) {
     const cacheDir = potentialDataDir.join('Cache/runtimes');
@@ -350,9 +321,7 @@ export async function listGameMakerDataDirs(): Promise<Pathy[]> {
   return dataDirs;
 }
 
-export async function listInstalledIdes(
-  parentDir: string | Pathy = process.env.PROGRAMFILES!,
-) {
+export async function listInstalledIdes(parentDir: string | Pathy = process.env.PROGRAMFILES!) {
   assert(parentDir, 'No program files directory provided');
 
   const ideExecutables = await new Pathy(parentDir).listChildrenRecursively({

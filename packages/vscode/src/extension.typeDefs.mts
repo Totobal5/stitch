@@ -2,9 +2,7 @@ import vscode from 'vscode';
 import type { StitchWorkspace } from './extension.workspace.mjs';
 import { locationOf } from './lib.mjs';
 
-export class StitchTypeDefinitionProvider
-  implements vscode.TypeDefinitionProvider
-{
+export class StitchTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
   constructor(readonly workspace: StitchWorkspace) {}
 
   provideTypeDefinition(

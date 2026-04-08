@@ -13,9 +13,7 @@ describe('Cl2 Comforts', function () {
     // Find a quest that gives items
     const storylines = listComforts(packed.working);
 
-    await pathy(`tmp.${comfortSchemaId}`).write(
-      stringifyComfort(storylines[0], packed),
-    );
+    await pathy(`tmp.${comfortSchemaId}`).write(stringifyComfort(storylines[0], packed));
   });
 
   it('can convert comforts to text and back without error', async function () {

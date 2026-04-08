@@ -1,12 +1,12 @@
 {
-  "$GMShader":"",
-  "%Name":"shad_pretty",
-  "name":"shad_pretty",
-  "parent":{
-    "name":"Stuff",
-    "path":"folders/Stuff.yy",
+  "$GMShader": "",
+  "%Name": "shad_pretty",
+  "name": "shad_pretty",
+  "parent": {
+    "name": "Stuff",
+    "path": "folders/Stuff.yy"
   },
-  "resourceType":"GMShader",
-  "resourceVersion":"2.0",
-  "type":1,
+  "resourceType": "GMShader",
+  "resourceVersion": "2.0",
+  "type": 1
 }

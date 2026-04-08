@@ -16,8 +16,7 @@ export interface TokenType<Name extends string = string> extends TokenTypeBase {
   name: Name;
 }
 
-export interface ITokenConfig<Name extends string = string>
-  extends ITokenConfigBase {
+export interface ITokenConfig<Name extends string = string> extends ITokenConfigBase {
   name: Name;
   push_mode?: GmlLexerMode;
 }

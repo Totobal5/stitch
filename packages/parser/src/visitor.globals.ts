@@ -113,11 +113,7 @@ export class GmlGlobalDeclarationsVisitor extends GmlVisitorBase {
     } else if (!isNotDef) {
       this.PROCESSOR.file.addDiagnostic(
         'INVALID_OPERATION',
-        new Diagnostic(
-          `"${name}" already exists as a built-in symbol.`,
-          range,
-          'warning',
-        ),
+        new Diagnostic(`"${name}" already exists as a built-in symbol.`, range, 'warning'),
       );
     }
     symbol.addRef(range, !isNotDef && !symbol.native);
@@ -135,9 +131,7 @@ export class GmlGlobalDeclarationsVisitor extends GmlVisitorBase {
       jsdoc.name!.content,
       Range.from(this.PROCESSOR.file, jsdoc.name!),
     );
-    symbol.setType(
-      typeFromParsedJsdocs(jsdoc, this.PROCESSOR.project.types, false),
-    );
+    symbol.setType(typeFromParsedJsdocs(jsdoc, this.PROCESSOR.project.types, false));
     symbol.describe(jsdoc.description);
     // NOTE: references to types are added during local processing so they are not needed here
   }
@@ -173,13 +167,13 @@ export class GmlGlobalDeclarationsVisitor extends GmlVisitorBase {
     this.PROCESSOR.project.types.set(`Enum.${symbol.name}`, type);
 
     // Upsert the enum members
-    for (let i = 0; i < children.enumMember.length; i++) {
-      const name = children.enumMember[i].children.Identifier[0];
+    const enumMembers = children.enumMember ?? [];
+    for (let i = 0; i < enumMembers.length; i++) {
+      const name = enumMembers[i].children.Identifier[0];
       const range = this.PROCESSOR.range(name);
       // Does member already exist?
       const member = type.getMember(name.image) || type.addMember(name.image)!;
-      const memberType =
-        member.type.type[0] || new Type('EnumMember').named(name.image);
+      const memberType = member.type.type[0] || new Type('EnumMember').named(name.image);
       member.setType(memberType);
       memberType.signifier = member;
       member.enumMember = true;
@@ -196,8 +190,7 @@ export class GmlGlobalDeclarationsVisitor extends GmlVisitorBase {
    */
   override functionExpression(children: FunctionExpressionCstChildren) {
     const isGlobal =
-      this.PROCESSOR.currentLocalScope ===
-        this.PROCESSOR.file.scopes[0].local &&
+      this.PROCESSOR.currentLocalScope === this.PROCESSOR.file.scopes[0].local &&
       this.PROCESSOR.asset.assetKind === 'scripts';
     // Functions create a new localscope. Keeping track of that is important
     // for making sure that we're looking at a global function declaration.
@@ -213,14 +206,8 @@ export class GmlGlobalDeclarationsVisitor extends GmlVisitorBase {
         // Ensure that the parent type exists
         const parentName = constructorNode.children.Identifier[0]?.image;
         if (parentName) {
-          const parentNameRange = this.PROCESSOR.range(
-            constructorNode.children.Identifier[0],
-          );
-          const parentSignifier = this.REGISTER_GLOBAL_BY_NAME(
-            parentName,
-            parentNameRange,
-            true,
-          );
+          const parentNameRange = this.PROCESSOR.range(constructorNode.children.Identifier[0]);
+          const parentSignifier = this.REGISTER_GLOBAL_BY_NAME(parentName, parentNameRange, true);
           let parentType = parentSignifier.type.type[0];
           if (!parentType) {
             parentType = new Type('Function').named(parentName);
@@ -230,14 +217,10 @@ export class GmlGlobalDeclarationsVisitor extends GmlVisitorBase {
           // Ensure it has a constructs type
           parentType.isConstructor = true;
           parentConstructs =
-            (parentType.self as StructType) ||
-            new Type('Struct').named(parentName);
+            (parentType.self as StructType) || new Type('Struct').named(parentName);
           parentType.self = parentConstructs;
           parentConstructs.signifier = parentSignifier;
-          this.PROCESSOR.project.types.set(
-            `Struct.${parentName}`,
-            parentConstructs,
-          );
+          this.PROCESSOR.project.types.set(`Struct.${parentName}`, parentConstructs);
         }
       }
 
@@ -301,8 +284,8 @@ export class GmlGlobalDeclarationsVisitor extends GmlVisitorBase {
     const identifier = identifierFrom(children);
     if (identifier?.type === 'Global') {
       const globalIdentifier =
-        children.accessorSuffixes?.[0].children.dotAccessSuffix?.[0].children
-          .identifier[0].children;
+        children.accessorSuffixes?.[0].children.dotAccessSuffix?.[0].children.identifier[0]
+          .children;
       if (globalIdentifier?.Identifier) {
         this.REGISTER_GLOBAL(globalIdentifier);
       }

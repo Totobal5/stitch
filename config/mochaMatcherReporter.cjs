@@ -15,15 +15,10 @@ class MatcherReporter {
   constructor(runner, options) {
     Base.call(this, runner, options);
     runner.on(EVENT_TEST_FAIL, function (test, err) {
-      const match = err.stack.match(
-        /\(file:\/\/\/(?<file>.+?):(?<line>\d+):(?<col>\d+)\)/,
-      );
+      const match = err.stack.match(/\(file:\/\/\/(?<file>.+?):(?<line>\d+):(?<col>\d+)\)/);
       ok(match, 'Could not parse stack trace');
       const [, absolutePath, line, col] = match;
-      const filePath = path.relative(
-        path.resolve(process.cwd(), '../..'),
-        absolutePath,
-      );
+      const filePath = path.relative(path.resolve(process.cwd(), '../..'), absolutePath);
       // Location and message line
       console.error(`> ${[filePath, line, col, err.message].join('::')}`);
       // Add the title on the subsequent line, in case we want to pull that too

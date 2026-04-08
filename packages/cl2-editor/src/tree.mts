@@ -49,14 +49,12 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
     return this.workspace.packed;
   }
 
-  private _onDidChangeTreeData: vscode.EventEmitter<
-    TreeItem | undefined | null | void
-  > = new vscode.EventEmitter<TreeItem | undefined | null | void>();
+  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined | null | void> =
+    new vscode.EventEmitter<TreeItem | undefined | null | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  private _onDidCollapseElement: vscode.EventEmitter<
-    TreeItem | undefined | null | void
-  > = new vscode.EventEmitter<TreeItem | undefined | null | void>();
+  private _onDidCollapseElement: vscode.EventEmitter<TreeItem | undefined | null | void> =
+    new vscode.EventEmitter<TreeItem | undefined | null | void>();
   readonly onDidCollapseElement = this._onDidCollapseElement.event;
 
   protected constructor(readonly workspace: CrashlandsWorkspace) {}
@@ -73,8 +71,7 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
     const baseFolders = new Set<string>();
     const getParent = (mote: Mote) =>
       mote.parent ? this.packed.working.getMote(mote.parent)! : undefined;
-    const getFolder = (mote: Mote) =>
-      mote.folder ? mote.folder.split('/') : [];
+    const getFolder = (mote: Mote) => (mote.folder ? mote.folder.split('/') : []);
 
     // Make sure we know if a mote has children, so
     // it can be displayed with a folder toggle etc
@@ -135,9 +132,7 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
           // Then add the subfolder
           const subfolder = moteFolder.slice(0, item.relativePath.length + 1);
           if (!baseFolders.has(subfolder.at(-1)!)) {
-            items.push(
-              new FolderItem(item.parentMote, item, subfolder, { open: false }),
-            );
+            items.push(new FolderItem(item.parentMote, item, subfolder, { open: false }));
             baseFolders.add(subfolder.at(-1)!);
           }
         }
@@ -152,9 +147,7 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
         const moteFolder = getFolder(mote);
         if (moteFolder.length && !baseFolders.has(moteFolder[0])) {
           // Then add the subfolder
-          items.push(
-            new FolderItem(parent, item, [moteFolder[0]], { open: false }),
-          );
+          items.push(new FolderItem(parent, item, [moteFolder[0]], { open: false }));
           baseFolders.add(moteFolder[0]);
         } else if (moteFolder.length) {
           // Then we already have this folder. Skip!
@@ -244,11 +237,7 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
   }
 
   setDropMode(mode: DropMode) {
-    void vscode.commands.executeCommand(
-      'setContext',
-      'crashlands.dropMode',
-      mode,
-    );
+    void vscode.commands.executeCommand('setContext', 'crashlands.dropMode', mode);
     this.dropMode = mode;
   }
   handleDrag(
@@ -258,13 +247,9 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
     const item = new vscode.DataTransferItem(source);
     dataTransfer.set(this.treeMimeType, item);
   }
-  async handleDrop(
-    onto: TreeItem | undefined,
-    dataTransfer: vscode.DataTransfer,
-  ) {
+  async handleDrop(onto: TreeItem | undefined, dataTransfer: vscode.DataTransfer) {
     if (!onto) return;
-    const dropping: TreeItem = (dataTransfer.get(this.treeMimeType)?.value ||
-      [])[0];
+    const dropping: TreeItem = (dataTransfer.get(this.treeMimeType)?.value || [])[0];
     if (!dropping || dropping === onto) return;
 
     // Need different outcomes for every combination of target and dropping (each can be a mote or a folder)
@@ -278,22 +263,14 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
     // 4. Dropping a folder onto a folder
     //    - Move all motes in the folder (recursively) by setting their parent to the mote containing the target folder
     const allMotes = this.allMotes;
-    const getChildren = (
-      moteId: string | undefined,
-      folder: string | undefined,
-    ) => {
+    const getChildren = (moteId: string | undefined, folder: string | undefined) => {
       const children = allMotes.filter(
-        (otherMote) =>
-          otherMote.parent === moteId && otherMote.folder === folder,
+        (otherMote) => otherMote.parent === moteId && otherMote.folder === folder,
       );
       return children.sort((a, b) => a.data.order - b.data.order);
     };
-    const getSiblings = (mote: Mote | undefined) =>
-      getChildren(mote?.parent, mote?.folder);
-    const assertIsNotInParents = (
-      ofMote: Mote | undefined,
-      hopefullyNonParent: Mote,
-    ) => {
+    const getSiblings = (mote: Mote | undefined) => getChildren(mote?.parent, mote?.folder);
+    const assertIsNotInParents = (ofMote: Mote | undefined, hopefullyNonParent: Mote) => {
       if (!ofMote || !hopefullyNonParent) return;
       assertLoudly(
         this.workspace.packed.working
@@ -315,27 +292,20 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
       const targetSiblings = getSiblings(onto.mote);
 
       // Some motes don't have an order field -- they are NOT sortable (they just appear alphabetically in the list). For simplicity, we'll just prevent dropping if any of the motes involved are unsortable.
-      const ontoOrder =
-        'order' in onto.mote.data ? onto.mote.data.order : undefined;
+      const ontoOrder = 'order' in onto.mote.data ? onto.mote.data.order : undefined;
       if (ontoOrder === undefined) {
         return;
       }
 
       const priorSibling = targetSiblings.findLast(
         (sib) =>
-          sib.data.order <= ontoOrder &&
-          sib.id !== onto.mote.id &&
-          sib.id !== dropping.mote.id,
+          sib.data.order <= ontoOrder && sib.id !== onto.mote.id && sib.id !== dropping.mote.id,
       );
       const newOrder = priorSibling
         ? (priorSibling.data.order + ontoOrder) / 2
         : ontoOrder - ORDER_INCREMENT;
       this.packed.updateMoteData(dropping.moteId, 'data/order', newOrder);
-      this.packed.updateMoteLocation(
-        dropping.moteId,
-        onto.mote.parent,
-        onto.mote.folder,
-      );
+      this.packed.updateMoteLocation(dropping.moteId, onto.mote.parent, onto.mote.folder);
     } else if (
       onto instanceof TreeMoteItem &&
       dropping instanceof TreeMoteItem &&
@@ -363,15 +333,8 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
       // which requires finding the mote-parent for this folder,
       // setting the drop-mote's parent to that, and its folder
       assertIsNotInParents(onto.parentMote, dropping.mote);
-      const targetSiblings = getChildren(
-        onto.parentMote?.id,
-        onto.relativePathString,
-      );
-      this.packed.updateMoteLocation(
-        dropping.moteId,
-        onto.parentMote?.id,
-        onto.relativePathString,
-      );
+      const targetSiblings = getChildren(onto.parentMote?.id, onto.relativePathString);
+      this.packed.updateMoteLocation(dropping.moteId, onto.parentMote?.id, onto.relativePathString);
       this.packed.updateMoteData(
         dropping.moteId,
         'data/order',
@@ -382,27 +345,17 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
       // Then we're dropping a folder onto a mote.
       // We need to get all motes that are in this folder (no need for recursion since things are all defined relatively)
       // Each mote needs to have its parent set to the target mote, and its folder set to the final part of the folder path
-      const motesToMove = getChildren(
-        dropping.parentMote?.id,
-        dropping.relativePathString,
-      );
+      const motesToMove = getChildren(dropping.parentMote?.id, dropping.relativePathString);
       for (const mote of motesToMove) {
         assertIsNotInParents(onto.mote, mote);
-        this.packed.updateMoteLocation(
-          mote.id,
-          onto.mote.id,
-          dropping.relativePath.at(-1),
-        );
+        this.packed.updateMoteLocation(mote.id, onto.mote.id, dropping.relativePath.at(-1));
       }
     } else if (onto instanceof FolderItem && dropping instanceof FolderItem) {
       // Case 4
       // Then we're dropping a folder onto a folder.
       // Get all of the motes in this folder
       // For each mote, set its parent to the parent of the target folder, and its folder to the target folder's path + the final part of its own path
-      const motesToMove = getChildren(
-        dropping.parentMote?.id,
-        dropping.relativePathString,
-      );
+      const motesToMove = getChildren(dropping.parentMote?.id, dropping.relativePathString);
       for (const mote of motesToMove) {
         assertIsNotInParents(onto.parentMote, mote);
         const folder = mote.folder?.split('/').at(-1);
@@ -446,44 +399,27 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeItem> {
     provider.setDropMode('order');
 
     const subs = [
-      vscode.commands.registerCommand(
-        'crashlands.tree.dropMode.order.enable',
-        () => {
-          provider.setDropMode('order');
-        },
-      ),
-      vscode.commands.registerCommand(
-        'crashlands.tree.dropMode.nest.enable',
-        () => {
-          provider.setDropMode('nest');
-        },
-      ),
-      vscode.commands.registerCommand(
-        'crashlands.tree.setFolder',
-        (item: TreeMoteItem) => {
-          if (!(item instanceof TreeMoteItem)) return;
-          provider.setFolder(item);
-        },
-      ),
-      vscode.commands.registerCommand(
-        'crashlands.tree.copyFolderPath',
-        (item: TreeItem) => {
-          if (!(item instanceof FolderItem)) return;
-          vscode.env.clipboard.writeText(item.relativePathString);
-        },
-      ),
-      vscode.commands.registerCommand(
-        'crashlands.tree.newChat',
-        async (item: TreeItem) => {
-          // TODO: Add a new chat to the GameChanger data!
-          const parentMote =
-            item instanceof TreeMoteItem ? item.mote : item.parentMote;
-          const folder =
-            item instanceof FolderItem ? item.relativePathString : undefined;
-          await createChatMote(provider.packed, parentMote, folder);
-          provider.rebuild();
-        },
-      ),
+      vscode.commands.registerCommand('crashlands.tree.dropMode.order.enable', () => {
+        provider.setDropMode('order');
+      }),
+      vscode.commands.registerCommand('crashlands.tree.dropMode.nest.enable', () => {
+        provider.setDropMode('nest');
+      }),
+      vscode.commands.registerCommand('crashlands.tree.setFolder', (item: TreeMoteItem) => {
+        if (!(item instanceof TreeMoteItem)) return;
+        provider.setFolder(item);
+      }),
+      vscode.commands.registerCommand('crashlands.tree.copyFolderPath', (item: TreeItem) => {
+        if (!(item instanceof FolderItem)) return;
+        vscode.env.clipboard.writeText(item.relativePathString);
+      }),
+      vscode.commands.registerCommand('crashlands.tree.newChat', async (item: TreeItem) => {
+        // TODO: Add a new chat to the GameChanger data!
+        const parentMote = item instanceof TreeMoteItem ? item.mote : item.parentMote;
+        const folder = item instanceof FolderItem ? item.relativePathString : undefined;
+        await createChatMote(provider.packed, parentMote, folder);
+        provider.rebuild();
+      }),
       provider.view,
     ];
 
@@ -522,13 +458,9 @@ class FolderItem extends TreeItemBase<'folder'> {
   }
 }
 
-export type MoteItemData =
-  | MoteData
-  | { id: unknown; schema: unknown; order: number };
+export type MoteItemData = MoteData | { id: unknown; schema: unknown; order: number };
 
-class TreeMoteItem<
-  Data extends MoteItemData = MoteItemData,
-> extends TreeItemBase<'mote'> {
+class TreeMoteItem<Data extends MoteItemData = MoteItemData> extends TreeItemBase<'mote'> {
   override readonly kind = 'mote';
   document: vscode.TextDocument | undefined;
   static lookup = new Map<string, TreeMoteItem>();
@@ -540,8 +472,7 @@ class TreeMoteItem<
     options?: { hasChildren?: boolean },
   ) {
     super(packed.working.getMoteName(moteId)!);
-    this.contextValue =
-      this.kind + '-' + packed.working.getMote(moteId)!.schema_id;
+    this.contextValue = this.kind + '-' + packed.working.getMote(moteId)!.schema_id;
     TreeMoteItem.lookup.set(moteId, this);
     this.collapsibleState = options?.hasChildren
       ? vscode.TreeItemCollapsibleState.Collapsed
@@ -577,9 +508,7 @@ class TreeMoteItem<
   }
 
   get parentMote(): Mote | undefined {
-    return this.mote.parent
-      ? this.packed.working.getMote(this.mote.parent)
-      : undefined;
+    return this.mote.parent ? this.packed.working.getMote(this.mote.parent) : undefined;
   }
 
   /**

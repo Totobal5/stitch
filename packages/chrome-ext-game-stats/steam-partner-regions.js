@@ -164,36 +164,32 @@ function addButtons() {
     const tallyCategory = tallyRowName.match(/unit|activation/)
       ? 'units'
       : tallyRowName.match(/revenue|sales/)
-      ? 'revenue'
-      : tallyRowName.match(/wishlist/)
-      ? 'wishlists'
-      : null;
+        ? 'revenue'
+        : tallyRowName.match(/wishlist/)
+          ? 'wishlists'
+          : null;
 
     if (!tallyCategory) {
       console.error('Unknown tally type', tallyRowName);
       continue;
     }
 
-    const tallyType = ['revenue', 'units', 'wishlist balance'].includes(
-      tallyRowName,
-    )
+    const tallyType = ['revenue', 'units', 'wishlist balance'].includes(tallyRowName)
       ? 'total'
       : tallyRowName.match(/steam/)
-      ? 'steam'
-      : tallyRowName.match(/in-game/)
-      ? 'ingame'
-      : tallyRowName.match(/retail/)
-      ? 'retail'
-      : null;
+        ? 'steam'
+        : tallyRowName.match(/in-game/)
+          ? 'ingame'
+          : tallyRowName.match(/retail/)
+            ? 'retail'
+            : null;
 
     if (!tallyType) {
       console.error('Unknown tally type', tallyRowName);
       continue;
     }
 
-    let valueString = row
-      .querySelector('td:nth-child(5)')
-      ?.innerHTML.replace(/[$\\s,]/g, '');
+    let valueString = row.querySelector('td:nth-child(5)')?.innerHTML.replace(/[$\\s,]/g, '');
     if (!valueString) continue;
 
     if (valueString.startsWith('(')) {
@@ -201,10 +197,7 @@ function addButtons() {
     }
     const value = +valueString;
     if (isNaN(value)) {
-      console.error(
-        'Unknown value',
-        row.querySelector('td:nth-child(5)')?.innerHTML,
-      );
+      console.error('Unknown value', row.querySelector('td:nth-child(5)')?.innerHTML);
       continue;
     }
 
@@ -246,8 +239,7 @@ function addButtons() {
 
   // Insert buttons above the table to copy as CSV and as JSON
   const copyAsCsv = "navigator.clipboard.writeText('" + csv + "')";
-  const copyAsTsv =
-    "navigator.clipboard.writeText('" + csv.replace(/,/g, '\\t') + "')";
+  const copyAsTsv = "navigator.clipboard.writeText('" + csv.replace(/,/g, '\\t') + "')";
   const copyAsJson = "navigator.clipboard.writeText('" + asJson + "')";
 
   const copyEl = document.createElement('div');

@@ -35,8 +35,6 @@ export async function readdirSafe(dir: string | Pathy): Promise<string[]> {
   return await _readdirSafe(dir, false);
 }
 
-export async function readdirSafeWithFileTypes(
-  dir: string | Pathy,
-): Promise<Dirent[]> {
+export async function readdirSafeWithFileTypes(dir: string | Pathy): Promise<Dirent[]> {
   return await _readdirSafe(dir, true);
 }

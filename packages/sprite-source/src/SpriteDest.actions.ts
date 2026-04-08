@@ -1,11 +1,5 @@
 import { pathy, type Pathy } from '@bscotch/pathy';
-import {
-  Yy,
-  YySprite,
-  yySpriteSchema,
-  type Yyp,
-  type YypResourceId,
-} from '@bscotch/yy';
+import { Yy, YySprite, yySpriteSchema, type Yyp, type YypResourceId } from '@bscotch/yy';
 import path from 'path';
 import type { SpriteDestAction } from './SpriteDest.schemas.js';
 import { FIO_RETRY_DELAY, MAX_FIO_RETRIES } from './constants.js';

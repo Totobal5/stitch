@@ -1,11 +1,6 @@
 import { Code } from '@bscotch/gml-parser';
 import vscode from 'vscode';
-import {
-  getBaseIcon,
-  getFileIcon,
-  getGameMakerIcon,
-  getObjectEventIcon,
-} from './icons.mjs';
+import { getBaseIcon, getFileIcon, getGameMakerIcon, getObjectEventIcon } from './icons.mjs';
 
 // ICONS: See https://code.visualstudio.com/api/references/icons-in-labels#icon-listing
 
@@ -18,9 +13,7 @@ and on other extensions is to:
   e.g. the current query string as the item with a search icon button for opening the input dialog and a clear button for resetting the query.
 */
 
-export abstract class StitchTreeItemBase<
-  Kind extends string = string,
-> extends vscode.TreeItem {
+export abstract class StitchTreeItemBase<Kind extends string = string> extends vscode.TreeItem {
   /** The kind of Node this item is. Also used as the default `contextValue` value */
   readonly kind!: Kind;
   abstract readonly parent: StitchTreeItemBase | undefined;

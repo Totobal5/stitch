@@ -6,10 +6,7 @@ export class StitchImportError extends Error {
   }
 }
 
-export function assertStitchImportClaim(
-  claim: any,
-  message: string,
-): asserts claim {
+export function assertStitchImportClaim(claim: any, message: string): asserts claim {
   if (!claim) {
     throw new StitchImportError(message, assertStitchImportClaim);
   }

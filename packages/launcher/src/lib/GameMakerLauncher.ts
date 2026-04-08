@@ -5,12 +5,7 @@ import { GameMakerIde } from './GameMakerIde.js';
 import { GameMakerSearch } from './GameMakerLauncher.types.js';
 import { GameMakerRuntime } from './GameMakerRuntime.js';
 import { GameMakerRunOptions } from './GameMakerRuntime.types.js';
-import {
-  bootstrapRuntimeVersion,
-  type Logger,
-  setActiveRuntime,
-  trace,
-} from './utility.js';
+import { bootstrapRuntimeVersion, type Logger, setActiveRuntime, trace } from './utility.js';
 
 export * from './GameMakerLauncher.types.js';
 
@@ -42,9 +37,7 @@ export class GameMakerLauncher {
       disableUpdatePrompt?: boolean;
     },
   ) {
-    console.log(
-      `Making sure that IDE v${openProjectOptions.ideVersion} is installed...`,
-    );
+    console.log(`Making sure that IDE v${openProjectOptions.ideVersion} is installed...`);
     const ide = await GameMakerIde.install(openProjectOptions.ideVersion, {
       programFiles: openProjectOptions.programFiles,
     });
@@ -82,9 +75,7 @@ export class GameMakerLauncher {
    * channels). Each Runtime comes with its own
    * GameMaker CLI artifact ("Igor").
    */
-  static async listInstalledRuntimes(options?: {
-    logger?: Logger;
-  }): Promise<GameMakerRuntime[]> {
+  static async listInstalledRuntimes(options?: { logger?: Logger }): Promise<GameMakerRuntime[]> {
     return await GameMakerRuntime.listInstalled(options);
   }
 
@@ -97,9 +88,7 @@ export class GameMakerLauncher {
     });
     const { version, channel } = searchParams || {};
     return installedRuntimes.find(
-      (v) =>
-        (!version || v.version === version) &&
-        (!channel || v.channel === channel),
+      (v) => (!version || v.version === version) && (!channel || v.channel === channel),
     );
   }
 
@@ -134,22 +123,16 @@ export class GameMakerLauncher {
     const otherRuntime = await GameMakerLauncher.findInstalledRuntime({
       version: usingVersion,
     });
-    ok(
-      otherRuntime,
-      `Could not find an existing runtime to use to install the new runtime.`,
-    );
+    ok(otherRuntime, `Could not find an existing runtime to use to install the new runtime.`);
 
     // Use this runtime to install the new runtime
-    const { stdout, compilerLogsPath } = await otherRuntime.installRuntime(
-      release.runtime,
-    );
+    const { stdout, compilerLogsPath } = await otherRuntime.installRuntime(release.runtime);
     ok(
       !stdout.includes('License is invalid - Out of Date'),
       'GameMaker CLI failed due to expired credentials. This can be caused by using a runtime that requires Enterprise credentials, or by using a runtime with a bug. Runtime v2022.300.0.476 is known to work -- you can install it via the IDE and use it for future programmatic installs.',
     );
     ok(
-      stdout.includes('Verification Complete') &&
-        stdout.includes('Igor complete'),
+      stdout.includes('Verification Complete') && stdout.includes('Igor complete'),
       `Runtime installation failed. Check the logs at ${compilerLogsPath}`,
     );
 

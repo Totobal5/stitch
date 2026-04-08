@@ -33,9 +33,7 @@ export function typeToHoverDetails(type: Type) {
         if (a_prefix_count !== b_prefix_count) {
           return a_prefix_count - b_prefix_count;
         }
-        return a.name
-          ?.toLocaleLowerCase?.()
-          .localeCompare(b.name?.toLocaleLowerCase?.());
+        return a.name?.toLocaleLowerCase?.().localeCompare(b.name?.toLocaleLowerCase?.());
       });
     if (members.length) {
       let code = '```ts\n{\n';
@@ -92,8 +90,8 @@ export function typeToHoverText(type: Type) {
       type.isConstructor
         ? type.self!.toFeatherString()
         : type.returns?.type.length
-        ? type.returns.toFeatherString()
-        : 'Undefined'
+          ? type.returns.toFeatherString()
+          : 'Undefined'
     }`;
   } else {
     code += type.toFeatherString();

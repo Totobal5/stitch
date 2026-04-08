@@ -27,9 +27,7 @@ export type Rhs =
   | AssignmentCstChildren
   | undefined;
 
-export function rhsFrom(
-  item: Rhs,
-): AssignmentRightHandSideCstChildren | undefined {
+export function rhsFrom(item: Rhs): AssignmentRightHandSideCstChildren | undefined {
   if (item === undefined) {
     return;
   }
@@ -53,16 +51,27 @@ export function rhsFrom(
 }
 
 export function functionFromRhs(rhs: Rhs) {
-  return rhsFrom(rhs)?.functionExpression?.[0].children;
+  const normalized = rhsFrom(rhs);
+  return (
+    normalized?.functionExpression?.[0].children ||
+    normalized?.expression?.[0].children.primaryExpression?.[0].children.functionExpression?.[0]
+      ?.children ||
+    normalized?.expression?.[0].children.primaryExpression?.[0].children.newFunctionExpression?.[0]
+      .children.functionExpression?.[0].children
+  );
 }
 
 export function structLiteralFromRhs(rhs: Rhs) {
-  return rhsFrom(rhs)?.structLiteral?.[0].children;
+  const normalized = rhsFrom(rhs);
+  return (
+    normalized?.structLiteral?.[0].children ||
+    normalized?.expression?.[0].children.primaryExpression?.[0].children.structLiteral?.[0].children
+  );
 }
 
 export function arrayLiteralFromRhs(rhs: Rhs) {
-  return rhsFrom(rhs)?.expression?.[0].children.primaryExpression?.[0].children
-    .arrayLiteral?.[0]?.children;
+  return rhsFrom(rhs)?.expression?.[0].children.primaryExpression?.[0].children.arrayLiteral?.[0]
+    ?.children;
 }
 
 export type IdentifierSource =
@@ -73,20 +82,21 @@ export type IdentifierSource =
   | { children: { identifier: IdentifierCstNode[] } };
 
 type AccessorSuffixName = keyof AccessorSuffixesCstChildren;
-export type SortedAccessorSuffix<
-  T extends AccessorSuffixName = AccessorSuffixName,
-> = Required<AccessorSuffixesCstChildren>[T][0];
+export type SortedAccessorSuffix<T extends AccessorSuffixName = AccessorSuffixName> =
+  Required<AccessorSuffixesCstChildren>[T][0];
 
 export function isEmpty(obj: unknown) {
   if (!obj) return true;
-  if (typeof obj !== 'object')
-    throw new Error('Can only check objects for emptiness.');
+  if (typeof obj !== 'object') throw new Error('Can only check objects for emptiness.');
   return Object.keys(obj).length === 0;
 }
 
 export function sortedFunctionCallParts(
   node: FunctionArgumentsCstNode,
 ): (IToken | FunctionArgumentCstNode)[] {
+  if (!node.children.StartParen?.[0] || !node.children.EndParen?.[0]) {
+    return [];
+  }
   return [
     node.children.StartParen[0],
     ...(node.children.functionArgument || []),
@@ -117,18 +127,14 @@ export function stringLiteralAsString(
       : 'MultilineSingleStringEnd' in children
         ? children.MultilineSingleStringEnd[0].image
         : children.MultilineDoubleStringEnd[0].image;
-  return `${start}${(children.Substring || [])
-    .map((s) => s.image)
-    .join('')}${end}`;
+  return `${start}${(children.Substring || []).map((s) => s.image).join('')}${end}`;
 }
 
 function getStartOffset(node: CstNode | IToken): number {
   return 'startOffset' in node ? node.startOffset : node.location!.startOffset;
 }
 
-export function sortChildren(
-  records: Record<string, (IToken | CstNode)[]>,
-): (IToken | CstNode)[] {
+export function sortChildren(records: Record<string, (IToken | CstNode)[]>): (IToken | CstNode)[] {
   const sorted: (IToken | CstNode)[] = [];
   for (const key of keysOf(records)) {
     sorted.push(...records[key]);

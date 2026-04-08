@@ -28,11 +28,7 @@ import {
 } from './lib.mjs';
 import { logger, showErrorMessage, warn } from './log.mjs';
 import { handleDrag, handleDrop } from './tree.dragDrop.mjs';
-import {
-  GameMakerFolder,
-  GameMakerProjectFolder,
-  GameMakerRootFolder,
-} from './tree.folder.mjs';
+import { GameMakerFolder, GameMakerProjectFolder, GameMakerRootFolder } from './tree.folder.mjs';
 import {
   TreeAsset,
   TreeCode,
@@ -52,9 +48,7 @@ import {
 } from './tree.utility.mjs';
 
 export class GameMakerTreeProvider
-  implements
-    vscode.TreeDataProvider<Treeable>,
-    vscode.TreeDragAndDropController<Treeable>
+  implements vscode.TreeDataProvider<Treeable>, vscode.TreeDragAndDropController<Treeable>
 {
   tree = new GameMakerRootFolder();
   view!: vscode.TreeView<Treeable>;
@@ -62,14 +56,12 @@ export class GameMakerTreeProvider
   readonly dragMimeTypes = [this.treeMimeType];
   readonly dropMimeTypes = [this.treeMimeType, 'text/uri-list'];
 
-  private _onDidChangeTreeData: vscode.EventEmitter<
-    Treeable | undefined | null | void
-  > = new vscode.EventEmitter<Treeable | undefined | null | void>();
+  private _onDidChangeTreeData: vscode.EventEmitter<Treeable | undefined | null | void> =
+    new vscode.EventEmitter<Treeable | undefined | null | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  private _onDidCollapseElement: vscode.EventEmitter<
-    Treeable | undefined | null | void
-  > = new vscode.EventEmitter<Treeable | undefined | null | void>();
+  private _onDidCollapseElement: vscode.EventEmitter<Treeable | undefined | null | void> =
+    new vscode.EventEmitter<Treeable | undefined | null | void>();
   readonly onDidCollapseElement = this._onDidCollapseElement.event;
 
   constructor(readonly workspace: StitchWorkspace) {
@@ -90,10 +82,7 @@ export class GameMakerTreeProvider
     return this.workspace.projects;
   }
 
-  async handleDrop(
-    target: Treeable | undefined,
-    dataTransfer: vscode.DataTransfer,
-  ) {
+  async handleDrop(target: Treeable | undefined, dataTransfer: vscode.DataTransfer) {
     return await handleDrop(this, target, dataTransfer);
   }
 
@@ -137,9 +126,7 @@ export class GameMakerTreeProvider
     if (acceptsRisk !== 'Yes') return;
 
     // Get the target from the current projects
-    const targetProject = await this.workspace.chooseProject(
-      'Choose the target project',
-    );
+    const targetProject = await this.workspace.chooseProject('Choose the target project');
     if (!targetProject) return;
     // const targetFolder = await vscode.window.showQuickPick(
     //   targetProject.folders,
@@ -232,10 +219,7 @@ export class GameMakerTreeProvider
    * Prompt the user for a new asset name and do all of
    * the non-type-specific prep work for creating the asset.
    */
-  protected async prepareForNewAsset(
-    where: GameMakerFolder,
-    initialName?: string,
-  ) {
+  protected async prepareForNewAsset(where: GameMakerFolder, initialName?: string) {
     const newAssetName = await promptForAssetPath(initialName);
     if (!newAssetName) {
       return;
@@ -294,9 +278,7 @@ export class GameMakerTreeProvider
     this.changed(roomItem);
   }
 
-  async setSprite(
-    objectItem: ObjectParentFolder | ObjectSpriteFolder | TreeAsset,
-  ) {
+  async setSprite(objectItem: ObjectParentFolder | ObjectSpriteFolder | TreeAsset) {
     const asset = objectItem.asset;
     if (!isAssetOfKind(asset, 'objects')) {
       return;
@@ -308,9 +290,7 @@ export class GameMakerTreeProvider
         sprite: p as Asset<'sprites'> | undefined,
         description: undefined as string | undefined,
       }))
-      .sort((a, b) =>
-        a.label.toLocaleLowerCase().localeCompare(b.label.toLocaleLowerCase()),
-      );
+      .sort((a, b) => a.label.toLocaleLowerCase().localeCompare(b.label.toLocaleLowerCase()));
     if (asset.sprite) {
       spriteOptions.unshift({
         label: 'Sprites',
@@ -331,10 +311,7 @@ export class GameMakerTreeProvider
     }
     logger.info('Setting sprite', spriteChoice);
     asset.sprite = spriteChoice.sprite;
-    if (
-      'onSetSprite' in objectItem &&
-      typeof objectItem.onSetSprite === 'function'
-    ) {
+    if ('onSetSprite' in objectItem && typeof objectItem.onSetSprite === 'function') {
       objectItem.onSetSprite(spriteChoice.sprite);
     } else if ('provider' in objectItem) {
       objectItem.provider.onUpdate?.(objectItem);
@@ -414,10 +391,7 @@ export class GameMakerTreeProvider
     }
     logger.info('Setting parent', parentChoice);
     asset.parent = parentChoice.asset || undefined;
-    if (
-      'onSetParent' in objectItem &&
-      typeof objectItem.onSetParent === 'function'
-    ) {
+    if ('onSetParent' in objectItem && typeof objectItem.onSetParent === 'function') {
       objectItem.onSetParent(parentChoice.asset);
     }
   }
@@ -438,10 +412,8 @@ export class GameMakerTreeProvider
       isAssetOfKind(asset, 'objects'),
       `Cannot create event for ${asset.assetKind} asset.`,
     );
-    const events: (
-      | ObjectEvent
-      | { kind: vscode.QuickPickItemKind.Separator; label: string }
-    )[] = [];
+    const events: (ObjectEvent | { kind: vscode.QuickPickItemKind.Separator; label: string })[] =
+      [];
     for (let i = 0; i < objectEvents.length; i++) {
       const event = objectEvents[i];
       if (i > 0 && objectEvents[i - 1].group !== event.group) {
@@ -463,10 +435,7 @@ export class GameMakerTreeProvider
     if (!code) {
       return;
     }
-    if (
-      'onCreateEvent' in objectItem &&
-      typeof objectItem.onCreateEvent === 'function'
-    ) {
+    if ('onCreateEvent' in objectItem && typeof objectItem.onCreateEvent === 'function') {
       objectItem.onCreateEvent(eventInfo);
     }
     this.changed(objectItem);
@@ -539,16 +508,10 @@ export class GameMakerTreeProvider
 
     // Create a SpriteDir from that folder
     const errors: Error[] = [];
-    const spriteDir = await SpriteDir.from(
-      pathy(sourceFolder[0].fsPath),
-      [],
-      errors,
-    );
+    const spriteDir = await SpriteDir.from(pathy(sourceFolder[0].fsPath), [], errors);
     assertLoudly(
       spriteDir,
-      `Failed to create sprite from folder. ${errors
-        .map((e) => e.message)
-        .join(', ')}`,
+      `Failed to create sprite from folder. ${errors.map((e) => e.message).join(', ')}`,
     );
 
     // Prompt for bleed/crop options (note will mutate source)
@@ -556,8 +519,7 @@ export class GameMakerTreeProvider
       [
         {
           label: 'Bleed',
-          description:
-            'Add a layer of low-alpha pixels around the foreground to improve aliasing.',
+          description: 'Add a layer of low-alpha pixels around the foreground to improve aliasing.',
         },
         {
           label: 'Crop',
@@ -637,9 +599,7 @@ export class GameMakerTreeProvider
 
     // NOTE: At this point we've bypassed the parser, so we'll need to
     // register the asset manually.
-    const assetInfo = await project.addAssetToYyp(
-      dest.join(`${name}.yy`).absolute,
-    );
+    const assetInfo = await project.addAssetToYyp(dest.join(`${name}.yy`).absolute);
     const asset = await Asset.from(project, assetInfo);
     assertLoudly(asset, 'Failed to create sprite asset.');
     project.registerAsset(asset);
@@ -687,19 +647,13 @@ export class GameMakerTreeProvider
       }
     }
     if (errors.length) {
-      showErrorMessage(
-        `Failed to update sounds:\n${errors.map((e) => e.message).join(', ')}`,
-      );
+      showErrorMessage(`Failed to update sounds:\n${errors.map((e) => e.message).join(', ')}`);
     }
     if (updated.length) {
-      vscode.window.showInformationMessage(
-        `Updated sounds:\n${updated.join(', ')}`,
-      );
+      vscode.window.showInformationMessage(`Updated sounds:\n${updated.join(', ')}`);
     }
     if (created.length) {
-      vscode.window.showInformationMessage(
-        `Created sounds:\n${created.join(', ')}`,
-      );
+      vscode.window.showInformationMessage(`Created sounds:\n${created.join(', ')}`);
     }
     this.changed(where);
   }
@@ -771,9 +725,7 @@ export class GameMakerTreeProvider
     try {
       await where.project!.deleteFolder(where.path);
     } catch {
-      showErrorMessage(
-        `Folders can only be deleted if they contain no assets.`,
-      );
+      showErrorMessage(`Folders can only be deleted if they contain no assets.`);
       return;
     }
     this.rebuild();
@@ -788,10 +740,7 @@ export class GameMakerTreeProvider
   async duplicateAsset(item: TreeAsset) {
     const dest = await this.prepareForNewAsset(item.parent);
     if (!dest) return;
-    const asset = await item.parent.project!.duplicateAsset(
-      item.asset.name,
-      dest.path,
-    );
+    const asset = await item.parent.project!.duplicateAsset(item.asset.name, dest.path);
     this.afterNewAssetCreated(asset, dest.folder, item.parent);
   }
 
@@ -828,9 +777,7 @@ export class GameMakerTreeProvider
 
   getChildren(element?: Treeable | undefined): Treeable[] | undefined {
     const assetSorter = (a: TreeAsset, b: TreeAsset) => {
-      return a.asset.name
-        .toLowerCase()
-        .localeCompare(b.asset.name.toLowerCase());
+      return a.asset.name.toLowerCase().localeCompare(b.asset.name.toLowerCase());
     };
     const folderSorter = (a: GameMakerFolder, b: GameMakerFolder) => {
       return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
@@ -851,19 +798,14 @@ export class GameMakerTreeProvider
         ...element.resources.sort(assetSorter),
       ];
     } else if (element instanceof GameMakerFolder) {
-      return [
-        ...element.folders.sort(folderSorter),
-        ...element.resources.sort(assetSorter),
-      ];
+      return [...element.folders.sort(folderSorter), ...element.resources.sort(assetSorter)];
     } else if (element instanceof TreeFilterGroup) {
       return element.filters.sort((a, b) => a.query.localeCompare(b.query));
     } else if (element instanceof TreeAsset) {
       if (isAssetOfKind(element.asset, 'objects')) {
         return element.asset.gmlFilesArray.map((f) => new TreeCode(element, f));
       } else if (isAssetOfKind(element.asset, 'sprites')) {
-        return element.asset.framePaths.map(
-          (p, i) => new TreeSpriteFrame(element, p, i),
-        );
+        return element.asset.framePaths.map((p, i) => new TreeSpriteFrame(element, p, i));
       } else if (isAssetOfKind(element.asset, 'shaders')) {
         const paths = element.asset.shaderPaths!;
         return [
@@ -873,12 +815,7 @@ export class GameMakerTreeProvider
       } else if (isAssetOfKind(element.asset, 'rooms')) {
         const instances = element.asset.roomInstances;
         return instances.map(
-          (i) =>
-            new TreeRoomInstance(
-              element as TreeAsset<'rooms'>,
-              i.object,
-              i.instanceId,
-            ),
+          (i) => new TreeRoomInstance(element as TreeAsset<'rooms'>, i.object, i.instanceId),
         );
       }
     }
@@ -913,10 +850,7 @@ export class GameMakerTreeProvider
         projectFolder.filterGroup = filterGroups.get(project)!;
       } else {
         for (const filterGroupName of ['Folders', 'Assets']) {
-          const filterGroup = new TreeFilterGroup(
-            projectFolder,
-            filterGroupName,
-          );
+          const filterGroup = new TreeFilterGroup(projectFolder, filterGroupName);
           projectFolder.filterGroup = filterGroup;
         }
       }
@@ -1043,84 +977,38 @@ export class GameMakerTreeProvider
     const subscriptions = [
       this.view,
       registerCommand('stitch.assets.import', this.importAssets.bind(this)),
-      registerCommand(
-        'stitch.assets.renameFolder',
-        this.promptToRenameFolder.bind(this),
+      registerCommand('stitch.assets.renameFolder', this.promptToRenameFolder.bind(this)),
+      registerCommand('stitch.assets.deleteFolder', this.deleteFolder.bind(this)),
+      registerCommand('stitch.assets.deleteSpriteFrame', this.deleteSpriteFrame.bind(this)),
+      registerCommand('stitch.diagnostics.suppress', this.suppressDiagnostics.bind(this)),
+      registerCommand('stitch.assets.rename', this.promptToRenameAsset.bind(this)),
+      registerCommand('stitch.assets.editSprite', (item: TreeAsset | Asset | undefined) =>
+        this.editSprite(item),
       ),
-      registerCommand(
-        'stitch.assets.deleteFolder',
-        this.deleteFolder.bind(this),
-      ),
-      registerCommand(
-        'stitch.assets.deleteSpriteFrame',
-        this.deleteSpriteFrame.bind(this),
-      ),
-      registerCommand(
-        'stitch.diagnostics.suppress',
-        this.suppressDiagnostics.bind(this),
-      ),
-      registerCommand(
-        'stitch.assets.rename',
-        this.promptToRenameAsset.bind(this),
-      ),
-      registerCommand(
-        'stitch.assets.editSprite',
-        (item: TreeAsset | Asset | undefined) => this.editSprite(item),
-      ),
-      registerCommand(
-        'stitch.assets.editSound',
-        (item: TreeAsset | Asset | undefined) => {
-          console.log('triggered edit sound');
-          this.editSound(item);
-        },
-      ),
-      registerCommand(
-        'stitch.assets.duplicate',
-        this.duplicateAsset.bind(this),
-      ),
+      registerCommand('stitch.assets.editSound', (item: TreeAsset | Asset | undefined) => {
+        console.log('triggered edit sound');
+        this.editSound(item);
+      }),
+      registerCommand('stitch.assets.duplicate', this.duplicateAsset.bind(this)),
       registerCommand('stitch.assets.newSound', this.upsertSounds.bind(this)),
       registerCommand('stitch.assets.newFolder', this.createFolder.bind(this)),
       registerCommand('stitch.assets.newScript', this.createScript.bind(this)),
       registerCommand('stitch.assets.newObject', this.createObject.bind(this)),
       registerCommand('stitch.assets.newSprite', this.createSprite.bind(this)),
-      registerCommand(
-        'stitch.assets.newSpriteFromImage',
-        this.createSpriteFromImage.bind(this),
-      ),
-      registerCommand(
-        'stitch.assets.replaceSpriteFrames',
-        this.replaceSpriteFrames.bind(this),
-      ),
+      registerCommand('stitch.assets.newSpriteFromImage', this.createSpriteFromImage.bind(this)),
+      registerCommand('stitch.assets.replaceSpriteFrames', this.replaceSpriteFrames.bind(this)),
       registerCommand('stitch.assets.newShader', this.createShader.bind(this)),
       registerCommand('stitch.assets.newRoom', this.createRoom.bind(this)),
       registerCommand('stitch.assets.newEvent', this.createEvent.bind(this)),
       registerCommand('stitch.assets.setParent', this.setParent.bind(this)),
       registerCommand('stitch.assets.setSprite', this.setSprite.bind(this)),
-      registerCommand(
-        'stitch.assets.addRoomInstance',
-        this.addRoomInstance.bind(this),
-      ),
-      registerCommand(
-        'stitch.assets.deleteRoomInstance',
-        this.deleteRoomInstance.bind(this),
-      ),
+      registerCommand('stitch.assets.addRoomInstance', this.addRoomInstance.bind(this)),
+      registerCommand('stitch.assets.deleteRoomInstance', this.deleteRoomInstance.bind(this)),
       registerCommand('stitch.assets.reveal', this.reveal.bind(this)),
-      registerCommand(
-        'stitch.assets.filters.delete',
-        this.deleteFilter.bind(this),
-      ),
-      registerCommand(
-        'stitch.assets.filters.enable',
-        this.enableFilter.bind(this),
-      ),
-      registerCommand(
-        'stitch.assets.filters.disable',
-        this.disableFilter.bind(this),
-      ),
-      registerCommand(
-        'stitch.assets.filters.new',
-        this.createFilter.bind(this),
-      ),
+      registerCommand('stitch.assets.filters.delete', this.deleteFilter.bind(this)),
+      registerCommand('stitch.assets.filters.enable', this.enableFilter.bind(this)),
+      registerCommand('stitch.assets.filters.disable', this.disableFilter.bind(this)),
+      registerCommand('stitch.assets.filters.new', this.createFilter.bind(this)),
       registerCommand('stitch.assets.filters.edit', this.editFilter.bind(this)),
     ];
     return subscriptions;

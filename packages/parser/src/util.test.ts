@@ -9,10 +9,7 @@ export function assertThrows(fn: () => void, message?: string) {
   throw new Error(message || 'Expected function to throw');
 }
 
-export async function assertThrowsAsync(
-  fn: () => Promise<void>,
-  message?: string,
-) {
+export async function assertThrowsAsync(fn: () => Promise<void>, message?: string) {
   try {
     await fn();
   } catch (e) {

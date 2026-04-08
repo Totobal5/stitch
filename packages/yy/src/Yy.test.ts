@@ -107,10 +107,7 @@ describe('Yy Files', function () {
       'A FixedNumber should equal a regular number',
     ).to.be.true;
     expect(
-      Yy.areEqual(
-        { a: new FixedNumber(10.111, 2) },
-        { a: new FixedNumber(10.111, 3) },
-      ),
+      Yy.areEqual({ a: new FixedNumber(10.111, 2) }, { a: new FixedNumber(10.111, 3) }),
       'A FixedNumber should equal another FixedNumber with a different precision',
     ).to.be.true;
   });
@@ -118,17 +115,12 @@ describe('Yy Files', function () {
   it('can create GameMaker-style JSON', function () {
     expect(Yy.stringify(sampleData, sampleSchema)).to.equal(sampleDataAsString);
     expect(
-      Yy.stringify(
-        { num: 15.1234134 },
-        z.object({ num: fixedNumber(undefined, 2) }),
-      ),
+      Yy.stringify({ num: 15.1234134 }, z.object({ num: fixedNumber(undefined, 2) })),
     ).to.equal('{\r\n  "num": 15.12,\r\n}');
   });
 
   it('can parse Yy data', function () {
-    expect(Yy.parse(sampleDataAsString, sampleSchema)).to.deep.equal(
-      sampleData,
-    );
+    expect(Yy.parse(sampleDataAsString, sampleSchema)).to.deep.equal(sampleData);
   });
 
   it('can read GameMaker-style JSON', async function () {
@@ -142,9 +134,7 @@ describe('Yy Files', function () {
       two: fixedNumber(undefined, 2),
     });
     const toExpectedString = (n: number) => {
-      return `{\r\n  "one": ${Number(n).toFixed(1)},\r\n  "two": ${Number(
-        n,
-      ).toFixed(2)},\r\n}`;
+      return `{\r\n  "one": ${Number(n).toFixed(1)},\r\n  "two": ${Number(n).toFixed(2)},\r\n}`;
     };
     const cases = [0, 1, 1.2, 233.3333];
     for (const number of cases) {
@@ -293,15 +283,83 @@ describe('Yy Files', function () {
   });
 
   xit('can convert an old-format sprite yy file to the new format', async function () {
-    const project = await Yy.read(
-      './samples/project/Crashlands2.yyp',
-      'project',
-    );
-    const rawSprite = JSON.parse(
-      await fs.readFile('./samples/to-convert.yy', 'utf8'),
-    );
+    const project = await Yy.read('./samples/project/Crashlands2.yyp', 'project');
+    const rawSprite = JSON.parse(await fs.readFile('./samples/to-convert.yy', 'utf8'));
     const stringified = Yy.stringify(rawSprite, 'sprites', project);
     console.log(stringified);
+  });
+
+  it('ConfigValues.CopyToMask should stringify as number, not string', function () {
+    const projectJson = `{
+      "name": "test",
+      "resourceType": "GMProject",
+      "resourceVersion": "1.7",
+      "configs": { "name": "Default", "children": [] },
+      "MetaData": { "IDEVersion": "2024.14.4.221" },
+      "IncludedFiles": [
+        {
+          "$GMIncludedFile": "",
+          "%Name": "test.txt",
+          "ConfigValues": {
+            "dev": {
+              "CopyToMask": "-1"
+            }
+          },
+          "CopyToMask": -1,
+          "filePath": "datafiles",
+          "name": "test.txt",
+          "resourceType": "GMIncludedFile",
+          "resourceVersion": "2.0"
+        }
+      ]
+    }`;
+    const project = Yy.parse(projectJson, 'project');
+    const stringified = Yy.stringify(project, 'project');
+    // Verify that CopyToMask inside ConfigValues is -1 (number) not "-1" (string)
+    expect(stringified).to.include('"CopyToMask":-1');
+    expect(stringified).to.not.include('"CopyToMask":"-1"');
+  });
+
+  it('corrupted yyp files with ConfigValues.CopyToMask as string should be auto-corrected', function () {
+    // This simulates a corrupted file where ConfigValues.CopyToMask is a string
+    // When parsed and re-stringified, it should be corrected to a number
+    const corruptedProjectJson = `{
+      "name": "corrupted_test",
+      "resourceType": "GMProject",
+      "resourceVersion": "1.7",
+      "configs": { "name": "Default", "children": [] },
+      "MetaData": {
+        "IDEVersion": "2024.14.4.221"
+      },
+      "IncludedFiles": [
+        {
+          "$GMIncludedFile": "",
+          "%Name": "corrupted_file.txt",
+          "ConfigValues": {
+            "dev": {
+              "CopyToMask": "-1"
+            }
+          },
+          "CopyToMask": -1,
+          "filePath": "datafiles",
+          "name": "corrupted_file.txt",
+          "resourceType": "GMIncludedFile",
+          "resourceVersion": "2.0"
+        }
+      ]
+    }`;
+
+    // Parse the corrupted file
+    const project = Yy.parse(corruptedProjectJson, 'project');
+
+    // Verify the internal representation is correct (BigInt)
+    const includedFile = project.IncludedFiles?.[0];
+    expect(includedFile?.ConfigValues?.['dev']?.['CopyToMask']).to.equal(-1n);
+
+    // Stringify and verify it's corrected
+    const stringified = Yy.stringify(project, 'project');
+    expect(stringified).to.include('"CopyToMask":-1');
+    expect(stringified).to.not.include('"CopyToMask":"-1"');
   });
 
   for (const resourceType of ['project', ...yyResourceTypes] as const) {

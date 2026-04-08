@@ -7,9 +7,7 @@ export const nameField = '%Name';
 export function randomString(length = 32) {
   let a = '';
   for (let i = 0; i < length; i++) {
-    a += '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz'[
-      (Math.random() * 60) | 0
-    ];
+    a += '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz'[(Math.random() * 60) | 0];
   }
   return a;
 }
@@ -53,8 +51,7 @@ export const fixed1 = new FixedNumber(1);
 
 export function fixedNumber(schema = z.number(), digits = 1) {
   const coercedToNumber = z.preprocess(
-    (arg) =>
-      arg instanceof FixedNumber || typeof arg === 'number' ? +arg : arg,
+    (arg) => (arg instanceof FixedNumber || typeof arg === 'number' ? +arg : arg),
     schema,
   );
   return coercedToNumber.transform((value) => new FixedNumber(value, digits));
@@ -65,8 +62,23 @@ export function fixedNumber(schema = z.number(), digits = 1) {
  */
 export function bigNumber() {
   return z
-    .union([z.number(), z.bigint()])
-    .transform((value) => (typeof value === 'bigint' ? value : BigInt(value)));
+    .union([
+      z.number(),
+      z.bigint(),
+      z
+        .string()
+        .trim()
+        .regex(/^-?\d+$/),
+    ])
+    .transform((value) => {
+      if (typeof value === 'bigint') {
+        return value;
+      }
+      if (typeof value === 'string') {
+        return BigInt(value);
+      }
+      return BigInt(value);
+    });
 }
 
 /**
@@ -78,9 +90,7 @@ export function ensureObjects<T extends z.ZodObject>(obj: T, minItems = 1) {
   return z.preprocess((arg) => {
     arg = typeof arg === 'undefined' ? [] : arg;
     if (Array.isArray(arg) && arg.length < minItems) {
-      const newItems = [...Array(Math.max(minItems - arg.length, 0))].map(
-        () => ({}),
-      );
+      const newItems = [...Array(Math.max(minItems - arg.length, 0))].map(() => ({}));
       arg.push(...newItems);
     }
     return arg;
@@ -107,10 +117,7 @@ export function unstable<T extends z.ZodRawShape>(shape: T): z.ZodObject<T> {
   // );
 }
 
-export function getYyResourceId(
-  yyType: YyResourceType,
-  name: string,
-): YypResourceId {
+export function getYyResourceId(yyType: YyResourceType, name: string): YypResourceId {
   return {
     name,
     path: `${yyType}/${name}/${name}.yy`,
@@ -124,8 +131,7 @@ export function yyResourceIdSchemaGenerator(yyType: YyResourceType) {
       if (arg === null || !['undefined', 'object'].includes(typeof arg)) {
         return arg;
       }
-      const objectId: { name?: string; path?: string } =
-        arg === undefined ? {} : arg;
+      const objectId: { name?: string; path?: string } = arg === undefined ? {} : arg;
       if (objectId.name && !objectId.path) {
         objectId.path = pathFromName(objectId.name);
       }
@@ -177,9 +183,7 @@ export function parsePath(path: string): {
   ext: `.${string}`;
 } {
   path = toPosixPath(path);
-  const parts = path.match(
-    /^(?<parent>.*\/)?(?<filename>[^/]+?(?<ext>\.[^.]*)?)$/,
-  );
+  const parts = path.match(/^(?<parent>.*\/)?(?<filename>[^/]+?(?<ext>\.[^.]*)?)$/);
   assert(parts, `Could not identify path parts of "${path}"`);
   return { ...parts.groups, fullpath: path } as any;
 }

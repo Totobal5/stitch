@@ -8,10 +8,7 @@ import {
   type SpriteSummary,
   type SpritesInfo,
 } from './SpriteCache.schemas.js';
-import {
-  applySpriteAction,
-  type SpriteDestActionResult,
-} from './SpriteDest.actions.js';
+import { applySpriteAction, type SpriteDestActionResult } from './SpriteDest.actions.js';
 import {
   SpriteDestAction,
   spriteDestConfigSchema,
@@ -19,11 +16,7 @@ import {
   type SpriteDestSource,
 } from './SpriteDest.schemas.js';
 import { SpriteSource } from './SpriteSource.js';
-import {
-  retryOptions,
-  spriteCacheFilename,
-  spriteDestConfigFilename,
-} from './constants.js';
+import { retryOptions, spriteCacheFilename, spriteDestConfigFilename } from './constants.js';
 import { Reporter } from './types.js';
 import { SpriteSourceError, assert, rethrow } from './utility.js';
 
@@ -40,9 +33,7 @@ export class SpriteDest extends SpriteCache {
   }
 
   get configFile() {
-    return this.stitchDir
-      .join(spriteDestConfigFilename)
-      .withValidator(spriteDestConfigSchema);
+    return this.stitchDir.join(spriteDestConfigFilename).withValidator(spriteDestConfigSchema);
   }
 
   @sequential
@@ -56,9 +47,7 @@ export class SpriteDest extends SpriteCache {
     };
     const destSpritesInfo = destSpritesCache.info;
     // Get the most up-to-date source and dest info
-    const ignorePatterns = (sourceConfig.ignore || []).map(
-      (x) => new RegExp(x),
-    );
+    const ignorePatterns = (sourceConfig.ignore || []).map((x) => new RegExp(x));
     const cleanSpriteName = (sourcePath: string) =>
       `${sourceConfig.prefix || ''}${sourcePath
         .split('/')
@@ -67,9 +56,9 @@ export class SpriteDest extends SpriteCache {
 
     // The source pathy is either absolute or relative to the project root
     const sourceRoot = pathy(sourceConfig.source, this.yypPath.up());
-    const collaboratorSourceRoots = (
-      sourceConfig.collaboratorSources || []
-    ).map((s) => pathy(s, this.yypPath.up()));
+    const collaboratorSourceRoots = (sourceConfig.collaboratorSources || []).map((s) =>
+      pathy(s, this.yypPath.up()),
+    );
     const collaboratorSourcesWait = Promise.allSettled(
       collaboratorSourceRoots.map((s) =>
         SpriteSource.from(s).then((s) => s.update().then((x) => x.info)),
@@ -97,17 +86,12 @@ export class SpriteDest extends SpriteCache {
       potentiallyNewer: SpriteInfo,
       replaceIfNewer: boolean,
     ): boolean => {
-      const currentNewest = collaboratorSprites.get(
-        potentiallyNewer.name.toLowerCase(),
-      );
+      const currentNewest = collaboratorSprites.get(potentiallyNewer.name.toLowerCase());
       if (currentNewest && !isNewer(potentiallyNewer, currentNewest)) {
         return false;
       }
       if (replaceIfNewer) {
-        collaboratorSprites.set(
-          potentiallyNewer.name.toLowerCase(),
-          potentiallyNewer,
-        );
+        collaboratorSprites.set(potentiallyNewer.name.toLowerCase(), potentiallyNewer);
       }
       return true;
     };
@@ -127,9 +111,7 @@ export class SpriteDest extends SpriteCache {
 
     /** Map of destName.toLower() to the source info */
     const sourceSprites = new Map<string, SpriteInfo>();
-    for (const [sourcePath, sourceSprite] of Object.entries(
-      sourceSpritesInfo,
-    )) {
+    for (const [sourcePath, sourceSprite] of Object.entries(sourceSpritesInfo)) {
       // Skip it if it matches the ignore patterns
       if (ignorePatterns.some((x) => x.test(sourcePath))) {
         continue;
@@ -140,9 +122,7 @@ export class SpriteDest extends SpriteCache {
 
       // Check for name collisions. If found, they should be reported as issues.
       if (sourceSprites.get(name.toLowerCase())) {
-        this.issues.push(
-          new SpriteSourceError(`Source sprite name collision: ${name}`),
-        );
+        this.issues.push(new SpriteSourceError(`Source sprite name collision: ${name}`));
       }
 
       sourceSprites.set(name.toLowerCase(), {
@@ -169,9 +149,7 @@ export class SpriteDest extends SpriteCache {
     for (const [normalizedName, sourceSprite] of sourceSprites) {
       const destSprite = destSprites.get(normalizedName);
       const sourceDir = source.spritesRoot.join(sourceSprite.path).absolute;
-      const destDir = this.spritesRoot.join(
-        destSprite?.path || sourceSprite.name,
-      ).absolute;
+      const destDir = this.spritesRoot.join(destSprite?.path || sourceSprite.name).absolute;
 
       if (!isNewerThanCollaboratorSprites(sourceSprite, false)) {
         this.logs.push({
@@ -238,12 +216,11 @@ export class SpriteDest extends SpriteCache {
     };
 
     report(0, 'Updating project cache...');
-    const [configResult, destSpritesInfoResult, yypResult] =
-      await Promise.allSettled([
-        this.loadConfig(overrides),
-        this.updateSpriteInfo(),
-        Yy.read(this.yypPath.absolute, 'project'),
-      ]);
+    const [configResult, destSpritesInfoResult, yypResult] = await Promise.allSettled([
+      this.loadConfig(overrides),
+      this.updateSpriteInfo(),
+      Yy.read(this.yypPath.absolute, 'project'),
+    ]);
     assert(
       yypResult.status === 'fulfilled',
       'Project file is invalid',
@@ -257,9 +234,7 @@ export class SpriteDest extends SpriteCache {
     assert(
       destSpritesInfoResult.status === 'fulfilled',
       'Could not load sprites info',
-      destSpritesInfoResult.status === 'rejected'
-        ? destSpritesInfoResult.reason
-        : undefined,
+      destSpritesInfoResult.status === 'rejected' ? destSpritesInfoResult.reason : undefined,
     );
 
     const config = configResult.value;
@@ -300,10 +275,7 @@ export class SpriteDest extends SpriteCache {
           },
           (err) => {
             this.issues.push(
-              new SpriteSourceError(
-                `Failed to infer actions for "${sourceConfig.source}"`,
-                err,
-              ),
+              new SpriteSourceError(`Failed to infer actions for "${sourceConfig.source}"`, err),
             );
           },
         ),
@@ -317,13 +289,10 @@ export class SpriteDest extends SpriteCache {
     const applyActionsWaits: Promise<any>[] = [];
 
     const percentForYypUpdate = 5;
-    const percentPerAction =
-      (100 - percentComplete - percentForYypUpdate) / actions.length;
+    const percentPerAction = (100 - percentComplete - percentForYypUpdate) / actions.length;
     for (const action of actions) {
       if (existingNonSpriteAssets.has(action.name)) {
-        this.issues.push(
-          new SpriteSourceError(`Asset name collision: ${action.name}`),
-        );
+        this.issues.push(new SpriteSourceError(`Asset name collision: ${action.name}`));
         continue;
       }
       // If we're trying to create a new asset with an invalid name, error!
@@ -333,9 +302,7 @@ export class SpriteDest extends SpriteCache {
           return pattern.test(action.name);
         });
         if (!isValidName) {
-          this.issues.push(
-            new SpriteSourceError(`Sprite name violates rules: ${action.name}`),
-          );
+          this.issues.push(new SpriteSourceError(`Sprite name violates rules: ${action.name}`));
           continue;
         }
       }
@@ -350,10 +317,7 @@ export class SpriteDest extends SpriteCache {
           })
           .catch((err) => {
             this.issues.push(
-              new SpriteSourceError(
-                `Error applying action: ${JSON.stringify(action)}`,
-                err,
-              ),
+              new SpriteSourceError(`Error applying action: ${JSON.stringify(action)}`, err),
             );
           })
           .finally(() => {
@@ -383,10 +347,7 @@ export class SpriteDest extends SpriteCache {
       }
       if (!existingFolders.has(appliedAction.folder.folderPath)) {
         // Also add to a random spot in the Folders array
-        const insertAt = Math.max(
-          Math.floor(Math.random() * yyp.Folders.length) - 1,
-          0,
-        );
+        const insertAt = Math.max(Math.floor(Math.random() * yyp.Folders.length) - 1, 0);
         // @ts-expect-error The object is partial, but gets validated and completed on write
         yyp.Folders.splice(insertAt, 0, appliedAction.folder);
         existingFolders.add(appliedAction.folder.folderPath);
@@ -403,19 +364,14 @@ export class SpriteDest extends SpriteCache {
    * Load the config, ensuring it exists on disk. If overrides
    * are provided the config will be updated with those values.
    */
-  async loadConfig(
-    overrides: SpriteDestConfig = {},
-  ): Promise<SpriteDestConfig> {
+  async loadConfig(overrides: SpriteDestConfig = {}): Promise<SpriteDestConfig> {
     // Validate options. Show error out if invalid.
     try {
       overrides = spriteDestConfigSchema.parse(overrides);
     } catch (err) {
       rethrow(err, 'Invalid SpriteDest options');
     }
-    assert(
-      await this.spritesRoot.isDirectory(),
-      'Source must be an existing directory.',
-    );
+    assert(await this.spritesRoot.isDirectory(), 'Source must be an existing directory.');
     // Update the config
     await this.stitchDir.ensureDirectory();
     const config = await this.configFile.read({
@@ -436,15 +392,9 @@ export class SpriteDest extends SpriteCache {
 
   static async from(projectYypPath: string | Pathy) {
     // Ensure the project file exists
-    assert(
-      projectYypPath.toString().endsWith('.yyp'),
-      'The project path must be to a .yyp file',
-    );
+    assert(projectYypPath.toString().endsWith('.yyp'), 'The project path must be to a .yyp file');
     const projectYyp = pathy(projectYypPath);
-    assert(
-      await projectYyp.exists(),
-      `Project file does not exist: ${projectYyp}`,
-    );
+    assert(await projectYyp.exists(), `Project file does not exist: ${projectYyp}`);
 
     // Ensure the project has a sprites folder
     const projectFolder = projectYyp.up();
@@ -480,10 +430,7 @@ export class SpriteDest extends SpriteCache {
             'This is a cache file for speeding up subsequent pipeline operations. It should not be tracked in git.',
         },
       ]) {
-        if (
-          !lines.includes(toIgnore.name) &&
-          !lines.includes('!' + toIgnore.name)
-        ) {
+        if (!lines.includes(toIgnore.name) && !lines.includes('!' + toIgnore.name)) {
           gitignoreContent += `\n# ${toIgnore.comment}\n${toIgnore.name}`;
           console.log('  added', toIgnore, 'to .gitignore');
         }

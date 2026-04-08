@@ -14,8 +14,7 @@ import {
 
 export function sizeOf(thing: any): number {
   if (!thing) return 0;
-  if ('length' in thing && typeof thing.length === 'number')
-    return thing.length;
+  if ('length' in thing && typeof thing.length === 'number') return thing.length;
   if ('size' in thing && typeof thing.size === 'number') return thing.size;
   assert(typeof thing === 'object', 'Cannot get size of non-object');
   return Object.keys(thing).length;
@@ -58,9 +57,7 @@ function resolveOneOf(schema: Bschema, data: any): Bschema | undefined {
     if (!('properties' in subschema)) {
       return false;
     }
-    if (
-      !('bConst' in subschema.properties![schema.discriminator!.propertyName])
-    ) {
+    if (!('bConst' in subschema.properties![schema.discriminator!.propertyName])) {
       return false;
     }
     const subschemaDescriminator = (
@@ -81,11 +78,7 @@ function resolveOneOf(schema: Bschema, data: any): Bschema | undefined {
  *
  * Only works with Bschema-style pointers.
  */
-export function setValueAtPointer<T>(
-  data: T,
-  pointer: string | string[],
-  value: any,
-): T {
+export function setValueAtPointer<T>(data: T, pointer: string | string[], value: any): T {
   // Ensure that the path to the value exists
   pointer = normalizePointer(pointer);
   let current = data as Record<string, any>;
@@ -98,9 +91,7 @@ export function setValueAtPointer<T>(
       throw new Error(
         `Cannot set intermediate pointer at ${pointer
           .slice(0, i + 1)
-          .join(
-            '/',
-          )}: a non-object value already exists there (${JSON.stringify(
+          .join('/')}: a non-object value already exists there (${JSON.stringify(
           current[pointer[i]],
         )})`,
       );
@@ -136,10 +127,7 @@ export function resolvePointerInSchema(
       current = current.properties![pointer[i]];
       continue;
     }
-    if (
-      'additionalProperties' in current &&
-      typeof current.additionalProperties === 'object'
-    ) {
+    if ('additionalProperties' in current && typeof current.additionalProperties === 'object') {
       current = current.additionalProperties;
       continue;
     }
@@ -213,17 +201,12 @@ export function computeTerminalPointers(
     return collection;
   };
 
-  __basePointer = prefixWith
-    ? [prefixWith, ...__basePointer]
-    : [...__basePointer];
+  __basePointer = prefixWith ? [prefixWith, ...__basePointer] : [...__basePointer];
 
   if (typeof data === 'object') {
     for (const key in data) {
       const subdata = data[key];
-      computeTerminalPointers(subdata, undefined, collection, [
-        ...__basePointer,
-        key,
-      ]);
+      computeTerminalPointers(subdata, undefined, collection, [...__basePointer, key]);
     }
   } else {
     addToCollection();
@@ -250,9 +233,7 @@ export function computeMotePointersFromSchema(
     return collection;
   };
 
-  __basePointer = withDataPrefix
-    ? ['data', ...__basePointer]
-    : [...__basePointer];
+  __basePointer = withDataPrefix ? ['data', ...__basePointer] : [...__basePointer];
 
   addToCollection();
 
@@ -268,29 +249,17 @@ export function computeMotePointersFromSchema(
   }
   if (isBschemaObject(schema)) {
     for (const key in schema.oneOf || []) {
-      computeMotePointersFromSchema(
-        gcData,
-        schema.oneOf![key],
-        collection,
-        false,
-        __basePointer,
-      );
+      computeMotePointersFromSchema(gcData, schema.oneOf![key], collection, false, __basePointer);
     }
     for (const key in schema.properties) {
       const subSchema = schema.properties[key];
-      computeMotePointersFromSchema(gcData, subSchema, collection, false, [
-        ...__basePointer,
-        key,
-      ]);
+      computeMotePointersFromSchema(gcData, subSchema, collection, false, [...__basePointer, key]);
     }
     if (schema.additionalProperties) {
-      computeMotePointersFromSchema(
-        gcData,
-        schema.additionalProperties,
-        collection,
-        false,
-        [...__basePointer, '*'],
-      );
+      computeMotePointersFromSchema(gcData, schema.additionalProperties, collection, false, [
+        ...__basePointer,
+        '*',
+      ]);
     }
   } else {
     // Then we're at a leaf node and can store it
@@ -336,9 +305,7 @@ export function parsedItemToWords(item: ParsedLineItem): ParsedLineItem[] {
     const position = item.start.character + i;
     if (char.match(/[<>()[\].:;|@#,!?"*\s-]/)) {
       // Normalize some stuff to reduce false positives
-      currentWord ||= currentWord
-        .replace(/'(s|d|ll|ve|re|n)$/, '')
-        .replace(/^\d+%?$/, '');
+      currentWord ||= currentWord.replace(/'(s|d|ll|ve|re|n)$/, '').replace(/^\d+%?$/, '');
       if (currentWord) {
         // Clean up a bit to allow focusing on the WORDS
         const word = {
@@ -349,8 +316,7 @@ export function parsedItemToWords(item: ParsedLineItem): ParsedLineItem[] {
         word.start.character = currentWordStart;
         word.start.index = item.start.index + currentWordStart;
         word.end.character = currentWordStart + currentWord.length;
-        word.end.index =
-          item.start.index + currentWordStart + currentWord.length;
+        word.end.index = item.start.index + currentWordStart + currentWord.length;
         currentWord = '';
         words.push(word);
       }

@@ -12,10 +12,11 @@ function expectEqualNumbers(a: NumberLike, b: NumberLike, message?: string) {
   expect(+a, message).to.equal(+b);
 }
 
-function expectEqualLengths<
-  T extends { length: NumberLike },
-  U extends { length: NumberLike },
->(a: T, b: U, message?: string) {
+function expectEqualLengths<T extends { length: NumberLike }, U extends { length: NumberLike }>(
+  a: T,
+  b: U,
+  message?: string,
+) {
   return expectEqualNumbers(a.length, b.length, message);
 }
 
@@ -25,10 +26,9 @@ function expectFramesToMatchKeyframes(sprite: YySprite) {
   expectEqualLengths(frames, keyframes);
   expectEqualLengths(frames, sprite.sequence);
   for (let i = 0; i < frames.length; i++) {
-    expect(
-      frames[i].name,
-      `Frame name should be found in the index-matched Keyframe`,
-    ).to.equal(keyframes[i].Channels!['0'].Id!.name);
+    expect(frames[i].name, `Frame name should be found in the index-matched Keyframe`).to.equal(
+      keyframes[i].Channels!['0'].Id!.name,
+    );
     expectEqualNumbers(
       keyframes[i].Key!,
       i,

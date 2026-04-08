@@ -24,9 +24,7 @@ const yypResourceSchema = z.object({
 
 export type YypOption = z.infer<typeof yypOptionSchema>;
 const yypOptionSchema = z.object({
-  ConfigValues: z
-    .record(z.string(), z.record(z.string(), z.string()))
-    .optional(),
+  ConfigValues: z.record(z.string(), z.record(z.string(), z.string())).optional(),
   name: z.string(),
   path: z.string(),
 });
@@ -85,9 +83,7 @@ export const yypFolderSchema = z.preprocess(
 export type YypAudioGroup = z.infer<typeof yypAudioGroupSchema>;
 export type YypAudioGroupLoose = z.input<typeof yypAudioGroupSchema>;
 export const yypAudioGroupSchema = z.object({
-  ConfigValues: z
-    .record(z.string(), z.record(z.string(), z.string()))
-    .optional(),
+  ConfigValues: z.record(z.string(), z.record(z.string(), z.string())).optional(),
   name: z.string(),
   targets: bigNumber().default(-1n),
   resourceType: z.literal('GMAudioGroup').default('GMAudioGroup'),
@@ -96,9 +92,7 @@ export const yypAudioGroupSchema = z.object({
 
 export type YypTextureGroup = z.infer<typeof yypTextureGroupSchema>;
 export const yypTextureGroupSchema = z.looseObject({
-  ConfigValues: z
-    .record(z.string(), z.record(z.string(), z.string()))
-    .optional(),
+  ConfigValues: z.record(z.string(), z.record(z.string(), z.string())).optional(),
   name: z.string(),
   groupParent: z
     .object({
@@ -126,7 +120,7 @@ const yypIncludedFileSchema = z.object({
     .record(
       z.string(),
       z.object({
-        CopyToMask: z.string(),
+        CopyToMask: bigNumber(),
       }),
     )
     .optional(),

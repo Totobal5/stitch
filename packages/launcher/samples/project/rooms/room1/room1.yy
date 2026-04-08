@@ -218,9 +218,7 @@
   "inheritLayers": false,
   "creationCodeFile": "",
   "inheritCode": false,
-  "instanceCreationOrder": [
-    { "name": "inst_13526D2F", "path": "rooms/Room1/Room1.yy" }
-  ],
+  "instanceCreationOrder": [{ "name": "inst_13526D2F", "path": "rooms/Room1/Room1.yy" }],
   "inheritCreationOrder": false,
   "sequenceId": null,
   "roomSettings": {

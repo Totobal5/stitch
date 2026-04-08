@@ -5,9 +5,7 @@ import { logThrown } from './assert.mjs';
 import { stitchConfig } from './config.mjs';
 import { warn } from './log.mjs';
 
-export class StitchYyFormatProvider
-  implements vscode.DocumentFormattingEditProvider
-{
+export class StitchYyFormatProvider implements vscode.DocumentFormattingEditProvider {
   provideDocumentFormattingEdits(
     document: vscode.TextDocument,
   ): vscode.ProviderResult<vscode.TextEdit[]> {
@@ -17,17 +15,12 @@ export class StitchYyFormatProvider
     }
     const parts = document.uri.path.split(/[\\/]+/);
     const name = parts.at(-1)!;
-    const type = name.endsWith('.yyp')
-      ? 'project'
-      : (parts.at(-3) as YyResourceType);
+    const type = name.endsWith('.yyp') ? 'project' : (parts.at(-3) as YyResourceType);
     const text = logThrown(() => document.getText());
     const start = document.positionAt(0);
     const end = document.positionAt(text.length);
     const parsed = sortKeysByReference(Yy.parse(text, type), Yy.parse(text));
-    const edit = new vscode.TextEdit(
-      new vscode.Range(start, end),
-      Yy.stringify(parsed),
-    );
+    const edit = new vscode.TextEdit(new vscode.Range(start, end), Yy.stringify(parsed));
     return [edit];
   }
 }

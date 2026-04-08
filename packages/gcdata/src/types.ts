@@ -77,9 +77,7 @@ export function getProperties(
   return;
 }
 
-export function getAdditionalProperties(
-  schema: Bschema | undefined,
-): Bschema | undefined {
+export function getAdditionalProperties(schema: Bschema | undefined): Bschema | undefined {
   if (!schema) return;
   if (isBschemaObject(schema)) {
     return schema.additionalProperties;
@@ -95,8 +93,7 @@ export function isBschemaObject(schema: any): schema is BschemaObject {
   return (
     typeof schema === 'object' &&
     (schema['type'] === 'object' ||
-      (!schema['type'] &&
-        (schema['properties'] || schema['additionalProperties'])))
+      (!schema['type'] && (schema['properties'] || schema['additionalProperties'])))
   );
 }
 
@@ -116,12 +113,9 @@ export function isBschemaBoolean(schema: any): schema is BschemaBoolean {
   return typeof schema === 'object' && schema['type'] === 'boolean';
 }
 
-export function isBschemaNumeric(
-  schema: any,
-): schema is BschemaNumber | BschemaInteger {
+export function isBschemaNumeric(schema: any): schema is BschemaNumber | BschemaInteger {
   return (
-    typeof schema === 'object' &&
-    (schema['type'] === 'number' || schema['type'] === 'integer')
+    typeof schema === 'object' && (schema['type'] === 'number' || schema['type'] === 'integer')
   );
 }
 
@@ -264,20 +258,12 @@ const changeTypeSchema = z
 
 export type Change = z.infer<typeof changeSchema>;
 export const changeSchema = z.looseObject({
-  mote_id: z
-    .string()
-    .optional()
-    .describe('If this was a mote change, the ID of that mote.'),
+  mote_id: z.string().optional().describe('If this was a mote change, the ID of that mote.'),
   schema_id: z
     .string()
-    .describe(
-      `If this was a mote change, the mote's schema. Otherwise, the schema that changed.`,
-    ),
+    .describe(`If this was a mote change, the mote's schema. Otherwise, the schema that changed.`),
   type: changeTypeSchema,
-  schema_title: z
-    .string()
-    .optional()
-    .describe('Stored for posterity in case the name changes.'),
+  schema_title: z.string().optional().describe('Stored for posterity in case the name changes.'),
   mote_name: z
     .string()
     .optional()
@@ -287,9 +273,7 @@ export const changeSchema = z.looseObject({
   allowed: z
     .union([z.boolean(), z.number()])
     .default(true)
-    .describe(
-      'Whether or not the current user is allowed to make this change.',
-    ),
+    .describe('Whether or not the current user is allowed to make this change.'),
   staged: z
     .union([z.boolean(), z.number()])
     .default(false)
@@ -309,9 +293,7 @@ export const changesSchema = z.looseObject({
     .regex(/^c\d+$/)
     .describe('The base GameChanger commit these changes are relative to'),
   changes: z.object({
-    message: z
-      .string()
-      .describe('The commit message for the changes. Can be a null string.'),
+    message: z.string().describe('The commit message for the changes. Can be a null string.'),
     motes: z.record(z.string(), changeSchema).default({}),
     /** Schema changes. */
     schemas: z.record(z.string(), changeSchema).default({}),
@@ -323,8 +305,6 @@ export const changesSchema = z.looseObject({
   }),
 });
 
-export function isObject<T extends object>(
-  value: unknown,
-): value is Exclude<T, null> {
+export function isObject<T extends object>(value: unknown): value is Exclude<T, null> {
   return typeof value === 'object' && value !== null;
 }

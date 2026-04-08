@@ -1,12 +1,7 @@
 import { literal } from '@bscotch/utility/browser';
 import { z } from 'zod';
 
-export const gameMakerFeedChannels = literal([
-  'lts',
-  'stable',
-  'beta',
-  'unstable',
-]);
+export const gameMakerFeedChannels = literal(['lts', 'stable', 'beta', 'unstable']);
 
 export const gameMakerFeedDefaultChannels = literal(['lts', 'stable', 'beta']);
 

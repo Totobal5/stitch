@@ -3,17 +3,12 @@ import type { GameChanger } from './GameChanger.js';
 import { bsArrayToArray, toArrayTag } from './helpers.js';
 import { cleanGameChangerString } from './util.js';
 
-export function stringifyComfort(
-  mote: ComfortMote,
-  packed: GameChanger,
-): string {
+export function stringifyComfort(mote: ComfortMote, packed: GameChanger): string {
   // METADATA
   const blocks: string[] = [
     `Name: ${cleanGameChangerString(packed.working.getMoteName(mote))}`,
     `Description: ${cleanGameChangerString(mote.data.description?.text)}\n`,
-    `Unlocked Description: ${cleanGameChangerString(
-      mote.data.unlocked_description?.text,
-    )}\n`,
+    `Unlocked Description: ${cleanGameChangerString(mote.data.unlocked_description?.text)}\n`,
   ];
 
   if (mote.data.wip?.staging) {

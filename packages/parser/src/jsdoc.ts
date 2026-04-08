@@ -61,9 +61,7 @@ const optionalParamNamePattern = `\\[\\s*(?<optionalName>(?:[a-zA-Z_][a-zA-Z_0-9
 const names = keysOf(patterns);
 for (const tagName of names) {
   // Add the line prefix and a tag capture group
-  patterns[
-    tagName
-  ] = `${linePrefixPattern}(?<tag>(?<${tagName}>${patterns[tagName]}))`;
+  patterns[tagName] = `${linePrefixPattern}(?<tag>(?<${tagName}>${patterns[tagName]}))`;
 }
 
 // Types with required typeGroups
@@ -76,15 +74,8 @@ for (const tagName of typeTags) {
 patterns.param = `${patterns.param}(\\s+${typeGroupPattern})?\\s+(${paramNamePattern}|${optionalParamNamePattern})`;
 
 // Variable declaration patterns
-for (const tagName of [
-  'localvar',
-  'globalvar',
-  'instancevar',
-  'template',
-] as const) {
-  patterns[
-    tagName
-  ] = `${patterns[tagName]}(\\s+${typeGroupPattern})?\\s+${paramNamePattern}`;
+for (const tagName of ['localvar', 'globalvar', 'instancevar', 'template'] as const) {
+  patterns[tagName] = `${patterns[tagName]}(\\s+${typeGroupPattern})?\\s+${paramNamePattern}`;
 }
 
 // Self (has a type but no group. Make brackets optional to be more forgiving)
@@ -96,14 +87,11 @@ for (const tagName of names) {
 }
 const descriptionLine = `${linePrefixPattern}\\s*${descriptionPattern}`;
 
-const regexes: Record<(typeof names)[number], RegExp> = names.reduce(
-  (acc, tagName) => {
-    // The 'd' flag is only supported in Node 18+, which VSCode doesn't support yet.
-    acc[tagName] = new RegExp(patterns[tagName]);
-    return acc;
-  },
-  {} as any,
-);
+const regexes: Record<(typeof names)[number], RegExp> = names.reduce((acc, tagName) => {
+  // The 'd' flag is only supported in Node 18+, which VSCode doesn't support yet.
+  acc[tagName] = new RegExp(patterns[tagName]);
+  return acc;
+}, {} as any);
 
 export type JsdocTagKind = keyof typeof patterns;
 
@@ -145,16 +133,9 @@ export interface Jsdoc<T extends JsdocKind = JsdocKind> extends IRange {
   self?: JsdocComponent;
 }
 
-export interface JsdocSummary
-  extends Jsdoc<
-    | 'description'
-    | 'function'
-    | 'type'
-    | 'self'
-    | 'globalvar'
-    | 'instancevar'
-    | 'localvar'
-  > {
+export interface JsdocSummary extends Jsdoc<
+  'description' | 'function' | 'type' | 'self' | 'globalvar' | 'instancevar' | 'localvar'
+> {
   /**
    * The list of all tags found in this block, and their
    * respective locations, for use e.g. syntax highlighting.
@@ -246,10 +227,7 @@ function jsdocGmlToLines(raw: IToken[]): JsdocLine[] {
  * or JS style, convert it
  * to a list of lines, each with its own position.
  */
-function jsdocStringToLines(
-  raw: string,
-  startPosition?: IPosition,
-): JsdocLine[] {
+function jsdocStringToLines(raw: string, startPosition?: IPosition): JsdocLine[] {
   const asIToken = {
     image: raw,
     startLine: startPosition?.line || 1,
@@ -372,10 +350,7 @@ export function parseJsdoc(
   };
 
   let describing: Jsdoc | null = doc;
-  const appendDescription = (
-    currentDescription: string,
-    newDescription?: string,
-  ) => {
+  const appendDescription = (currentDescription: string, newDescription?: string) => {
     newDescription ||= '';
     if (currentDescription) {
       return `${currentDescription}\n${newDescription}`;
@@ -403,10 +378,7 @@ export function parseJsdoc(
       const tagMatch = line.content.match(/@\w+\b/)!;
       assert(tagMatch, 'Tag match should exist');
       assert(tagMatch[0], 'Tag match must be an array');
-      const tagIndices = [
-        tagMatch.index!,
-        tagMatch.index! + tagMatch[0].length,
-      ] as const;
+      const tagIndices = [tagMatch.index!, tagMatch.index! + tagMatch[0].length] as const;
       doc.tags.push({
         content: parts.tag!,
         ...matchIndexToRange(line.start, tagIndices),
@@ -414,19 +386,12 @@ export function parseJsdoc(
 
       // Based on the tag type, update the doc
       const impliesFunction =
-        parts.function ||
-        parts.param ||
-        parts.returns ||
-        parts.pure ||
-        parts.template;
+        parts.function || parts.param || parts.returns || parts.pure || parts.template;
       if (impliesFunction) {
         doc.kind = 'function';
       }
 
-      const matchIndices = [
-        match.index!,
-        match.index! + match[0].length,
-      ] as const;
+      const matchIndices = [match.index!, match.index! + match[0].length] as const;
       const entireMatchRange = matchIndexToRange(line.start, matchIndices);
 
       // If this uses an @description tag, then apply that description
@@ -453,27 +418,19 @@ export function parseJsdoc(
         const kind = parts.param
           ? 'param'
           : parts.template
-          ? 'template'
-          : parts.localvar
-          ? 'localvar'
-          : parts.globalvar
-          ? 'globalvar'
-          : 'instancevar';
+            ? 'template'
+            : parts.localvar
+              ? 'localvar'
+              : parts.globalvar
+                ? 'globalvar'
+                : 'instancevar';
 
-        const typeString = substringRange(
-          line.content,
-          parts.typeUnion,
-          line.start,
-        );
+        const typeString = substringRange(line.content, parts.typeUnion, line.start);
         addTypeRanges(typeString);
 
         const entity: Jsdoc<typeof kind> = {
           kind,
-          name: substringRange(
-            line.content,
-            parts.name || parts.optionalName!,
-            line.start,
-          ),
+          name: substringRange(line.content, parts.name || parts.optionalName!, line.start),
           optional: !!parts.optionalName,
           type: typeString,
           description: parts.info || '',
@@ -500,11 +457,7 @@ export function parseJsdoc(
           // Then we don't want to overwrite.
           break;
         }
-        const typeString = substringRange(
-          line.content,
-          parts.typeUnion!,
-          line.start,
-        );
+        const typeString = substringRange(line.content, parts.typeUnion!, line.start);
         addTypeRanges(typeString);
 
         const returns: Jsdoc<'returns'> = {
@@ -622,10 +575,7 @@ function substringRange(
   };
 }
 
-function matchIndexToRange(
-  startPosition: IPosition,
-  index: MatchIndex | undefined,
-): IRange {
+function matchIndexToRange(startPosition: IPosition, index: MatchIndex | undefined): IRange {
   // Note that the IRange uses column and line indexes that start at 1, while the offset starts at 0.
   const range: IRange = {
     start: { ...startPosition },

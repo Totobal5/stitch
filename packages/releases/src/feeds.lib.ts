@@ -1,25 +1,17 @@
-import {
-  RssFeedEntry,
-  rssFeedSchema,
-  type GameMakerArtifact,
-} from './feeds.types.js';
+import { RssFeedEntry, rssFeedSchema, type GameMakerArtifact } from './feeds.types.js';
 import { fetchXml } from './fetch.js';
 
 /**
  * Get the runtime with the closest release date to the given IDE
  */
-export function findPairedRuntime(
-  runtimeFeed: GameMakerArtifact[],
-  ide: GameMakerArtifact,
-) {
+export function findPairedRuntime(runtimeFeed: GameMakerArtifact[], ide: GameMakerArtifact) {
   const location = runtimeFeed.reduce(
     (acc, cur, idx) => {
       if (!cur.publishedAt || cur.channel !== ide.channel) {
         return acc;
       }
       const diff = Math.abs(
-        new Date(cur.publishedAt).getTime() -
-          new Date(ide.publishedAt).getTime(),
+        new Date(cur.publishedAt).getTime() - new Date(ide.publishedAt).getTime(),
       );
       if (diff < acc.minDiff) {
         acc.minDiff = diff;

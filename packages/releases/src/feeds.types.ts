@@ -57,9 +57,7 @@ export const gameMakerArtifactSchema = z.object({
   notesUrl: z.string(),
 });
 
-export type GameMakerArtifactWithNotes = z.infer<
-  typeof gameMakerArtifactWithNotesSchema
->;
+export type GameMakerArtifactWithNotes = z.infer<typeof gameMakerArtifactWithNotesSchema>;
 export const gameMakerArtifactWithNotesSchema = gameMakerArtifactSchema.extend({
   notes: z.object({
     since: z.string().nullable(),
@@ -78,19 +76,14 @@ const gameMakerReleaseBaseSchema = z.object({
     .string()
     .transform((arg) => new Date(arg).toISOString())
     .describe('Date of release for the IDE in this pair'),
-  summary: htmlString().describe(
-    'Summary of the release, from the RSS feed for the IDE',
-  ),
+  summary: htmlString().describe('Summary of the release, from the RSS feed for the IDE'),
 });
 
-export type GameMakerReleaseWithNotes = z.infer<
-  typeof gameMakerReleaseWithNotesSchema
->;
-export const gameMakerReleaseWithNotesSchema =
-  gameMakerReleaseBaseSchema.extend({
-    ide: gameMakerArtifactWithNotesSchema.omit({ summary: true }),
-    runtime: gameMakerArtifactWithNotesSchema.omit({ summary: true }),
-  });
+export type GameMakerReleaseWithNotes = z.infer<typeof gameMakerReleaseWithNotesSchema>;
+export const gameMakerReleaseWithNotesSchema = gameMakerReleaseBaseSchema.extend({
+  ide: gameMakerArtifactWithNotesSchema.omit({ summary: true }),
+  runtime: gameMakerArtifactWithNotesSchema.omit({ summary: true }),
+});
 
 export type GameMakerRelease = z.infer<typeof gameMakerReleaseSchema>;
 export const gameMakerReleaseSchema = gameMakerReleaseBaseSchema.extend({
@@ -106,7 +99,4 @@ export const rawReleaseNoteSchema = z.strictObject({
 });
 
 export type RawReleaseNotesCache = Record<string, RawReleaseNote>;
-export const rawReleaseNotesCacheSchema = z.record(
-  z.string(),
-  rawReleaseNoteSchema,
-);
+export const rawReleaseNotesCacheSchema = z.record(z.string(), rawReleaseNoteSchema);

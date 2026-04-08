@@ -90,9 +90,7 @@ A `Project` instance provides methods for adding and removing assets, which you 
 ```ts
 // Get a GML file in its parsed state. Returns a Code instance,
 // which includes various methods for querying/modifying them.
-const code = project.getGmlFile(
-  '/path/to/my/project/scripts/some_script/some_script.gml',
-);
+const code = project.getGmlFile('/path/to/my/project/scripts/some_script/some_script.gml');
 
 // Find an asset. Assets are represented by Asset instances,
 // which include a variety of methods to query and manipulate them.
@@ -118,16 +116,10 @@ await project.renameAsset('old_name', 'new_name');
 await project.removeAssetByName('unwanted_asset_name');
 
 // Create a sound asset from an audio file
-await project.createSound(
-  'folder/subfolder/my_new_sound',
-  '/path/to/source/file.wav',
-);
+await project.createSound('folder/subfolder/my_new_sound', '/path/to/source/file.wav');
 
 // Create a sprite asset from an image
-await project.createSprite(
-  'folder/subfolder/sp_my_sprite',
-  '/path/to/source/file.png',
-);
+await project.createSprite('folder/subfolder/sp_my_sprite', '/path/to/source/file.png');
 
 // And so on and so on. You can create new objects, rooms, etc.
 // Each asset is modeled by an Asset instance, which will allow

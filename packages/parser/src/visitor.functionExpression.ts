@@ -9,6 +9,14 @@ import { withableTypes } from './types.primitives.js';
 import { assert } from './util.js';
 import type { GmlSignifierVisitor } from './visitor.js';
 
+function normalizeParamName(name: string) {
+  return name.replace(/^_+/, '');
+}
+
+function paramNamesMatch(left: string, right: string) {
+  return normalizeParamName(left) === normalizeParamName(right);
+}
+
 /** Visit a function's CST and update any signifiers and types */
 export function visitFunctionExpression(
   this: GmlSignifierVisitor,
@@ -34,9 +42,7 @@ export function visitFunctionExpression(
 
   // Compute useful properties of this function to help figure out
   // how to define its symbol, type, scope, etc.
-  const nameLocation = functionName
-    ? this.PROCESSOR.range(children.Identifier![0])
-    : undefined;
+  const nameLocation = functionName ? this.PROCESSOR.range(children.Identifier![0]) : undefined;
   const isConstructor = !!children.constructorSuffix;
   const bodyLocation = children.blockStatement[0].location!;
   const isFunctionStatement = ctx.ctxKindStack.at(-1) === 'functionStatement';
@@ -98,8 +104,8 @@ export function visitFunctionExpression(
     docs?.jsdoc.kind === 'self'
       ? docs.type[0]
       : docs?.jsdoc.kind === 'function'
-      ? docs.type[0]?.self
-      : undefined;
+        ? docs.type[0]?.self
+        : undefined;
   if (docContextRaw && docContextRaw.kind === 'Function') {
     // Then we use the function's construct if it is a constructor, else its context.
     docContextRaw = docContextRaw.self;
@@ -141,16 +147,9 @@ export function visitFunctionExpression(
 
   // Functions have their own localscope as well as their self scope,
   // so we need to push both.
-  const startParen = fixITokenLocation(
-    children.functionParameters[0].children.StartParen[0],
-  );
+  const startParen = fixITokenLocation(children.functionParameters[0].children.StartParen[0]);
   this.PROCESSOR.scope.setEnd(startParen);
-  this.PROCESSOR.pushScope(
-    startParen,
-    functionType.self,
-    functionType.local,
-    true,
-  );
+  this.PROCESSOR.pushScope(startParen, functionType.self, functionType.local, true);
 
   // Handle definitiveScope -- if this is a constructor or mixin,
   // we want to push a new definitiveScope.
@@ -160,8 +159,7 @@ export function visitFunctionExpression(
 
   // Add function signature components. Must take into account that we may
   // be updating after an edit.
-  const cstParams =
-    children.functionParameters?.[0]?.children.functionParameter || [];
+  const cstParams = children.functionParameters?.[0]?.children.functionParameter || [];
   let totalParams = 0;
   for (let i = 0; i < cstParams.length; i++) {
     const paramCtx = withCtxKind(ctx, 'functionParam');
@@ -169,20 +167,27 @@ export function visitFunctionExpression(
     const name = paramToken.image;
     const range = this.PROCESSOR.range(paramToken);
 
-    // Use JSDocs to determine the type, description, etc of the parameter
-    let fromJsdoc = docs?.type?.[0]?.local?.getMember(name);
-    if (fromJsdoc && paramToken.image !== fromJsdoc.name) {
-      this.PROCESSOR.addDiagnostic(
-        'JSDOC_MISMATCH',
-        paramToken,
-        `Parameter name mismatch`,
-      );
-      // Unset it so we don't accidentally use it!
+    // Use JSDocs to determine the type, description, etc of the parameter.
+    // Prefer POSITIONAL matching (GameMaker convention), then fallback to name matching.
+    const docsFunctionType = getTypeOfKind(docs?.type, 'Function');
+    const docsLocal = docsFunctionType?.local || docs?.type?.[0]?.local;
+    const fromJsdocByIndex = docsFunctionType?.getParameter(i);
+    let fromJsdoc = fromJsdocByIndex || docsLocal?.getMember(name);
+    if (!fromJsdoc && docsLocal) {
+      fromJsdoc = docsLocal.listMembers(true).find((member) => paramNamesMatch(name, member.name));
+    }
+    // If only name matching succeeded but names are truly incompatible, emit mismatch and drop docs typing.
+    if (fromJsdoc && !fromJsdocByIndex && !paramNamesMatch(paramToken.image, fromJsdoc.name)) {
+      this.PROCESSOR.addDiagnostic('JSDOC_MISMATCH', paramToken, `Parameter name mismatch`);
       fromJsdoc = undefined;
     }
-    const paramDoc = fromJsdoc
-      ? docs?.jsdoc.params?.find((p) => p.name?.content === name)
-      : undefined;
+    const paramDoc = docs?.jsdoc.params?.[i]
+      ? docs?.jsdoc.params?.[i]
+      : fromJsdoc
+        ? docs?.jsdoc.params?.find((p) =>
+            p.name?.content ? paramNamesMatch(p.name.content, name) : false,
+          )
+        : undefined;
 
     // Params are just local variables
     let param = functionType.local.getMember(name);
@@ -220,8 +225,7 @@ export function visitFunctionExpression(
       const idx = cstParams.length + i;
       const paramDoc = extraParams[i];
       assert(paramDoc, 'Expected extra param');
-      const type = docs!.type[0]?.local?.getMember(paramDoc.name!.content)
-        ?.type;
+      const type = docs!.type[0]?.local?.getMember(paramDoc.name!.content)?.type;
       functionType
         .addParameter(idx, paramDoc.name!.content, {
           optional: paramDoc.optional,
@@ -254,15 +258,11 @@ export function visitFunctionExpression(
     functionType.setReturnType(docs.type[0].returns.type);
     // TODO: Check against the inferred return types
   } else {
-    functionType.setReturnType(
-      ctx.returns?.length ? ctx.returns : this.UNDEFINED,
-    );
+    functionType.setReturnType(ctx.returns?.length ? ctx.returns : this.UNDEFINED);
   }
 
   // End the scope
-  const endBrace = fixITokenLocation(
-    children.blockStatement[0].children.EndBrace[0],
-  );
+  const endBrace = fixITokenLocation(children.blockStatement[0].children.EndBrace[0]);
   this.PROCESSOR.scope.setEnd(endBrace);
   this.PROCESSOR.popScope(endBrace, true);
   assert(

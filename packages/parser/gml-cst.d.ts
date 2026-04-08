@@ -24,6 +24,7 @@ export interface StatementCstNode extends CstNode {
 }
 
 export type StatementCstChildren = {
+  blockStatement?: BlockStatementCstNode[];
   functionStatement?: FunctionStatementCstNode[];
   localVarDeclarationsStatement?: LocalVarDeclarationsStatementCstNode[];
   globalVarDeclarationsStatement?: GlobalVarDeclarationsStatementCstNode[];
@@ -155,6 +156,7 @@ export type IfStatementCstChildren = {
   expression: ExpressionCstNode[];
   Then?: IToken[];
   blockableStatement: BlockableStatementCstNode[];
+  jsdoc?: JsdocCstNode[];
   elseIfStatement?: ElseIfStatementCstNode[];
   elseStatement?: ElseStatementCstNode[];
 };
@@ -187,8 +189,8 @@ export interface BlockableStatementCstNode extends CstNode {
 }
 
 export type BlockableStatementCstChildren = {
-  statement?: StatementCstNode[];
   blockStatement?: BlockStatementCstNode[];
+  statement?: StatementCstNode[];
 };
 
 export interface BlockableStatementsCstNode extends CstNode {
@@ -197,8 +199,8 @@ export interface BlockableStatementsCstNode extends CstNode {
 }
 
 export type BlockableStatementsCstChildren = {
-  statements?: StatementsCstNode[];
   blockStatement?: BlockStatementCstNode[];
+  statements?: StatementsCstNode[];
 };
 
 export interface BlockStatementCstNode extends CstNode {
@@ -262,6 +264,7 @@ export interface PrimaryExpressionCstNode extends CstNode {
 
 export type PrimaryExpressionCstChildren = {
   UnaryPrefixOperator?: IToken[];
+  newFunctionExpression?: NewFunctionExpressionCstNode[];
   BooleanLiteral?: IToken[];
   NumericLiteral?: IToken[];
   PointerLiteral?: IToken[];
@@ -271,8 +274,10 @@ export type PrimaryExpressionCstChildren = {
   multilineDoubleStringLiteral?: MultilineDoubleStringLiteralCstNode[];
   multilineSingleStringLiteral?: MultilineSingleStringLiteralCstNode[];
   templateLiteral?: TemplateLiteralCstNode[];
+  structLiteral?: StructLiteralCstNode[];
+  functionExpression?: FunctionExpressionCstNode[];
   identifierAccessor?: IdentifierAccessorCstNode[];
-  parenthesizedExpression?: ParenthesizedExpressionCstNode[];
+  parenthesizedAccessor?: ParenthesizedAccessorCstNode[];
   arrayLiteral?: ArrayLiteralCstNode[];
   UnarySuffixOperator?: IToken[];
 };
@@ -312,6 +317,16 @@ export type ParenthesizedExpressionCstChildren = {
   StartParen: IToken[];
   expression: ExpressionCstNode[];
   EndParen: IToken[];
+};
+
+export interface ParenthesizedAccessorCstNode extends CstNode {
+  name: 'parenthesizedAccessor';
+  children: ParenthesizedAccessorCstChildren;
+}
+
+export type ParenthesizedAccessorCstChildren = {
+  parenthesizedExpression: ParenthesizedExpressionCstNode[];
+  accessorSuffixes?: AccessorSuffixesCstNode[];
 };
 
 export interface AccessorSuffixesCstNode extends CstNode {
@@ -448,7 +463,7 @@ export type EnumStatementCstChildren = {
   Enum: IToken[];
   Identifier: IToken[];
   StartBrace: IToken[];
-  enumMember: EnumMemberCstNode[];
+  enumMember?: EnumMemberCstNode[];
   Comma?: IToken[];
   EndBrace: IToken[];
 };
@@ -461,8 +476,7 @@ export interface EnumMemberCstNode extends CstNode {
 export type EnumMemberCstChildren = {
   Identifier: IToken[];
   Assign?: IToken[];
-  Minus?: IToken[];
-  NumericLiteral?: IToken[];
+  expression?: ExpressionCstNode[];
 };
 
 export interface ConstructorSuffixCstNode extends CstNode {
@@ -488,6 +502,18 @@ export type FunctionExpressionCstChildren = {
   functionParameters: FunctionParametersCstNode[];
   constructorSuffix?: ConstructorSuffixCstNode[];
   blockStatement: BlockStatementCstNode[];
+};
+
+export interface NewFunctionExpressionCstNode extends CstNode {
+  name: 'newFunctionExpression';
+  children: NewFunctionExpressionCstChildren;
+}
+
+export type NewFunctionExpressionCstChildren = {
+  New: IToken[];
+  functionExpression?: FunctionExpressionCstNode[];
+  parenthesizedExpression?: ParenthesizedExpressionCstNode[];
+  functionArguments?: FunctionArgumentsCstNode[];
 };
 
 export interface FunctionStatementCstNode extends CstNode {
@@ -531,7 +557,16 @@ export interface MacroStatementCstNode extends CstNode {
 export type MacroStatementCstChildren = {
   Macro: IToken[];
   Identifier: IToken[];
-  expressionStatement: ExpressionStatementCstNode[];
+  localVarDeclarationsStatement?: LocalVarDeclarationsStatementCstNode[];
+  globalVarDeclarationsStatement?: GlobalVarDeclarationsStatementCstNode[];
+  ifStatement?: IfStatementCstNode[];
+  forStatement?: ForStatementCstNode[];
+  whileStatement?: WhileStatementCstNode[];
+  withStatement?: WithStatementCstNode[];
+  repeatStatement?: RepeatStatementCstNode[];
+  blockStatement?: BlockStatementCstNode[];
+  emptyStatement?: EmptyStatementCstNode[];
+  expressionStatement?: ExpressionStatementCstNode[];
 };
 
 export interface ForStatementCstNode extends CstNode {
@@ -759,6 +794,7 @@ export type CaseStatementCstChildren = {
   expression: ExpressionCstNode[];
   Colon: IToken[];
   blockableStatements: BlockableStatementsCstNode[];
+  breakStatement?: BreakStatementCstNode[];
 };
 
 export interface DefaultStatementCstNode extends CstNode {
@@ -770,6 +806,7 @@ export type DefaultStatementCstChildren = {
   Default: IToken[];
   Colon: IToken[];
   blockableStatements: BlockableStatementsCstNode[];
+  breakStatement?: BreakStatementCstNode[];
 };
 
 export interface BreakStatementCstNode extends CstNode {
@@ -846,14 +883,8 @@ export interface GmlVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   jsdocGml(children: JsdocGmlCstChildren, param?: IN): OUT;
   jsdocJs(children: JsdocJsCstChildren, param?: IN): OUT;
   stringLiteral(children: StringLiteralCstChildren, param?: IN): OUT;
-  multilineDoubleStringLiteral(
-    children: MultilineDoubleStringLiteralCstChildren,
-    param?: IN,
-  ): OUT;
-  multilineSingleStringLiteral(
-    children: MultilineSingleStringLiteralCstChildren,
-    param?: IN,
-  ): OUT;
+  multilineDoubleStringLiteral(children: MultilineDoubleStringLiteralCstChildren, param?: IN): OUT;
+  multilineSingleStringLiteral(children: MultilineSingleStringLiteralCstChildren, param?: IN): OUT;
   templateLiteral(children: TemplateLiteralCstChildren, param?: IN): OUT;
   repeatStatement(children: RepeatStatementCstChildren, param?: IN): OUT;
   returnStatement(children: ReturnStatementCstChildren, param?: IN): OUT;
@@ -861,25 +892,17 @@ export interface GmlVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   elseIfStatement(children: ElseIfStatementCstChildren, param?: IN): OUT;
   elseStatement(children: ElseStatementCstChildren, param?: IN): OUT;
   blockableStatement(children: BlockableStatementCstChildren, param?: IN): OUT;
-  blockableStatements(
-    children: BlockableStatementsCstChildren,
-    param?: IN,
-  ): OUT;
+  blockableStatements(children: BlockableStatementsCstChildren, param?: IN): OUT;
   blockStatement(children: BlockStatementCstChildren, param?: IN): OUT;
-  expressionStatement(
-    children: ExpressionStatementCstChildren,
-    param?: IN,
-  ): OUT;
+  expressionStatement(children: ExpressionStatementCstChildren, param?: IN): OUT;
   expression(children: ExpressionCstChildren, param?: IN): OUT;
   binaryExpression(children: BinaryExpressionCstChildren, param?: IN): OUT;
   ternaryExpression(children: TernaryExpressionCstChildren, param?: IN): OUT;
   primaryExpression(children: PrimaryExpressionCstChildren, param?: IN): OUT;
   identifier(children: IdentifierCstChildren, param?: IN): OUT;
   identifierAccessor(children: IdentifierAccessorCstChildren, param?: IN): OUT;
-  parenthesizedExpression(
-    children: ParenthesizedExpressionCstChildren,
-    param?: IN,
-  ): OUT;
+  parenthesizedExpression(children: ParenthesizedExpressionCstChildren, param?: IN): OUT;
+  parenthesizedAccessor(children: ParenthesizedAccessorCstChildren, param?: IN): OUT;
   accessorSuffixes(children: AccessorSuffixesCstChildren, param?: IN): OUT;
   dotAccessSuffix(children: DotAccessSuffixCstChildren, param?: IN): OUT;
   arrayAccessSuffix(children: ArrayAccessSuffixCstChildren, param?: IN): OUT;
@@ -887,10 +910,7 @@ export interface GmlVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   listAccessSuffix(children: ListAccessSuffixCstChildren, param?: IN): OUT;
   mapAccessSuffix(children: MapAccessSuffixCstChildren, param?: IN): OUT;
   gridAccessSuffix(children: GridAccessSuffixCstChildren, param?: IN): OUT;
-  arrayMutationAccessorSuffix(
-    children: ArrayMutationAccessorSuffixCstChildren,
-    param?: IN,
-  ): OUT;
+  arrayMutationAccessorSuffix(children: ArrayMutationAccessorSuffixCstChildren, param?: IN): OUT;
   functionArguments(children: FunctionArgumentsCstChildren, param?: IN): OUT;
   functionArgument(children: FunctionArgumentCstChildren, param?: IN): OUT;
   emptyStatement(children: EmptyStatementCstChildren, param?: IN): OUT;
@@ -898,6 +918,7 @@ export interface GmlVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   enumMember(children: EnumMemberCstChildren, param?: IN): OUT;
   constructorSuffix(children: ConstructorSuffixCstChildren, param?: IN): OUT;
   functionExpression(children: FunctionExpressionCstChildren, param?: IN): OUT;
+  newFunctionExpression(children: NewFunctionExpressionCstChildren, param?: IN): OUT;
   functionStatement(children: FunctionStatementCstChildren, param?: IN): OUT;
   functionParameters(children: FunctionParametersCstChildren, param?: IN): OUT;
   functionParameter(children: FunctionParameterCstChildren, param?: IN): OUT;
@@ -907,44 +928,23 @@ export interface GmlVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
     children: GlobalVarDeclarationsStatementCstChildren,
     param?: IN,
   ): OUT;
-  globalVarDeclarations(
-    children: GlobalVarDeclarationsCstChildren,
-    param?: IN,
-  ): OUT;
-  globalVarDeclaration(
-    children: GlobalVarDeclarationCstChildren,
-    param?: IN,
-  ): OUT;
+  globalVarDeclarations(children: GlobalVarDeclarationsCstChildren, param?: IN): OUT;
+  globalVarDeclaration(children: GlobalVarDeclarationCstChildren, param?: IN): OUT;
   localVarDeclarationsStatement(
     children: LocalVarDeclarationsStatementCstChildren,
     param?: IN,
   ): OUT;
-  localVarDeclarations(
-    children: LocalVarDeclarationsCstChildren,
-    param?: IN,
-  ): OUT;
-  localVarDeclaration(
-    children: LocalVarDeclarationCstChildren,
-    param?: IN,
-  ): OUT;
+  localVarDeclarations(children: LocalVarDeclarationsCstChildren, param?: IN): OUT;
+  localVarDeclaration(children: LocalVarDeclarationCstChildren, param?: IN): OUT;
   staticVarDeclarationStatement(
     children: StaticVarDeclarationStatementCstChildren,
     param?: IN,
   ): OUT;
-  staticVarDeclarations(
-    children: StaticVarDeclarationsCstChildren,
-    param?: IN,
-  ): OUT;
-  variableAssignmentStatement(
-    children: VariableAssignmentStatementCstChildren,
-    param?: IN,
-  ): OUT;
+  staticVarDeclarations(children: StaticVarDeclarationsCstChildren, param?: IN): OUT;
+  variableAssignmentStatement(children: VariableAssignmentStatementCstChildren, param?: IN): OUT;
   variableAssignment(children: VariableAssignmentCstChildren, param?: IN): OUT;
   assignment(children: AssignmentCstChildren, param?: IN): OUT;
-  assignmentRightHandSide(
-    children: AssignmentRightHandSideCstChildren,
-    param?: IN,
-  ): OUT;
+  assignmentRightHandSide(children: AssignmentRightHandSideCstChildren, param?: IN): OUT;
   arrayLiteral(children: ArrayLiteralCstChildren, param?: IN): OUT;
   structLiteral(children: StructLiteralCstChildren, param?: IN): OUT;
   structLiteralEntry(children: StructLiteralEntryCstChildren, param?: IN): OUT;

@@ -5,18 +5,13 @@ import { bsArrayToArray, toArrayTag, toMoteTag } from './helpers.js';
 import type { Mote } from './types.js';
 import { capitalize, cleanGameChangerString } from './util.js';
 
-export function stringifyQuest(
-  mote: Mote<Crashlands2.Quest>,
-  packed: GameChanger,
-) {
+export function stringifyQuest(mote: Mote<Crashlands2.Quest>, packed: GameChanger) {
   // METADATA
   const storyline = packed.working.getMote(mote.data.storyline);
   const blocks: string[] = [
     `Name: ${packed.working.getMoteName(mote)}`,
     `Storyline: ` +
-      (storyline
-        ? `${packed.working.getMoteName(storyline)}${toMoteTag(storyline)}`
-        : ''),
+      (storyline ? `${packed.working.getMoteName(storyline)}${toMoteTag(storyline)}` : ''),
   ];
   if (mote.data.wip?.staging) {
     blocks.push(`Stage: ${mote.data.wip.staging}\n`);
@@ -68,19 +63,13 @@ export function stringifyQuest(
       // GIVER
       if (mote.data.quest_giver) {
         const giver = packed.working.getMote(mote.data.quest_giver.item);
-        blocks.push(
-          `Giver: ${packed.working.getMoteName(giver)}${toMoteTag(giver)}`,
-        );
+        blocks.push(`Giver: ${packed.working.getMoteName(giver)}${toMoteTag(giver)}`);
       }
     } else {
       // RECEIVER
       if (mote.data.quest_receiver) {
         const receiver = packed.working.getMote(mote.data.quest_receiver.item);
-        blocks.push(
-          `Receiver: ${packed.working.getMoteName(receiver)}${toMoteTag(
-            receiver,
-          )}`,
-        );
+        blocks.push(`Receiver: ${packed.working.getMoteName(receiver)}${toMoteTag(receiver)}`);
       }
     }
 
@@ -137,26 +126,18 @@ export function stringifyQuest(
     if (momentType === 'start') {
       // Start Log
       if (mote.data.quest_start_log) {
-        blocks.push(
-          `Log: ${cleanGameChangerString(mote.data.quest_start_log.text)}`,
-          '',
-        );
+        blocks.push(`Log: ${cleanGameChangerString(mote.data.quest_start_log.text)}`, '');
       }
       // Clues
       if (mote.data.clues) {
         const clueGroups = bsArrayToArray(mote.data.clues);
         for (const clueGroup of clueGroups) {
-          if (!clueGroup.element?.phrases || !clueGroup.element.speaker)
-            continue;
+          if (!clueGroup.element?.phrases || !clueGroup.element.speaker) continue;
           const speaker = packed.working.getMote(clueGroup.element.speaker);
           let clueString = `Clue${toArrayTag(
             clueGroup,
-          )}: ${packed.working.getMoteName(speaker)}${toMoteTag(
-            clueGroup.element.speaker,
-          )}`;
-          for (const phraseContainer of bsArrayToArray(
-            clueGroup.element!.phrases,
-          )) {
+          )}: ${packed.working.getMoteName(speaker)}${toMoteTag(clueGroup.element.speaker)}`;
+          for (const phraseContainer of bsArrayToArray(clueGroup.element!.phrases)) {
             const clue = phraseContainer.element;
             let line = `\n>${toArrayTag(phraseContainer)} `;
             const emoji = clue?.phrase.emoji;

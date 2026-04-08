@@ -15,10 +15,7 @@ let dataString = JSON.stringify(packed.base.data);
 // Replace all refs with proper JSON Pointers
 dataString = dataString
   .replace(/"\$ref":\s*"([^"]+)"/g, '"$ref": "#/$defs/$1"')
-  .replace(
-    /"additionalProperties":\s*0(\.0)?/g,
-    '"additionalProperties": false',
-  )
+  .replace(/"additionalProperties":\s*0(\.0)?/g, '"additionalProperties": false')
   .replace(/"additionalProperties":\s*1(\.0)?/g, '"additionalProperties": true')
   .replace(/"bConst"/g, '"const"');
 
@@ -38,9 +35,7 @@ const rootSchema = {
   $schema: 'http://json-schema.org/draft-07/schema#',
   type: 'object',
   required: schemaNames,
-  properties: Object.fromEntries(
-    schemaNames.map((name) => [name, { $ref: `#/$defs/${name}` }]),
-  ),
+  properties: Object.fromEntries(schemaNames.map((name) => [name, { $ref: `#/$defs/${name}` }])),
 };
 
 // // We want types for Storylines and Quests
@@ -53,10 +48,7 @@ const schemaTypes = await compile(rootSchema, 'Schemas', {
   additionalProperties: false,
 });
 await pathy('src/cl2.types.auto.ts').write(
-  `export namespace Crashlands2 {\n\t${schemaTypes.replace(
-    /\n/g,
-    '\n\t',
-  )}\n}\n`,
+  `export namespace Crashlands2 {\n\t${schemaTypes.replace(/\n/g, '\n\t')}\n}\n`,
 );
 
 await createPointerTypesFromSchema(
@@ -65,11 +57,7 @@ await createPointerTypesFromSchema(
   'quest',
   (pointer) => !pointer.startsWith('objectives'),
 );
-await createPointerTypesFromSchema(
-  'cl2_storyline',
-  'StorylineMote',
-  'storyline',
-);
+await createPointerTypesFromSchema('cl2_storyline', 'StorylineMote', 'storyline');
 await createPointerTypesFromSchema(
   'cl2_artisan_glads',
   'ComfortMote',
@@ -100,18 +88,11 @@ await createPointerTypesFromSchema(
  * @param {string} outfileInfix
  * @param {(pointer:string)=>boolean} [pointerFilter]
  */
-async function createPointerTypesFromSchema(
-  schemaId,
-  typeRootName,
-  outfileInfix,
-  pointerFilter,
-) {
+async function createPointerTypesFromSchema(schemaId, typeRootName, outfileInfix, pointerFilter) {
   // Create types for Quest Mote paths
   const schema = exists(packed).base.getSchema(schemaId);
   ok(schema, 'Could not find schema for ' + schemaId);
-  const pointers = [
-    ...computeMotePointersFromSchema(exists(packed).base, schema),
-  ]
+  const pointers = [...computeMotePointersFromSchema(exists(packed).base, schema)]
     .filter((p) => !pointerFilter || pointerFilter(p))
     .map((p) => `\`${p.replace(/\*/g, '${string}')}\``)
     .sort();
@@ -128,9 +109,7 @@ async function createPointerTypesFromSchema(
 function recursivelyPortBschemaToJsonSchema(schema) {
   const isObject =
     schema &&
-    (schema.type === 'object' ||
-      'properties' in schema ||
-      'additionalProperties' in schema);
+    (schema.type === 'object' || 'properties' in schema || 'additionalProperties' in schema);
   if (!isObject) return schema;
 
   const propNames = Object.keys(schema.properties || {});
@@ -152,7 +131,6 @@ function recursivelyPortBschemaToJsonSchema(schema) {
  * @returns {Exclude<T, undefined | null>}
  */
 function exists(thing) {
-  if ([undefined, null].includes(thing))
-    throw new Error(`Expected ${thing} to exist`);
+  if ([undefined, null].includes(thing)) throw new Error(`Expected ${thing} to exist`);
   return thing;
 }

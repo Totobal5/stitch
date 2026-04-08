@@ -1,11 +1,6 @@
 import { GameMakerVersionString } from './types/GameMakerVersionString.js';
 import type { Yyp, YypResource } from './types/Yyp.js';
-import {
-  FixedNumber,
-  isObjectWithField,
-  nameField,
-  yyIsNewFormat,
-} from './types/utility.js';
+import { FixedNumber, isObjectWithField, nameField, yyIsNewFormat } from './types/utility.js';
 
 const escapable =
   // eslint-disable-next-line no-control-regex, no-misleading-character-class
@@ -66,11 +61,7 @@ export function stringifyYy(yyData: any, yyp?: Yyp): string {
    * Recursively JSON-stringify
    */
   function stringify(key: number, holder: any[], pointer: Pointer): string;
-  function stringify(
-    key: string,
-    holder: { [key: string]: string },
-    pointer: Pointer,
-  ): string;
+  function stringify(key: string, holder: { [key: string]: string }, pointer: Pointer): string;
   function stringify(key: number | string, holder: any, pointer: Pointer = []) {
     // Produce a string from holder[key].
     let value = holder[key];
@@ -125,21 +116,14 @@ export function stringifyYy(yyData: any, yyp?: Yyp): string {
           // for non-JSON values.
           arrayLevel++;
 
-          const jsonifiedValues = value.map(
-            (_, i) => stringify(i, value, [...pointer]) || 'null',
-          );
+          const jsonifiedValues = value.map((_, i) => stringify(i, value, [...pointer]) || 'null');
 
           // Join all of the elements together, separated with commas, and wrap them in
           // brackets.
           const v =
             jsonifiedValues.length === 0
               ? '[]'
-              : `[${eol}` +
-                gap +
-                jsonifiedValues.join(`,${eol}` + gap) +
-                `,${eol}` +
-                mind +
-                ']';
+              : `[${eol}` + gap + jsonifiedValues.join(`,${eol}` + gap) + `,${eol}` + mind + ']';
           gap = mind;
           level = startingLevel;
           arrayLevel--;
@@ -157,9 +141,7 @@ export function stringifyYy(yyData: any, yyp?: Yyp): string {
         Object.keys(value).forEach(function (k) {
           const v = stringify(k, value, [...pointer]);
           if (v) {
-            partial.push(
-              quote(k) + (includeGaps && !isNewFormat ? ': ' : ':') + v,
-            );
+            partial.push(quote(k) + (includeGaps && !isNewFormat ? ': ' : ':') + v);
           }
         });
 
@@ -169,19 +151,13 @@ export function stringifyYy(yyData: any, yyp?: Yyp): string {
         // In the new format, the Channels object deep within a sprite has its keys newlined
         const needsLineBreak =
           isNewFormat &&
-          (pointer.at(-1) === 'Channels' ||
-            pointer.find((p) => p === 'ConfigValues'));
+          (pointer.at(-1) === 'Channels' || pointer.find((p) => p === 'ConfigValues'));
 
         const v =
           partial.length === 0
             ? '{}'
             : includeGaps || needsLineBreak
-              ? `{${eol}` +
-                gap +
-                partial.join(`,${eol}` + gap) +
-                `,${eol}` +
-                mind +
-                '}'
+              ? `{${eol}` + gap + partial.join(`,${eol}` + gap) + `,${eol}` + mind + '}'
               : '{' + partial.join(',') + ',}';
         gap = mind;
         level = startingLevel;
@@ -234,8 +210,7 @@ function prepareForStringification<T>(
   const ideVersion = yyp?.MetaData?.IDEVersion
     ? new GameMakerVersionString(yyp.MetaData.IDEVersion)
     : null;
-  const isNewFormat =
-    __meta.isNewFormat || yyIsNewFormat(yyData) || yyIsNewFormat(yyp);
+  const isNewFormat = __meta.isNewFormat || yyIsNewFormat(yyData) || yyIsNewFormat(yyp);
   __meta = {
     ...__meta,
     isNewFormat,
@@ -271,9 +246,7 @@ function prepareForStringification<T>(
       if (currentPath === 'resources') {
         // Sort based on the path
         const resources = prepared as YypResource[];
-        resources.sort((a, b) =>
-          a.id.path.toLowerCase().localeCompare(b.id.path.toLowerCase()),
-        );
+        resources.sort((a, b) => a.id.path.toLowerCase().localeCompare(b.id.path.toLowerCase()));
       } else if (currentPath === 'IncludedFiles') {
         const includedFiles = prepared as Yyp['IncludedFiles'];
         includedFiles.sort((a, b) =>
@@ -294,17 +267,14 @@ function prepareForStringification<T>(
     return yyData;
   } else if (typeof yyData === 'object' && yyData !== null) {
     const yyDataCopy = { ...yyData } as Record<string, any>;
-    const hasResourceType =
-      'resourceType' in yyData && typeof yyData.resourceType === 'string';
+    const hasResourceType = 'resourceType' in yyData && typeof yyData.resourceType === 'string';
     if (isNewFormat && hasResourceType) {
       // Then we need to ensure that the file has the `${resourceType}` key,
       // because we may be converting an old format to the new one.
       yyDataCopy[`$${yyData.resourceType}`] ||= '';
       if (
         yyDataCopy[`$${yyData.resourceType}`] === '' &&
-        ['GMScript', 'GMRoom', 'GMRInstance', 'GMEvent'].includes(
-          yyData.resourceType as string,
-        ) &&
+        ['GMScript', 'GMRoom', 'GMRInstance', 'GMEvent'].includes(yyData.resourceType as string) &&
         ideVersion?.gte('2024.800.0.618')
       ) {
         // Then we need to set this to "v1" instead of ""

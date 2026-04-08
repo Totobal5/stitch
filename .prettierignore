@@ -9,6 +9,8 @@ package-lock.json
 **/*.yy
 *.yyp
 **/*.yyp
+*.svelte
+**/*.svelte
 pnpm-lock.yaml
 .DS_Store
 node_modules

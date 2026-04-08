@@ -59,14 +59,8 @@ const main = defineCommand({
         const dest = await SpriteDest.from(projectYypPath);
         const destConfig = await dest.loadConfig();
         destConfig.sources ||= [];
-        const relativeSourcePath = dest.yypPath
-          .up()
-          .relativeTo(src.spritesRoot);
-        if (
-          !destConfig.sources.find((src) =>
-            pathy(src.source).equals(relativeSourcePath),
-          )
-        ) {
+        const relativeSourcePath = dest.yypPath.up().relativeTo(src.spritesRoot);
+        if (!destConfig.sources.find((src) => pathy(src.source).equals(relativeSourcePath))) {
           destConfig.sources.push({
             source: relativeSourcePath,
           });

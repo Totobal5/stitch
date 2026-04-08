@@ -1,9 +1,4 @@
-import {
-  Asset,
-  Code,
-  getEventFromFilename,
-  isAssetOfKind,
-} from '@bscotch/gml-parser';
+import { Asset, Code, getEventFromFilename, isAssetOfKind } from '@bscotch/gml-parser';
 import { Pathy } from '@bscotch/pathy';
 import { YyResourceType } from '@bscotch/yy';
 import vscode from 'vscode';
@@ -139,9 +134,7 @@ export class TreeAsset<
     const asset = this.asset;
     if (isAssetOfKind(asset, 'scripts') || isAssetOfKind(asset, 'objects')) {
       const gmlFile = asset.gmlFilesArray?.[0];
-      file = vscode.Uri.file(
-        gmlFile?.path.absolute || this.asset.yyPath.absolute,
-      );
+      file = vscode.Uri.file(gmlFile?.path.absolute || this.asset.yyPath.absolute);
     } else if (isAssetOfKind(asset, 'sounds')) {
       file = vscode.Uri.file(asset.dir.join(asset.yy.soundFile).absolute);
     }
@@ -270,9 +263,7 @@ export class TreeRoomInstance extends StitchTreeItemBase<'room-instance'> {
     this.id = this.parent.id + '/' + instanceId;
 
     const gmlFile = asset.gmlFilesArray?.[0];
-    const file = vscode.Uri.file(
-      gmlFile?.path.absolute || asset.yyPath.absolute,
-    );
+    const file = vscode.Uri.file(gmlFile?.path.absolute || asset.yyPath.absolute);
     this.command = {
       command: 'vscode.open',
       title: 'Open',

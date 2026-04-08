@@ -19,8 +19,7 @@ export class StitchDefinitionsProvider implements vscode.DefinitionProvider {
 
     const assetName = item?.asset
       ? item.name
-      : item?.getTypeByKind('Id.Instance')?.name ||
-        item?.getTypeByKind('Asset.GMObject')?.name;
+      : item?.getTypeByKind('Id.Instance')?.name || item?.getTypeByKind('Asset.GMObject')?.name;
 
     if (item && item.native && item.name !== 'event_inherited') {
       // const helpLink = file?.project.helpLinks[item.name];
@@ -89,14 +88,12 @@ export class StitchDefinitionsProvider implements vscode.DefinitionProvider {
         if (!project) return;
         if (editor) {
           const cursorPosition = editor.selection.active;
-          const wordRange =
-            editor.document.getWordRangeAtPosition(cursorPosition);
+          const wordRange = editor.document.getWordRangeAtPosition(cursorPosition);
           if (wordRange) {
             word = editor.document.getText(wordRange);
           }
         }
-        const openDocs = () =>
-          vscode.env.openExternal(vscode.Uri.parse(project.helpLinks[word]));
+        const openDocs = () => vscode.env.openExternal(vscode.Uri.parse(project.helpLinks[word]));
         if (info?.from === 'keybind') {
           // Then we only want to open if the word is a native value of some sort.
           const item = project.self.getMember(word);

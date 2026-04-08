@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { pathy } from '@bscotch/pathy';
 import { logger } from './logger.js';
 import type { Asset } from './project.asset.js';
 import { Project } from './project.js';
@@ -37,9 +38,7 @@ describe('Project', function () {
     ok(keyframes);
     expect(keyframes.type.kind).to.equal('Array');
     expect(keyframes.type.items[0].kind).to.equal('Struct');
-    expect(keyframes.type.items[0].type[0]).to.eql(
-      spec.types.get('Struct.Keyframe'),
-    );
+    expect(keyframes.type.items[0].type[0]).to.eql(spec.types.get('Struct.Keyframe'));
 
     const typeField = track.getMember('type');
     ok(typeField);
@@ -62,20 +61,105 @@ describe('Project', function () {
     ok(scriptExecuteType.kind === 'Function');
     expect(scriptExecuteType.listParameters()).to.have.lengthOf(2);
     expect(scriptExecuteType.listParameters()![0]!.name).to.equal('scr');
-    expect(scriptExecuteType.listParameters()![0]!.type.type).to.have.lengthOf(
-      2,
-    );
-    expect(scriptExecuteType.listParameters()![0]!.type.type[0].kind).to.equal(
-      'Function',
-    );
-    expect(scriptExecuteType.listParameters()![0]!.type.type[1].kind).to.equal(
-      'Asset.GMScript',
-    );
+    expect(scriptExecuteType.listParameters()![0]!.type.type).to.have.lengthOf(2);
+    expect(scriptExecuteType.listParameters()![0]!.type.type[0].kind).to.equal('Function');
+    expect(scriptExecuteType.listParameters()![0]!.type.type[1].kind).to.equal('Asset.GMScript');
     expect(scriptExecuteType.listParameters()![1]!.name).to.equal('...');
   });
 
   it('can use fallback GmlSpec', async function () {
     await Project.fallbackGmlSpecPath.exists({ assert: true });
+  });
+
+  it('can find a gml file by absolute path', async function () {
+    const project = await Project.initialize('samples/project');
+    const absolutePath = pathy(project.dir.join('objects/o_object/Create_0.gml').absolute);
+    const gml = project.getGmlFile(absolutePath);
+    ok(gml);
+    expect(gml.path.absolute.toLocaleLowerCase()).to.equal(
+      absolutePath.absolute.toLocaleLowerCase(),
+    );
+  });
+
+  it('can resolve object yy properties as typed references in code', async function () {
+    const project = await Project.initialize('samples/gm-ghost-seed');
+    const asset = project.getAssetByName('o_change_room');
+    ok(asset && asset.assetKind === 'objects');
+
+    const obj = asset as Asset<'objects'>;
+    const toRoom = obj.variables?.getMember('toRoom');
+    const time = obj.variables?.getMember('time');
+    ok(toRoom);
+    ok(time);
+    expect(toRoom.type.toFeatherString()).to.equal('Asset.GMRoom');
+    expect(time.type.toFeatherString()).to.equal('Real');
+
+    const create = obj.gmlFile;
+    const toRoomRef = create.refs.find((ref) => ref.item.name === 'toRoom');
+    const timeRef = create.refs.find((ref) => ref.item.name === 'time');
+    ok(toRoomRef);
+    ok(timeRef);
+    ok(toRoomRef.item === toRoom);
+    ok(timeRef.item === time);
+
+    const callbackPlayerStart = create.content.indexOf('player.fsm.Change("Default");');
+    ok(callbackPlayerStart >= 0);
+    const callbackPlayerRef = create.getReferenceAt(callbackPlayerStart + 1);
+    ok(callbackPlayerRef);
+    expect(callbackPlayerRef.item.name).to.equal('player');
+
+    // Verify that `Change` is resolved correctly in `_pyr.fsm.Change("Freeze")`
+    const pyrFsmChangeStr = '_pyr.fsm.Change("Freeze")';
+    const pyrFsmChangeStart = create.content.indexOf(pyrFsmChangeStr);
+    ok(pyrFsmChangeStart >= 0, 'Could not find _pyr.fsm.Change("Freeze") in file');
+    const changeOffset = pyrFsmChangeStart + '_pyr.fsm.'.length;
+    const changeRef = create.getReferenceAt(changeOffset);
+    ok(changeRef, `No reference found at 'Change' position (offset ${changeOffset})`);
+    expect(changeRef.item.name).to.equal('Change');
+    expect(changeRef.item.type.kind).to.equal('Function');
+
+    const lpsmAsset = project.getAssetByName('LpSM_SM');
+    ok(lpsmAsset && lpsmAsset.assetKind === 'scripts');
+    const lpsmFile = (lpsmAsset as Asset<'scripts'>).gmlFile;
+    const onEnterAssignment = 'OnEnter =  _on_enter;';
+    const assignmentStart = lpsmFile.content.indexOf(onEnterAssignment);
+    ok(assignmentStart >= 0, 'Could not find OnEnter assignment in LpSM_SM');
+
+    const onEnterMemberOffset = assignmentStart + onEnterAssignment.indexOf('OnEnter');
+    const onEnterMemberRef = lpsmFile.getReferenceAt(onEnterMemberOffset);
+    ok(onEnterMemberRef, 'Could not resolve OnEnter member reference');
+    expect(onEnterMemberRef.item.name).to.equal('OnEnter');
+    expect(onEnterMemberRef.item.type.toFeatherString()).to.equal('Function');
+
+    const onEnterParamOffset = assignmentStart + onEnterAssignment.indexOf('_on_enter');
+    const onEnterParamRef = lpsmFile.getReferenceAt(onEnterParamOffset);
+    ok(onEnterParamRef, 'Could not resolve _on_enter parameter reference');
+    expect(onEnterParamRef.item.name).to.equal('_on_enter');
+    expect(onEnterParamRef.item.type.toFeatherString()).to.equal('Function');
+
+    // GameMaker-style: @param order is source-of-truth, even if names differ.
+    const originalLpsmContent = lpsmFile.content;
+    const weirdParamNamesContent = originalLpsmContent
+      .replace(
+        '/// @param {String} [name] State name.',
+        '/// @param {String} [dkjaslkjdlkasjdas] State name.',
+      )
+      .replace(
+        '/// @param {Function} [on_enter] Callback executed on enter: function(current, previous) {}',
+        '/// @param {Function} [uu18928823] Callback executed on enter: function(current, previous) {}',
+      );
+
+    await lpsmFile.reload(weirdParamNamesContent, { reloadDirty: true });
+    const weirdAssignmentStart = lpsmFile.content.indexOf(onEnterAssignment);
+    ok(weirdAssignmentStart >= 0, 'Could not find OnEnter assignment after weird @param rename');
+    const weirdParamOffset = weirdAssignmentStart + onEnterAssignment.indexOf('_on_enter');
+    const weirdParamRef = lpsmFile.getReferenceAt(weirdParamOffset);
+    ok(weirdParamRef, 'Could not resolve _on_enter with positional @param mapping');
+    expect(weirdParamRef.item.name).to.equal('_on_enter');
+    expect(weirdParamRef.item.type.toFeatherString()).to.equal('Function');
+
+    // Restore original content to avoid side effects for later tests.
+    await lpsmFile.reload(originalLpsmContent, { reloadDirty: true });
   });
 
   it('can analyze a representative project', async function () {
@@ -129,21 +213,20 @@ describe('Project', function () {
     ok(grandchild.parent === child);
     ok(child2.parent === parent);
     // Check that variables are propery inherited
-    expect(
-      parent.instanceType?.listMembers().map((m) => m.name),
-    ).to.include.members(parentVars);
-    expect(
-      child.instanceType?.listMembers().map((m) => m.name),
-    ).to.include.members([...parentVars, ...childVars]);
-    expect(
-      grandchild.instanceType?.listMembers().map((m) => m.name),
-    ).to.include.members([...parentVars, ...childVars, ...grandchildVars]);
-    expect(
-      child2.instanceType?.listMembers().map((m) => m.name),
-    ).to.include.members(child2Vars);
-    expect(
-      child2.instanceType?.listMembers().map((m) => m.name),
-    ).not.to.include.members(parentVars);
+    expect(parent.instanceType?.listMembers().map((m) => m.name)).to.include.members(parentVars);
+    expect(child.instanceType?.listMembers().map((m) => m.name)).to.include.members([
+      ...parentVars,
+      ...childVars,
+    ]);
+    expect(grandchild.instanceType?.listMembers().map((m) => m.name)).to.include.members([
+      ...parentVars,
+      ...childVars,
+      ...grandchildVars,
+    ]);
+    expect(child2.instanceType?.listMembers().map((m) => m.name)).to.include.members(child2Vars);
+    expect(child2.instanceType?.listMembers().map((m) => m.name)).not.to.include.members(
+      parentVars,
+    );
 
     // Check that a reference to the parent_var works in the grandchild
     const grandChildRef = grandchild.gmlFile.getReferenceAt(4, 24);
@@ -200,9 +283,7 @@ describe('Project', function () {
     const inRootScriptScope = scriptFile.getInScopeSymbolsAt(762);
     ok(inRootScriptScope.length);
     // Local scope
-    const localConstructed = inRootScriptScope.find(
-      (id) => id.name === 'const',
-    );
+    const localConstructed = inRootScriptScope.find((id) => id.name === 'const');
     ok(localConstructed);
     ok(localConstructed.local);
     ok(!localConstructed.global);
@@ -241,9 +322,7 @@ describe('Project', function () {
     ok(inFunctionScope.length);
     ok(inFunctionScope.find((id) => id.name === paramName));
     // And so should local vars
-    const inFunctionLocalvar = inFunctionScope.find(
-      (id) => id.name === 'local',
-    );
+    const inFunctionLocalvar = inFunctionScope.find((id) => id.name === 'local');
     ok(inFunctionLocalvar);
     ok(scriptFile.getReferenceAt(21, 10)!.item === inFunctionLocalvar);
     //#endregion FUNCTION SCOPE
@@ -309,10 +388,7 @@ describe('Project', function () {
     expect(constructorType.constructs[0].kind).to.equal('Struct');
     expect(constructorType.constructs[0].name).to.equal(constructorName);
     ok(project.self.getMember(constructorName) === constructorSymbol);
-    ok(
-      project.types.get(`Struct.${constructorName}`) ===
-        constructorType.constructs[0],
-    );
+    ok(project.types.get(`Struct.${constructorName}`) === constructorType.constructs[0]);
 
     //#endregion CONSTRUCTORS
 
@@ -335,9 +411,7 @@ describe('Project', function () {
     //#region FUNCTIONS
     // Check the return type of a function
     const functionDefRef = complexScriptFile.getReferenceAt(119, 22);
-    expect((functionDefRef?.item as Signifier).type.returns[0].kind).to.equal(
-      'Array',
-    );
+    expect((functionDefRef?.item as Signifier).type.returns[0].kind).to.equal('Array');
     const globalFunction = scriptFile.getReferenceAt(6, 19);
     ok(globalFunction);
     ok(globalFunction.item.name === 'global_function');
@@ -360,14 +434,12 @@ describe('Project', function () {
     // Mock reload a file during editing and ensure that
     // no extraneous identifiers are created
     let code = complexScriptFile.content;
-    await complexScriptFile.reload(
-      code + `\n\nfunction Tmp () constructor {a}`,
-      { reloadDirty: true },
-    );
-    await complexScriptFile.reload(
-      code + `\n\nfunction Tmp () constructor {ab}`,
-      { reloadDirty: true },
-    );
+    await complexScriptFile.reload(code + `\n\nfunction Tmp () constructor {a}`, {
+      reloadDirty: true,
+    });
+    await complexScriptFile.reload(code + `\n\nfunction Tmp () constructor {ab}`, {
+      reloadDirty: true,
+    });
     // A should no longer exist!
     assert(complexScriptFile.refs.find((r) => r.item.name === 'ab'));
     assert(!complexScriptFile.refs.find((r) => r.item.name === 'a'));
@@ -385,16 +457,14 @@ describe('Project', function () {
 
   it('can sync datafiles', async function () {
     const project = await resetSandbox();
-    await project.dir
-      .join('datafiles/test-folder/test-file.txt')
-      .write('hello');
+    await project.dir.join('datafiles/test-folder/test-file.txt').write('hello');
     await project.syncIncludedFiles();
-    assert(
-      project.datafiles.find(
-        (f) =>
-          f.name === 'test-file.txt' && f.filePath === 'datafiles/test-folder',
-      ),
+    const synced = project.datafiles.find(
+      (f) => f.name === 'test-file.txt' && f.filePath === 'datafiles/test-folder',
     );
+    assert(synced);
+    // Included file masks must remain numeric to avoid GameMaker schema corruption.
+    expect(synced.CopyToMask).to.equal(-1n);
   });
 
   xit('can parse sample project', async function () {
@@ -449,13 +519,9 @@ async function validateCrossFileDiagnostics(project: Project) {
   assert(declaration.item === reference.item);
   assert(propertyDeclaration.item === propertyReference.item);
   assert(propertyDeclaration.item.name === propName);
-  assert(
-    declaration.item.type.type[0]!.getMember(propName) ===
-      propertyDeclaration.item,
-  );
+  assert(declaration.item.type.type[0]!.getMember(propName) === propertyDeclaration.item);
   // Should not have any diagnostics in these files.
-  const stepDiagnostics =
-    stepEvent.getDiagnostics().UNDECLARED_VARIABLE_REFERENCE;
+  const stepDiagnostics = stepEvent.getDiagnostics().UNDECLARED_VARIABLE_REFERENCE;
   expect(stepDiagnostics).to.have.lengthOf(0);
 
   // Upon reloading the Create event, should STILL have
@@ -474,8 +540,7 @@ async function validateCrossFileDiagnostics(project: Project) {
   const reloadedPropertyReference = stepEvent.getReferenceAt(1, 25)!;
   assert(reloadedPropertyReference.item === reloadedPropertyDeclaration.item);
 
-  const reloadedStepDiagnostics =
-    stepEvent.getDiagnostics().UNDECLARED_VARIABLE_REFERENCE;
+  const reloadedStepDiagnostics = stepEvent.getDiagnostics().UNDECLARED_VARIABLE_REFERENCE;
   expect(reloadedStepDiagnostics).to.have.lengthOf(0);
 }
 
@@ -513,19 +578,14 @@ async function validateAccessorTypes(project: Project) {
   ok(functionScope);
   const timerVar = functionScope!.local.getMember('_timer');
   ok(timerVar);
-  ok(
-    timerVar.type.type[0] === reactionTimerConstruct,
-    'Timer var type is not the expected type',
-  );
+  ok(timerVar.type.type[0] === reactionTimerConstruct, 'Timer var type is not the expected type');
   let withContext = reactionsFile.getScopeRangeAt(5, 1)!;
   ok(withContext.self === reactionTimerConstruct);
   assertAllMembersExist(timerVar.type);
 
   // Reload the file and ensure that the type is still correct
   await reactionsFile.reload();
-  const reloadedTimerVar = reactionsFile
-    .getScopeRangeAt(3, 1)!
-    .local.getMember('_timer');
+  const reloadedTimerVar = reactionsFile.getScopeRangeAt(3, 1)!.local.getMember('_timer');
   ok(reloadedTimerVar);
   ok(
     reloadedTimerVar.type.type[0] === reactionTimerConstruct,
@@ -545,38 +605,22 @@ function validateFunctionContexts(project: Project) {
   ok(complicatedScriptFile);
 
   // GLOBAL CONSTRUCTED CONTEXT
-  const bschemaGlobalContext = complicatedScriptFile.getReferenceAt(
-    7,
-    14,
-  )!.item;
-  const functionWithBschemaGlobalContext = functionScriptFile.getScopeRangeAt(
-    2,
-    32,
-  )!;
+  const bschemaGlobalContext = complicatedScriptFile.getReferenceAt(7, 14)!.item;
+  const functionWithBschemaGlobalContext = functionScriptFile.getScopeRangeAt(2, 32)!;
   ok(
     functionWithBschemaGlobalContext &&
-      functionWithBschemaGlobalContext.self ===
-        bschemaGlobalContext.type.constructs[0],
+      functionWithBschemaGlobalContext.self === bschemaGlobalContext.type.constructs[0],
   );
 
   // OBJECT CONTEXT
   const obj = project.getAssetByName('o_object')!;
   ok(obj && obj.instanceType);
   const functionWithObjectContext = functionScriptFile.getScopeRangeAt(7, 25)!;
-  ok(
-    functionWithObjectContext &&
-      functionWithObjectContext.self === obj.assetType,
-  );
+  ok(functionWithObjectContext && functionWithObjectContext.self === obj.assetType);
 
   // INSTANCE CONTEXT
-  const functionWithInstanceContext = functionScriptFile.getScopeRangeAt(
-    12,
-    27,
-  );
-  ok(
-    functionWithInstanceContext &&
-      functionWithInstanceContext.self === obj.instanceType,
-  );
+  const functionWithInstanceContext = functionScriptFile.getScopeRangeAt(12, 27);
+  ok(functionWithInstanceContext && functionWithInstanceContext.self === obj.instanceType);
 }
 
 function validateJsdocs(project: Project) {
@@ -653,18 +697,14 @@ function validateWithContexts(project: Project) {
   ok(complicatedScriptFile);
 
   // WITHING INTO A GLOBAL CONSTRUCTED
-  const bschemaGlobalContext = complicatedScriptFile.getReferenceAt(1, 14)!.item
-    .type.type[0];
+  const bschemaGlobalContext = complicatedScriptFile.getReferenceAt(1, 14)!.item.type.type[0];
   ok(
     bschemaGlobalContext &&
       bschemaGlobalContext.kind === 'Struct' &&
       bschemaGlobalContext.name === 'Bschema',
   );
   const withIntoBschemaGlobal = withingScriptFile.getScopeRangeAt(2, 15)!;
-  ok(
-    withIntoBschemaGlobal &&
-      withIntoBschemaGlobal.self === bschemaGlobalContext,
-  );
+  ok(withIntoBschemaGlobal && withIntoBschemaGlobal.self === bschemaGlobalContext);
 
   // WITHING INTO AN OBJECT IDENTIFIER
   const obj = project.getAssetByName('o_object')!;
@@ -696,10 +736,7 @@ function validateWithContexts(project: Project) {
   const localStruct = withingScriptFile.getReferenceAt(24, 9)!.item;
   ok(localStruct && localStruct.type.kind === 'Struct');
   const withIntoLocalStruct = withingScriptFile.getScopeRangeAt(27, 16)!;
-  ok(
-    withIntoLocalStruct &&
-      withIntoLocalStruct.self === localStruct.type.type[0],
-  );
+  ok(withIntoLocalStruct && withIntoLocalStruct.self === localStruct.type.type[0]);
 
   // The following JSDoc was misbehaving at one point...
   const jsdoc = withingScriptFile.jsdocs[0];
@@ -712,15 +749,10 @@ function validateBschemaConstructor(project: Project) {
   const complexScript = project.getAssetByName('Complicated')!;
   const complexScriptFile = complexScript.gmlFile;
   const bschemaGlobal = project.self.getMember('BSCHEMA');
-  const bschemaStructType = project.types.get(
-    'Struct.Bschema',
-  ) as Type<'Struct'>;
+  const bschemaStructType = project.types.get('Struct.Bschema') as Type<'Struct'>;
   const bschemaGlobalDef = complexScriptFile.getReferenceAt(1, 15);
-  const bschemaConstructor = complexScriptFile.getReferenceAt(7, 13)
-    ?.item as Signifier;
-  const bschemaRoleType = project.types.get(
-    'Struct.BschemaRole',
-  ) as Type<'Struct'>;
+  const bschemaConstructor = complexScriptFile.getReferenceAt(7, 13)?.item as Signifier;
+  const bschemaRoleType = project.types.get('Struct.BschemaRole') as Type<'Struct'>;
   ok(bschemaGlobal);
   ok(bschemaStructType);
   ok(bschemaStructType.kind === 'Struct');
@@ -734,8 +766,7 @@ function validateBschemaConstructor(project: Project) {
   // Check all of the members of Struct.Bschema.
 
   // Make sure that the project_setup Bschema field gets typed based on its assignment
-  const projectSetupAssignedTo =
-    bschemaConstructor.type.type[0].getParameter(0)!;
+  const projectSetupAssignedTo = bschemaConstructor.type.type[0].getParameter(0)!;
   ok(projectSetupAssignedTo.name === 'project_setup_function');
   // ok(projectSetupType === projectSetupAssignedTo.type);
 
@@ -764,10 +795,7 @@ function validateBschemaConstructor(project: Project) {
     roles: { kind: 'Struct', code: 'Struct<Struct.BschemaRole>' },
     schema_mote_ids: { kind: 'Struct', code: 'Struct<Array<String>>' },
     uid_pools: { kind: 'Struct' },
-  } satisfies Record<
-    string,
-    { kind?: PrimitiveName; kinds?: PrimitiveName[]; code?: string }
-  >;
+  } satisfies Record<string, { kind?: PrimitiveName; kinds?: PrimitiveName[]; code?: string }>;
 
   for (const [fieldName, info] of Object.entries(expectedKinds)) {
     logger.log('Checking field', fieldName, 'of Bschema');
@@ -779,8 +807,7 @@ function validateBschemaConstructor(project: Project) {
     if ('kind' in info) {
       expect(type.kind).to.equal(info.kind);
     }
-    expect(member.def, 'All members should have a definition location').to
-      .exist;
+    expect(member.def, 'All members should have a definition location').to.exist;
     if ('kinds' in info) {
       expect(type?.type.length).to.equal(info.kinds.length);
       for (const expectedKind of info.kinds) {
@@ -803,9 +830,7 @@ function validateBschemaConstructor(project: Project) {
   expect(schemaMoteIds.type.items[0].kind).to.equal('Array');
   expect(schemaMoteIds.type.items[0].type[0].items).to.exist;
   expect(schemaMoteIds.type.items[0].type[0].items!.kind).to.equal('String');
-  expect(schemaMoteIds.type.toFeatherString()).to.equal(
-    'Struct<Array<String>>',
-  );
+  expect(schemaMoteIds.type.toFeatherString()).to.equal('Struct<Array<String>>');
   //#endregion Bschema.schema_mote_ids
 
   //#region Bschema.roles

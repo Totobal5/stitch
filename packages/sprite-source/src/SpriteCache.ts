@@ -1,10 +1,6 @@
 import { Pathy, pathy } from '@bscotch/pathy';
 import { computePngChecksums } from '@bscotch/pixel-checksum';
-import {
-  SpritesInfo,
-  cacheVersion,
-  spritesInfoSchema,
-} from './SpriteCache.schemas.js';
+import { SpritesInfo, cacheVersion, spritesInfoSchema } from './SpriteCache.schemas.js';
 import { SpriteDir } from './SpriteDir.js';
 import { computeStringChecksum } from './checksum.js';
 import { retryOptions, spriteCacheFilename } from './constants.js';
@@ -35,9 +31,7 @@ export class SpriteCache {
   }
 
   get cacheFile() {
-    return this.stitchDir
-      .join(spriteCacheFilename)
-      .withValidator(spritesInfoSchema);
+    return this.stitchDir.join(spriteCacheFilename).withValidator(spritesInfoSchema);
   }
 
   protected async getSpriteDirs(dirs: Pathy[]): Promise<SpriteDir[]> {
@@ -52,9 +46,7 @@ export class SpriteCache {
             }
           })
           .catch((err) => {
-            this.issues.push(
-              new SpriteSourceError(`Error processing "${dir.relative}"`, err),
-            );
+            this.issues.push(new SpriteSourceError(`Error processing "${dir.relative}"`, err));
           }),
       );
     }
@@ -75,9 +67,7 @@ export class SpriteCache {
           info: {},
         };
         this.issues.push(
-          new SpriteSourceError(
-            `Sprite cache version is out of date. Will rebuild.`,
-          ),
+          new SpriteSourceError(`Sprite cache version is out of date. Will rebuild.`),
         );
       }
     } catch (err) {
@@ -85,12 +75,7 @@ export class SpriteCache {
         version: cacheVersion,
         info: {},
       };
-      this.issues.push(
-        new SpriteSourceError(
-          `Could not load sprite cache. Will rebuild.`,
-          err,
-        ),
-      );
+      this.issues.push(new SpriteSourceError(`Could not load sprite cache. Will rebuild.`, err));
     }
     return cache;
   }
@@ -103,18 +88,13 @@ export class SpriteCache {
     // Load the current cache and sprite dirs
     const [cache, allSpriteDirs] = await Promise.all([
       this.loadCache(),
-      getDirs(this.spritesRoot.absolute, this.maxDepth).then((dirs) =>
-        this.getSpriteDirs(dirs),
-      ),
+      getDirs(this.spritesRoot.absolute, this.maxDepth).then((dirs) => this.getSpriteDirs(dirs)),
     ]);
     // Filter out ignored spriteDirs
     const spriteDirs = !ignore?.length
       ? allSpriteDirs
       : allSpriteDirs.filter(
-          (dir) =>
-            !ignorePatterns?.some((pattern) =>
-              dir.path.relative.match(pattern),
-            ),
+          (dir) => !ignorePatterns?.some((pattern) => dir.path.relative.match(pattern)),
         );
 
     // For each sprite, update the cache with its size, frames (checksums, changedAt, etc)
@@ -125,17 +105,12 @@ export class SpriteCache {
     await Promise.all(waits);
 
     // Add any missing checksums
-    const checksumsToCompute: [sprite: string, frame: string, path: string][] =
-      [];
+    const checksumsToCompute: [sprite: string, frame: string, path: string][] = [];
     for (const [sprite, info] of Object.entries(cache.info)) {
       if (info.spine) continue;
       for (const [frame, frameInfo] of Object.entries(info.frames)) {
         if (frameInfo.checksum) continue;
-        checksumsToCompute.push([
-          sprite,
-          frame,
-          this.spritesRoot.join(sprite, frame).absolute,
-        ]);
+        checksumsToCompute.push([sprite, frame, this.spritesRoot.join(sprite, frame).absolute]);
       }
     }
     const checksums = computePngChecksums(
@@ -157,9 +132,7 @@ export class SpriteCache {
     }
 
     // Remove any sprite info that no longer exists
-    const existingSpriteDirs = new Set(
-      spriteDirs.map((dir) => dir.path.relative),
-    );
+    const existingSpriteDirs = new Set(spriteDirs.map((dir) => dir.path.relative));
     for (const spriteDir of Object.keys(cache.info)) {
       if (!existingSpriteDirs.has(spriteDir)) {
         delete cache.info[spriteDir];

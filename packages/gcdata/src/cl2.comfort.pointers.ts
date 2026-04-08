@@ -1,5 +1,6 @@
 export type ComfortMoteDataPointer = `data/${ComfortMotePointer}`;
-export type ComfortMotePointer = ``
+export type ComfortMotePointer =
+  | ``
   | `artisan_id`
   | `description/description`
   | `description/skip`

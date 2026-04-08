@@ -28,14 +28,8 @@ const platformNames = [
  *    + "0.0.0-rc.0" syntax (the 4th number will be the RC number)
  * The four numbers will appear in all cases as the string "major.minor.patch.candidate"
  */
-export async function setProjectVersion(
-  yypPath: string,
-  versionString: string,
-) {
-  assert(
-    yypPath.endsWith('.yyp'),
-    'First argument must be a path to a .yyp file',
-  );
+export async function setProjectVersion(yypPath: string, versionString: string) {
+  assert(yypPath.endsWith('.yyp'), 'First argument must be a path to a .yyp file');
   const projectFolder = parsePath(yypPath).parent;
   const parts = versionString.match(
     /^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)((\.(?<revision>\d+))|(-rc.(?<candidate>\d+)))?$/,
@@ -46,12 +40,7 @@ export async function setProjectVersion(
   const { major, minor, patch, revision, candidate } = parts.groups as {
     [part: string]: string;
   };
-  const normalizedVersionString = [
-    major,
-    minor,
-    patch,
-    candidate || revision || '0',
-  ].join('.');
+  const normalizedVersionString = [major, minor, patch, candidate || revision || '0'].join('.');
   const optionsDir = joinPaths(projectFolder, 'options');
   const optionsFiles = await listFiles(optionsDir, ['.yy', '.nmeta']);
   for (const file of optionsFiles) {
@@ -61,9 +50,7 @@ export async function setProjectVersion(
       // Read the file and replace anything that looks like a version line with the provided version. A version line looks like "option_..._version":"x.y.z.w"
       const content = await fsp.readFile(file, 'utf8');
       const newContent = content.replace(
-        new RegExp(
-          `("option[^"]*(?:${platformNames.join('|')})_version":\\s*")[\\d.]+"`,
-        ),
+        new RegExp(`("option[^"]*(?:${platformNames.join('|')})_version":\\s*")[\\d.]+"`),
         `$1${normalizedVersionString}"`,
       );
       await fsp.writeFile(file, newContent);
@@ -75,10 +62,7 @@ export async function setProjectVersion(
         `(?<pre><DisplayVersion>)(?<versionString>.*)(?<post></DisplayVersion>)`,
       );
       const content = await fsp.readFile(file, 'utf8');
-      const newContent = content.replace(
-        switchSearchRegex,
-        `$1${normalizedVersionString}$3`,
-      );
+      const newContent = content.replace(switchSearchRegex, `$1${normalizedVersionString}$3`);
       await fsp.writeFile(file, newContent);
     }
   }
@@ -88,10 +72,7 @@ export async function setProjectVersion(
  * Get the files found in `dir`, recursively, as full paths. Only include
  * specified extensions.
  */
-async function listFiles(
-  dir: string,
-  allowedExtensions: `.${string}`[],
-): Promise<string[]> {
+async function listFiles(dir: string, allowedExtensions: `.${string}`[]): Promise<string[]> {
   let results: string[] = [];
   const list = await fsp.readdir(dir, { withFileTypes: true });
   for (const dirent of list) {

@@ -11,9 +11,7 @@ import { SpriteSourceError, assert } from './utility.js';
 export class SpriteDir {
   protected _frames: SpriteFrame[] = [];
   protected _isSpine = false;
-  protected _spinePaths:
-    | undefined
-    | { atlas: Pathy; json: Pathy; pngs: Pathy[] };
+  protected _spinePaths: undefined | { atlas: Pathy; json: Pathy; pngs: Pathy[] };
 
   protected constructor(
     readonly path: Pathy,
@@ -37,10 +35,7 @@ export class SpriteDir {
   async updateCache(cache: SpritesInfo) {
     // Do some initial cleanup of the cache
     // Remove the cache if there has been a spine-type-change
-    if (
-      cache.info[this.path.relative] &&
-      cache.info[this.path.relative].spine !== this.isSpine
-    ) {
+    if (cache.info[this.path.relative] && cache.info[this.path.relative].spine !== this.isSpine) {
       delete cache.info[this.path.relative];
     }
     // Initialize the cache if it doesn't exist
@@ -122,9 +117,7 @@ export class SpriteDir {
     }
     // Get the boundingbox that captures the bounding boxes of
     // all frames.
-    const bboxes = await Promise.all(
-      this.frames.map((frame) => frame.getBoundingBox()),
-    );
+    const bboxes = await Promise.all(this.frames.map((frame) => frame.getBoundingBox()));
     const bbox = bboxes.slice(1).reduce((bbox, frameBbox) => {
       return {
         left: Math.min(bbox.left, frameBbox.left),
@@ -141,18 +134,9 @@ export class SpriteDir {
     await newSpriteDir.ensureDirectory();
     if (this.isSpine) {
       const fromTo = [
-        [
-          this.spinePaths.atlas,
-          newSpriteDir.join(this.spinePaths.atlas.basename),
-        ],
-        [
-          this.spinePaths.json,
-          newSpriteDir.join(this.spinePaths.json.basename),
-        ],
-        ...this.spinePaths.pngs.map((png) => [
-          png,
-          newSpriteDir.join(png.basename),
-        ]),
+        [this.spinePaths.atlas, newSpriteDir.join(this.spinePaths.atlas.basename)],
+        [this.spinePaths.json, newSpriteDir.join(this.spinePaths.json.basename)],
+        ...this.spinePaths.pngs.map((png) => [png, newSpriteDir.join(png.basename)]),
       ];
       await Promise.all(
         fromTo.map(([from, to]) =>
@@ -203,10 +187,7 @@ export class SpriteDir {
       });
     } catch (err) {
       this.issues.push(
-        new SpriteSourceError(
-          `Could not delete source folder: ${this.path.relative}`,
-          err,
-        ),
+        new SpriteSourceError(`Could not delete source folder: ${this.path.relative}`, err),
       );
     }
   }
@@ -220,9 +201,7 @@ export class SpriteDir {
     logs: Log[] = [],
     issues: Error[] = [],
   ): Promise<SpriteDir | undefined> {
-    const files = (await readdirSafe(path.absolute)).map((file) =>
-      pathy(file, path.absolute),
-    );
+    const files = (await readdirSafe(path.absolute)).map((file) => pathy(file, path.absolute));
     let pngs = files.filter((file) => file.basename.match(/\.png$/i));
     pngs.sort();
     if (pngs.length === 0) {
@@ -259,20 +238,10 @@ export class SpriteDir {
       }
 
       // 2. Get the {name}.atlas and {name}.json files
-      const skeletonJson = files.find(
-        (f) => f.name === frameId && f.hasExtension('json'),
-      );
-      const skeletonAtlas = files.find(
-        (f) => f.name === frameId && f.hasExtension('atlas'),
-      );
-      assert(
-        skeletonJson,
-        `No .json file found for ${path.relative}/${frameId}`,
-      );
-      assert(
-        skeletonAtlas,
-        `No .atlas file found for ${path.relative}/${frameId}`,
-      );
+      const skeletonJson = files.find((f) => f.name === frameId && f.hasExtension('json'));
+      const skeletonAtlas = files.find((f) => f.name === frameId && f.hasExtension('atlas'));
+      assert(skeletonJson, `No .json file found for ${path.relative}/${frameId}`);
+      assert(skeletonAtlas, `No .atlas file found for ${path.relative}/${frameId}`);
 
       // 3. Set the spine paths. There can be multiple PNGs, and in the case
       //    of GameMaker assets there can be *other* PNGs (like thumbnails).
@@ -296,8 +265,7 @@ export class SpriteDir {
       for (const frame of sprite.frames.slice(1)) {
         const size = await frame.getSize();
         assert(
-          size.width === expectedSize.width &&
-            size.height === expectedSize.height,
+          size.width === expectedSize.width && size.height === expectedSize.height,
           'Frames must all be the same size.',
         );
       }

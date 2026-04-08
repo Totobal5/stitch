@@ -44,18 +44,12 @@ describe('Utilities', function () {
     ]);
     expect(versions[0].parsed).to.deep.equal([2022, 3, 1, 401]);
 
-    expect(GameMakerVersionString.gt('2023.3.1.401', '2023.3.1.400')).to.be
-      .true;
-    expect(GameMakerVersionString.gt('2023.3.1.401', '2023.3.1.401')).to.be
-      .false;
-    expect(GameMakerVersionString.gte('2023.3.1.401', '2023.3.1.401')).to.be
-      .true;
-    expect(GameMakerVersionString.gte('2023.3.1.401', '2023.3.1.400')).to.be
-      .true;
-    expect(GameMakerVersionString.eq('2023.3.1.401', '2023.3.1.401')).to.be
-      .true;
-    expect(GameMakerVersionString.eq('2023.3.1.401', '2023.3.1.400')).to.be
-      .false;
+    expect(GameMakerVersionString.gt('2023.3.1.401', '2023.3.1.400')).to.be.true;
+    expect(GameMakerVersionString.gt('2023.3.1.401', '2023.3.1.401')).to.be.false;
+    expect(GameMakerVersionString.gte('2023.3.1.401', '2023.3.1.401')).to.be.true;
+    expect(GameMakerVersionString.gte('2023.3.1.401', '2023.3.1.400')).to.be.true;
+    expect(GameMakerVersionString.eq('2023.3.1.401', '2023.3.1.401')).to.be.true;
+    expect(GameMakerVersionString.eq('2023.3.1.401', '2023.3.1.400')).to.be.false;
   });
 
   it('can use FixedNumber instances in place of number primitives', function () {

@@ -179,5 +179,5 @@ addButtons();
 })()`;
 
 export const steamWishlistActionsBookmarklet = `javascript:${encodeURIComponent(
-	steamWishlistActionsIife
+  steamWishlistActionsIife,
 )}`;

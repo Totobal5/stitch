@@ -3,16 +3,14 @@ import type { NewSoundDefaults, StitchConfig } from './schema.js';
 export function isValidSoundName(name: string, config: StitchConfig): boolean {
   const allowedNames = config?.newSoundRules?.allowedNames;
   if (!allowedNames?.length) return true;
-  if (allowedNames.some((pattern) => name.match(new RegExp(pattern))))
-    return true;
+  if (allowedNames.some((pattern) => name.match(new RegExp(pattern)))) return true;
   return false;
 }
 
 export function isValidSpriteName(name: string, config: StitchConfig): boolean {
   const allowedNames = config?.newSpriteRules?.allowedNames;
   if (!allowedNames?.length) return true;
-  if (allowedNames.some((pattern) => name.match(new RegExp(pattern))))
-    return true;
+  if (allowedNames.some((pattern) => name.match(new RegExp(pattern)))) return true;
   return false;
 }
 

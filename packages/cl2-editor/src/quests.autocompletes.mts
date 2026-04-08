@@ -8,9 +8,7 @@ export class QuestCompletionProvider implements vscode.CompletionItemProvider {
   provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-  ): vscode.ProviderResult<
-    vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>
-  > {
+  ): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
     const questDoc = QuestDocument.from(document.uri, this.workspace);
     if (questDoc) {
       return questDoc.getAutoCompleteItems(position);

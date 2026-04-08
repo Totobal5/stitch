@@ -95,8 +95,7 @@ const spriteInfoVariables = [
   {
     variable: 'nineslice',
     type: 'Struct',
-    description:
-      'The Nine Slice struct for this sprite, or undefined if it has no nine slice data',
+    description: 'The Nine Slice struct for this sprite, or undefined if it has no nine slice data',
   },
   {
     variable: 'messages',
@@ -113,8 +112,7 @@ const spriteInfoVariables = [
   {
     variable: 'frame_speed',
     type: 'Real',
-    description:
-      'The frame speed set for the sprite (see:\xa0The Sprite Editor)',
+    description: 'The frame speed set for the sprite (see:\xa0The Sprite Editor)',
   },
   {
     variable: 'frame_type',
@@ -138,8 +136,7 @@ const spriteInfoVariables = [
   {
     variable: 'premultiplied',
     type: 'Bool',
-    description:
-      'true if this sprite is marked as premultiplied, otherwise false',
+    description: 'true if this sprite is marked as premultiplied, otherwise false',
   },
   {
     variable: 'animation_names',
@@ -219,8 +216,7 @@ const frameVariables = [
   {
     variable: 'crop_height',
     type: 'Real',
-    description:
-      'The actual height of the frame on the texture page after cropping and scaling',
+    description: 'The actual height of the frame on the texture page after cropping and scaling',
   },
   {
     variable: 'x_offset',
@@ -240,8 +236,7 @@ const boneVariables = [
   {
     variable: 'parent',
     type: 'String',
-    description:
-      "The name of the parent bone, or\xa0undefined if this bone doesn't have a parent",
+    description: "The name of the parent bone, or\xa0undefined if this bone doesn't have a parent",
   },
   {
     variable: 'name',
@@ -314,8 +309,7 @@ const slotVariables = [
   {
     variable: 'bone',
     type: 'String',
-    description:
-      'The name of the slot\'s bone, or "(none)" if there is no bone for this slot',
+    description: 'The name of the slot\'s bone, or "(none)" if there is no bone for this slot',
   },
   {
     variable: 'attachment',
@@ -370,8 +364,7 @@ const slotVariables = [
   {
     variable: 'attachments',
     type: 'Array\xa0of\xa0String',
-    description:
-      'An array containing the names\xa0of all available attachments for this slot.',
+    description: 'An array containing the names\xa0of all available attachments for this slot.',
   },
 ] satisfies VariableInfo[];
 
@@ -379,8 +372,7 @@ const messagesVariables = [
   {
     variable: 'frame',
     type: 'Real',
-    description:
-      'The timing of this broadcast message from the start of the animation (in frames)',
+    description: 'The timing of this broadcast message from the start of the animation (in frames)',
   },
   {
     variable: 'message',
@@ -407,10 +399,7 @@ const frameInfoVariables = [
   },
 ] satisfies VariableInfo[];
 
-function variablesToStruct(
-  variables: VariableInfo[],
-  globalTypes: Map<string, Type>,
-): StructType {
+function variablesToStruct(variables: VariableInfo[], globalTypes: Map<string, Type>): StructType {
   const struct = new Type('Struct');
   for (const v of variables) {
     const type = typeFromFeatherString(v.type, globalTypes, false);
@@ -422,18 +411,11 @@ function variablesToStruct(
   return struct;
 }
 
-function addArrayItemTypeToField(
-  struct: StructType,
-  fieldName: string,
-  itemType: Type,
-) {
+function addArrayItemTypeToField(struct: StructType, fieldName: string, itemType: Type) {
   const field = struct.getMember(fieldName);
   assert(field, `Field ${fieldName} not found in struct ${struct.name}`);
   const arrayType = field.getTypeByKind('Array');
-  assert(
-    arrayType,
-    `Field ${fieldName} in struct ${struct.name} is not an array`,
-  );
+  assert(arrayType, `Field ${fieldName} in struct ${struct.name} is not an array`);
   arrayType.addItemType(itemType);
 }
 

@@ -3,22 +3,11 @@ import type { GameChanger } from './GameChanger.js';
 import { createBsArrayKey } from './helpers.js';
 import type { Mote } from './types.js';
 
-export {
-  parseStringifiedChat,
-  updateChangesFromParsedChat,
-} from './cl2.chat.parse.js';
+export { parseStringifiedChat, updateChangesFromParsedChat } from './cl2.chat.parse.js';
 export { stringifyChat } from './cl2.chat.stringify.js';
-export {
-  isChatMote,
-  listChats,
-  type ChatUpdateResult,
-} from './cl2.chat.types.js';
+export { isChatMote, listChats, type ChatUpdateResult } from './cl2.chat.types.js';
 
-export async function createChatMote(
-  packed: GameChanger,
-  parent?: Mote,
-  folder?: string,
-) {
+export async function createChatMote(packed: GameChanger, parent?: Mote, folder?: string) {
   console.log('CREATING CHAT MOTE', { parent, folder });
   const mote = packed.createMote(chatSchemaId, createBsArrayKey(6));
   packed.updateMoteData(mote.id, 'data/wip/staging', 'Draft');

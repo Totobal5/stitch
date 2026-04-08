@@ -17,34 +17,22 @@ class StitchConfig {
   }
 
   get sortSpriteSourceChangesBy() {
-    return (
-      this.config.get<'recency' | 'name'>('sprites.sources.sortChangesBy') ??
-      'recency'
-    );
+    return this.config.get<'recency' | 'name'>('sprites.sources.sortChangesBy') ?? 'recency';
   }
   get cleanOnSpineSpriteChange() {
-    return (
-      this.config.get<boolean>('sprites.cleanOnSpineSpriteChange') ?? false
-    );
+    return this.config.get<boolean>('sprites.cleanOnSpineSpriteChange') ?? false;
   }
   get suppressDiagnosticsInGroups() {
     return this.config.get<string[]>('diagnostics.suppressGroups') || [];
   }
   get autoDeclaredGlobalsPrefixes() {
-    return (
-      this.config.get<string[]>('diagnostics.autoDeclaredGlobalsPatterns') || []
-    );
+    return this.config.get<string[]>('diagnostics.autoDeclaredGlobalsPatterns') || [];
   }
   get releaseNotesChannels(): Channel[] {
-    return (
-      this.config.get<Channel[]>('gameMaker.releases.notes.channels') || []
-    );
+    return this.config.get<Channel[]>('gameMaker.releases.notes.channels') || [];
   }
   get disableGameMakerUpdatePrompt() {
-    return (
-      this.config.get<boolean>('gameMaker.disableGameMakerUpdatePrompt') ||
-      false
-    );
+    return this.config.get<boolean>('gameMaker.disableGameMakerUpdatePrompt') || false;
   }
 
   get enableFunctionSignatureStatus() {
@@ -54,26 +42,16 @@ class StitchConfig {
     return this.config.get<string | null>('editing.autocomplete.ignoredPrefix');
   }
   get symbolsIncludeInstanceVars() {
-    return (
-      this.config.get<boolean>(
-        'editing.workspaceSymbols.includeInstanceVariables',
-      ) ?? true
-    );
+    return this.config.get<boolean>('editing.workspaceSymbols.includeInstanceVariables') ?? true;
   }
   get symbolsIncludeLocalVars() {
-    return (
-      this.config.get<boolean>(
-        'editing.workspaceSymbols.includeLocalVariables',
-      ) ?? true
-    );
+    return this.config.get<boolean>('editing.workspaceSymbols.includeLocalVariables') ?? true;
   }
   get symbolsMaxSearchResults() {
     return this.config.get<number>('editing.workspaceSymbols.maxResults') || 30;
   }
   get functionSignatureStatusAlignment(): vscode.StatusBarAlignment {
-    const alignment = this.config.get<'left' | 'right'>(
-      'editing.signatureStatus.alignment',
-    );
+    const alignment = this.config.get<'left' | 'right'>('editing.signatureStatus.alignment');
     if (alignment === 'left') {
       return vscode.StatusBarAlignment.Left;
     }
@@ -92,9 +70,7 @@ class StitchConfig {
     return this.config.get<number>('runView.fontSize') ?? 0;
   }
   get runCompilerDefault(): 'vm' | 'yyc' {
-    return (
-      this.config.get<string>('run.defaultCompiler') || 'vm'
-    ).toLowerCase() as 'vm' | 'yyc';
+    return (this.config.get<string>('run.defaultCompiler') || 'vm').toLowerCase() as 'vm' | 'yyc';
   }
   get runConfigDefault(): string | null {
     return this.config.get<string>('run.defaultConfig') || null;
@@ -109,9 +85,7 @@ class StitchConfig {
     return this.config.get<number>('sprites.editor.minInitialWidth') || 128;
   }
   get spriteAutoImportDelay(): number {
-    return (
-      this.config.get<number>('sprites.sources.watcherDebounceInterval') ?? 1000
-    );
+    return this.config.get<number>('sprites.sources.watcherDebounceInterval') ?? 1000;
   }
   get spriteAutoImportOnStartup() {
     return this.config.get<boolean>('sprites.sources.watchOnStartup') ?? false;

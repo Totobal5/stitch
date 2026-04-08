@@ -37,9 +37,7 @@ This package uses [marked](https://www.npmjs.com/package/marked) for rendering. 
 import { markedBbcodeExtension } from '@bscotch/steam-bbcode/lib';
 import { Marked } from 'marked';
 
-const marked = new Marked(
-  markedBbcodeExtension /* ... optional other extensions */,
-);
+const marked = new Marked(markedBbcodeExtension /* ... optional other extensions */);
 function toBbcode(md: string): string {
   // (Marked replaces single-quotes with &#39;, which Steam doesn't know what to do with.)
   return (marked.parse(source) as string).replaceAll('&#39;', "'");

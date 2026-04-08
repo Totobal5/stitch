@@ -6,6 +6,6 @@
   "isDnD": false,
   "parent": {
     "name": "experiments",
-    "path": "experiments.yyp",
-  },
+    "path": "experiments.yyp"
+  }
 }

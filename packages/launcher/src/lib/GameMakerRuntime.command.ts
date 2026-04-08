@@ -2,10 +2,7 @@ import { Pathy } from '@bscotch/pathy';
 import { arrayWrapped, formatTimestamp } from '@bscotch/utility/browser';
 import { spawn } from 'child_process';
 import type { GameMakerLogOptions } from './GameMakerLauncher.types.js';
-import type {
-  GameMakerCliCommand,
-  GameMakerCliWorker,
-} from './GameMakerRuntime.cliTypes.js';
+import type { GameMakerCliCommand, GameMakerCliWorker } from './GameMakerRuntime.cliTypes.js';
 import type { GameMakerRuntime } from './GameMakerRuntime.js';
 import {
   GameMakerBuildOptions,
@@ -13,27 +10,18 @@ import {
   GameMakerExecutionResults,
   StitchSupportedBuilder,
 } from './GameMakerRuntime.types.js';
-import {
-  artifactExtensionForPlatform,
-  currentOs,
-  projectLogDirectory,
-} from './utility.js';
+import { artifactExtensionForPlatform, currentOs, projectLogDirectory } from './utility.js';
 
 export async function executeGameMakerRuntimeInstallCommand(
   runtime: GameMakerRuntime,
   newRuntime: { version: string; feedUrl: string },
 ) {
-  return await executeGameMakerCommand(
-    runtime,
-    'runtime',
-    ['Install', newRuntime.version],
-    {
-      user: (await runtime.activeUserDirectory()).absolute,
-      runtimePath: runtime.directory.up().absolute,
-      runtimeUrl: newRuntime.feedUrl,
-      verbose: true,
-    },
-  );
+  return await executeGameMakerCommand(runtime, 'runtime', ['Install', newRuntime.version], {
+    user: (await runtime.activeUserDirectory()).absolute,
+    runtimePath: runtime.directory.up().absolute,
+    runtimeUrl: newRuntime.feedUrl,
+    verbose: true,
+  });
 }
 
 export async function computeOptions(
@@ -59,11 +47,7 @@ export async function computeOptions(
     // For some reason the filename has to be there
     // but only the directory is used...
     of: empath(tempDir.join(`igor/out/${projectPath.name}.win`)),
-    tf: empath(
-      outputDir.join(
-        `${projectPath.name}.${artifactExtensionForPlatform(target)}`,
-      ),
-    ),
+    tf: empath(outputDir.join(`${projectPath.name}.${artifactExtensionForPlatform(target)}`)),
   };
 }
 
@@ -93,11 +77,7 @@ export async function computeGameMakerBuildOptions(
   options: GameMakerExecuteOptions;
 }> {
   const target = options?.targetPlatform || 'windows';
-  const command = options?.compile
-    ? target === 'windows'
-      ? 'PackageZip'
-      : 'Package'
-    : 'Run';
+  const command = options?.compile ? (target === 'windows' ? 'PackageZip' : 'Package') : 'Run';
   const buildOptions = await computeOptions(runtime, options);
   return {
     target,
@@ -121,13 +101,7 @@ export async function executeGameMakerBuildCommand(
     options: buildOptions,
   } = await computeGameMakerBuildOptions(runtime, options);
 
-  const results = await executeGameMakerCommand(
-    runtime,
-    target,
-    command,
-    buildOptions,
-    options,
-  );
+  const results = await executeGameMakerCommand(runtime, target, command, buildOptions, options);
   return results;
 }
 
@@ -141,13 +115,7 @@ export async function executeGameMakerCleanCommand(
     options: buildOptions,
   } = await computeGameMakerCleanOptions(runtime, options);
 
-  const results = await executeGameMakerCommand(
-    runtime,
-    target,
-    command,
-    buildOptions,
-    options,
-  );
+  const results = await executeGameMakerCommand(runtime, target, command, buildOptions, options);
   return results;
 }
 
@@ -198,9 +166,7 @@ export async function computeGameMakerBuildCommand(
 export function computeGameMakerCommand<W extends GameMakerCliWorker>(
   runtime: GameMakerRuntime,
   worker: W,
-  command:
-    | GameMakerCliCommand<W>
-    | [command: GameMakerCliCommand<W>, ...positionalArgs: string[]],
+  command: GameMakerCliCommand<W> | [command: GameMakerCliCommand<W>, ...positionalArgs: string[]],
   executionOptions: GameMakerExecuteOptions,
 ) {
   let args = Object.entries(executionOptions)
@@ -230,9 +196,7 @@ export function computeGameMakerCommand<W extends GameMakerCliWorker>(
 export async function executeGameMakerCommand<W extends GameMakerCliWorker>(
   runtime: GameMakerRuntime,
   worker: W,
-  command:
-    | GameMakerCliCommand<W>
-    | [command: GameMakerCliCommand<W>, ...positionalArgs: string[]],
+  command: GameMakerCliCommand<W> | [command: GameMakerCliCommand<W>, ...positionalArgs: string[]],
   executionOptions: GameMakerExecuteOptions,
   otherOptions?: GameMakerLogOptions,
 ) {
@@ -242,12 +206,7 @@ export async function executeGameMakerCommand<W extends GameMakerCliWorker>(
     //See https://github.com/dotnet/msbuild/issues/5726
     delete childEnv.PATH;
   }
-  const { cmd, args } = computeGameMakerCommand(
-    runtime,
-    worker,
-    command,
-    executionOptions,
-  );
+  const { cmd, args } = computeGameMakerCommand(runtime, worker, command, executionOptions);
   console.log('🚀 Running GameMaker CLI command:');
   console.log(cmd, ...args);
   const child = spawn(cmd, args, {
@@ -261,10 +220,7 @@ export async function executeGameMakerCommand<W extends GameMakerCliWorker>(
     timeSeparator: '',
   });
 
-  const logDir = await projectLogDirectory(
-    executionOptions.project,
-    otherOptions,
-  );
+  const logDir = await projectLogDirectory(executionOptions.project, otherOptions);
   const logFilePathy = (fileName: string) => {
     const logFileName = `${
       otherOptions?.excludeLogFileTimestamps ? '' : `${timestamp}.`
@@ -295,21 +251,16 @@ export async function executeGameMakerCommand<W extends GameMakerCliWorker>(
 
       const wasRunnable = command === 'Run' && results.compileSucceeded;
       const containedTwoIgorCompletes = logParts.length === 3;
-      results.runnerSucceeded = wasRunnable
-        ? containedTwoIgorCompletes
-        : undefined;
+      results.runnerSucceeded = wasRunnable ? containedTwoIgorCompletes : undefined;
 
       // Add compiler & runner logs
-      for (const [index, source] of (
-        ['compiler', 'runner'] as const
-      ).entries()) {
+      for (const [index, source] of (['compiler', 'runner'] as const).entries()) {
         let content = logParts[index];
         if (!content) {
           continue;
         }
         const needsSuccessMessage =
-          (index === 0 && results.compileSucceeded) ||
-          (index === 1 && results.runnerSucceeded);
+          (index === 0 && results.compileSucceeded) || (index === 1 && results.runnerSucceeded);
         if (needsSuccessMessage) {
           content += successMessage;
         }

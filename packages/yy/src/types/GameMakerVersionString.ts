@@ -1,11 +1,6 @@
 import { ok } from 'node:assert';
 
-export type GameMakerVersionParsed = [
-  year: number,
-  month: number,
-  major: number,
-  minor: number,
-];
+export type GameMakerVersionParsed = [year: number, month: number, major: number, minor: number];
 
 /** Utility class for GameMaker version strings, allowing easy comparison etc */
 export class GameMakerVersionString {
@@ -75,10 +70,8 @@ export class GameMakerVersionString {
     a: string | GameMakerVersionString,
     b: string | GameMakerVersionString,
   ): -1 | 0 | 1 {
-    const aVersion =
-      typeof a === 'string' ? GameMakerVersionString.parse(a) : a.parsed;
-    const bVersion =
-      typeof b === 'string' ? GameMakerVersionString.parse(b) : b.parsed;
+    const aVersion = typeof a === 'string' ? GameMakerVersionString.parse(a) : a.parsed;
+    const bVersion = typeof b === 'string' ? GameMakerVersionString.parse(b) : b.parsed;
     for (let i = 0; i < 4; i++) {
       let [aPart, bPart] = [aVersion[i], bVersion[i]];
       if (i === 1) {
@@ -96,44 +89,27 @@ export class GameMakerVersionString {
     return 0;
   }
 
-  static gt(
-    a: string | GameMakerVersionString,
-    b: string | GameMakerVersionString,
-  ) {
+  static gt(a: string | GameMakerVersionString, b: string | GameMakerVersionString) {
     return GameMakerVersionString.compare(a, b) > 0;
   }
 
-  static gte(
-    a: string | GameMakerVersionString,
-    b: string | GameMakerVersionString,
-  ) {
+  static gte(a: string | GameMakerVersionString, b: string | GameMakerVersionString) {
     return GameMakerVersionString.compare(a, b) >= 0;
   }
 
-  static eq(
-    a: string | GameMakerVersionString,
-    b: string | GameMakerVersionString,
-  ) {
+  static eq(a: string | GameMakerVersionString, b: string | GameMakerVersionString) {
     return GameMakerVersionString.compare(a, b) === 0;
   }
 
-  static lt(
-    a: string | GameMakerVersionString,
-    b: string | GameMakerVersionString,
-  ) {
+  static lt(a: string | GameMakerVersionString, b: string | GameMakerVersionString) {
     return GameMakerVersionString.compare(a, b) < 0;
   }
 
-  static lte(
-    a: string | GameMakerVersionString,
-    b: string | GameMakerVersionString,
-  ) {
+  static lte(a: string | GameMakerVersionString, b: string | GameMakerVersionString) {
     return GameMakerVersionString.compare(a, b) <= 0;
   }
 
-  static parse(
-    version: string,
-  ): [year: number, month: number, major: number, minor: number] {
+  static parse(version: string): [year: number, month: number, major: number, minor: number] {
     const parts = version.split('.');
     ok(parts.length === 4, `Invalid GameMaker version string: ${version}`);
     return parts.map((n) => {

@@ -66,10 +66,7 @@ function compileRegularSprite(
       './sprite-editor.js',
       panel.webview
         .asWebviewUri(
-          vscode.Uri.file(
-            stitchConfig.context.extensionPath +
-              '/webviews-legacy/sprite-editor.js',
-          ),
+          vscode.Uri.file(stitchConfig.context.extensionPath + '/webviews-legacy/sprite-editor.js'),
         )
         .toString(),
     );
@@ -136,18 +133,13 @@ async function compileSpineSprite(
   const html = spineEditorHtml
     .replace(
       '<!-- VSCODE-INJECT-DATA -->',
-      `<script>window.sprite = JSON.parse(\`${JSON.stringify(
-        data,
-      )}\`);</script>`,
+      `<script>window.sprite = JSON.parse(\`${JSON.stringify(data)}\`);</script>`,
     )
     .replace(
       './spine-editor.js',
       panel.webview
         .asWebviewUri(
-          vscode.Uri.file(
-            stitchConfig.context.extensionPath +
-              '/webviews-legacy/spine-editor.js',
-          ),
+          vscode.Uri.file(stitchConfig.context.extensionPath + '/webviews-legacy/spine-editor.js'),
         )
         .toString(),
     );

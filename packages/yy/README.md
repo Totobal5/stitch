@@ -66,14 +66,8 @@ Ensure a collection of audio or texture groups exist, for example as part of an 
 
 ```ts
 import { ensureGroups } from '@bscotch/yy';
-await ensureGroups('my/project.yyp', 'audio', [
-  'MyAudioGroup',
-  'MyOtherAudioGroup',
-]);
-await ensureGroups('my/project.yyp', 'texture', [
-  'MyTextureGroup',
-  'MyOtherTextureGroup',
-]);
+await ensureGroups('my/project.yyp', 'audio', ['MyAudioGroup', 'MyOtherAudioGroup']);
+await ensureGroups('my/project.yyp', 'texture', ['MyTextureGroup', 'MyOtherTextureGroup']);
 ```
 
 ### CLI

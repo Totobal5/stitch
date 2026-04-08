@@ -1,15 +1,10 @@
 import { pathy } from '@bscotch/pathy';
 import { expect } from 'chai';
-import {
-  computeReleasesSummary,
-  computeReleasesSummaryWithNotes,
-} from './feeds.js';
+import { computeReleasesSummary, computeReleasesSummaryWithNotes } from './feeds.js';
 import { rawReleaseNotesCacheSchema } from './feeds.types.js';
 import { cleanNote } from './notes.js';
 
-const notesCache = pathy('release-notes-cache.json').withValidator(
-  rawReleaseNotesCacheSchema,
-);
+const notesCache = pathy('release-notes-cache.json').withValidator(rawReleaseNotesCacheSchema);
 const tmpSummaryPath = pathy('releases-summary.json');
 
 const sampleReleaseNotesPath = pathy('samples/release_notes.json');
@@ -35,10 +30,7 @@ describe('Release Feeds', function () {
 
   it('can create a centralized GameMaker Releases database', async function () {
     const releases = await computeReleasesSummary();
-    const withNotes = await computeReleasesSummaryWithNotes(
-      releases,
-      notesCache,
-    );
+    const withNotes = await computeReleasesSummaryWithNotes(releases, notesCache);
     await tmpSummaryPath.write(withNotes);
     expect(withNotes.length).to.be.greaterThan(0);
     expect(withNotes.every((r) => r.channel)).to.exist;
@@ -48,9 +40,7 @@ describe('Release Feeds', function () {
       expect(withNotes.every((r) => r[type].notes)).to.exist;
       expect(withNotes.every((r) => r[type].notes.groups)).to.exist;
     }
-    const sampleRelease = withNotes.find(
-      (r) => r.runtime.version === '2022.0.1.30',
-    )!;
+    const sampleRelease = withNotes.find((r) => r.runtime.version === '2022.0.1.30')!;
     expect(sampleRelease).to.exist;
     expect(sampleRelease.runtime.notes.groups).to.exist;
     expect(sampleRelease.runtime.notes.groups.length).to.be.greaterThan(0);

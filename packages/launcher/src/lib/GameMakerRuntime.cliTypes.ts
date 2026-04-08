@@ -65,12 +65,7 @@ export type GameMakerCliCommand<W extends GameMakerCliWorker> = {
     | GameMakerCliBuildCommand;
   ps4: 'IniFile' | 'WriteMemoryFile' | 'Package' | GameMakerCliBuildCommand;
   ps5: 'IniFile' | 'Package' | GameMakerCliBuildCommand;
-  xboxone:
-    | 'IniFile'
-    | 'PackageDev'
-    | 'PackageSubmission'
-    | 'Package'
-    | GameMakerCliBuildCommand;
+  xboxone: 'IniFile' | 'PackageDev' | 'PackageSubmission' | 'Package' | GameMakerCliBuildCommand;
   xboxseriesxs:
     | 'IniFile'
     | 'PackageDevXboxOne'
@@ -83,13 +78,7 @@ export type GameMakerCliCommand<W extends GameMakerCliWorker> = {
   operagx: 'IniFile' | 'Package' | GameMakerCliBuildCommand;
   switch: 'IniFile' | 'Package' | GameMakerCliBuildCommand;
   tests: 'CalculateCoverage' | 'RunTests';
-  runtime:
-    | 'ListInstalled'
-    | 'Info'
-    | 'Install'
-    | 'List'
-    | 'Verify'
-    | 'FetchLicense';
+  runtime: 'ListInstalled' | 'Info' | 'Install' | 'List' | 'Verify' | 'FetchLicense';
 }[W];
 
 export type GameMakerCliBuildWorker =

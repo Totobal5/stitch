@@ -16,9 +16,7 @@ const spriteSummarySchema = z.looseObject({
   spine: z.literal(false),
   checksum: z
     .string()
-    .describe(
-      'A checksum combining the pixel-based checksums of all of the frame checksums.',
-    ),
+    .describe('A checksum combining the pixel-based checksums of all of the frame checksums.'),
   frames: z.record(z.string(), imageSummarySchema),
 });
 
@@ -44,10 +42,7 @@ export const spritesInfoSchema = z.looseObject({
   $schema: z.string().default(remoteFilename).optional(),
   version: z.number().default(1),
   info: z
-    .record(
-      z.string(),
-      z.discriminatedUnion('spine', [spriteSummarySchema, spineSummarySchema]),
-    )
+    .record(z.string(), z.discriminatedUnion('spine', [spriteSummarySchema, spineSummarySchema]))
     .default({}),
 });
 
@@ -66,9 +61,6 @@ export function lastChanged(info: SpriteSummary | SpineSummary) {
 /**
  * Returns `true` if `a` is newer than `b`.
  */
-export function isNewer(
-  a: SpriteSummary | SpineSummary,
-  b: SpriteSummary | SpineSummary,
-) {
+export function isNewer(a: SpriteSummary | SpineSummary, b: SpriteSummary | SpineSummary) {
   return lastChanged(a) > lastChanged(b);
 }

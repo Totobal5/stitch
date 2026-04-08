@@ -23,10 +23,7 @@ export class StitchLocationsProvider {
   async openProjectSaveDirectory() {
     const project = this.workspace.getActiveProject();
     assertLoudly(project, 'No project found!');
-    assertLoudly(
-      os.platform() === 'win32',
-      'Opening save directory only supported on Windows',
-    );
+    assertLoudly(os.platform() === 'win32', 'Opening save directory only supported on Windows');
     const saveDir = pathy(`${process.env.LOCALAPPDATA}/${project.name}`);
     await openPath(saveDir, { assertLoudly: true });
   }
@@ -42,10 +39,7 @@ export class StitchLocationsProvider {
     // /^GameMaker(Studio2?)?(-(Beta|LTS))?\.exe$/
     const uniquePaths = new Set<string>();
     const paths = (
-      await showProgress(
-        () => GameMakerIde.listWellKnownPaths(),
-        'Searching for paths...',
-      )
+      await showProgress(() => GameMakerIde.listWellKnownPaths(), 'Searching for paths...')
     ).filter((p) => {
       if (uniquePaths.has(p.path)) return false;
       uniquePaths.add(p.path);

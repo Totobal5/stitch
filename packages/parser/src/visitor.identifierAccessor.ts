@@ -1,4 +1,4 @@
-import { Defined, arrayWrapped } from '@bscotch/utility';
+import { Defined, arrayWrapped, isArray } from '@bscotch/utility';
 import type { IToken } from 'chevrotain';
 import type {
   AccessorSuffixesCstChildren,
@@ -15,12 +15,7 @@ import {
   sortedAccessorSuffixes,
   sortedFunctionCallParts,
 } from './parser.utility.js';
-import {
-  FunctionArgRange,
-  Position,
-  Range,
-  fixITokenLocation,
-} from './project.location.js';
+import { FunctionArgRange, Position, Range, fixITokenLocation } from './project.location.js';
 import type { Signifier } from './signifiers.js';
 import {
   getTypeOfKind,
@@ -31,6 +26,8 @@ import {
   normalizeType,
   replaceGenerics,
   updateGenericsMap,
+  prioritizeNonUndefinedTypes,
+  prioritizeNonUndefinedInTypeStore,
 } from './types.checks.js';
 import { Type, TypeStore, WithableType } from './types.js';
 import { withableTypes } from './types.primitives.js';
@@ -93,10 +90,9 @@ export function visitIdentifierAccessor(
     // Then this is being treated as a global variable but it has
     // not been declared anywhere
     const autoDeclarePrefixes =
-      this.PROCESSOR.project.options?.settings?.autoDeclareGlobalsPrefixes ||
-      [];
-    const isAutoDeclared = autoDeclarePrefixes.some(
-      (prefix) => lastAccessed.name?.startsWith(prefix),
+      this.PROCESSOR.project.options?.settings?.autoDeclareGlobalsPrefixes || [];
+    const isAutoDeclared = autoDeclarePrefixes.some((prefix) =>
+      lastAccessed.name?.startsWith(prefix),
     );
     if (!isAutoDeclared) {
       this.PROCESSOR.addDiagnostic(
@@ -122,7 +118,17 @@ export function visitIdentifierAccessor(
   // Update lastAccessed with the signifier info
   if (item?.$tag === 'Sym') {
     lastAccessed.signifier = item;
-    lastAccessed.types = arrayWrapped(getTypeStoreOrType(item));
+    const typeStoreOrTypes = getTypeStoreOrType(item);
+    // If we have a TypeStore, apply type prioritization; if we have Type[], apply type prioritization
+    if (isArray(typeStoreOrTypes)) {
+      // It's a Type[] - apply prioritization to boost non-Undefined types
+      const prioritized = prioritizeNonUndefinedTypes(typeStoreOrTypes);
+      lastAccessed.types = arrayWrapped(prioritized);
+    } else {
+      // It's a TypeStore - apply prioritization and wrap
+      prioritizeNonUndefinedInTypeStore(typeStoreOrTypes);
+      lastAccessed.types = arrayWrapped(typeStoreOrTypes);
+    }
     // Add a reference! But if this is an assignment that'll be
     // handled later.
     const refAddedLater = rhs && !item.def;
@@ -143,12 +149,7 @@ export function visitIdentifierAccessor(
       lastAccessed.rhs = rhs;
       lastAccessed.docs = docs;
     }
-    lastAccessed = processNextAccessor(
-      this,
-      lastAccessed,
-      suffixes[i],
-      suffixes[i + 1],
-    );
+    lastAccessed = processNextAccessor(this, lastAccessed, suffixes[i], suffixes[i + 1]);
   }
 
   return lastAccessed.types || [this.ANY];
@@ -197,9 +198,7 @@ function processNextAccessor(
         range: Range.fromCst(visitor.PROCESSOR.file, accessor.location!),
         ctx: lastAccessed.ctx,
       };
-      nextAccessed.types = allowedTypes
-        .map((t) => t.items)
-        .filter((t) => !!t) as TypeStore[];
+      nextAccessed.types = allowedTypes.map((t) => t.items).filter((t) => !!t) as TypeStore[];
       // If there is a RHS, we can't create a variable from it but
       // do need to process it!
       if (lastAccessed.rhs) {
@@ -207,12 +206,7 @@ function processNextAccessor(
       }
       break;
     case 'dotAccessSuffix':
-      nextAccessed = processDotAccessor(
-        visitor,
-        lastAccessed,
-        accessor,
-        nextAccessor,
-      );
+      nextAccessed = processDotAccessor(visitor, lastAccessed, accessor, nextAccessor);
       break;
     case 'functionArguments':
       nextAccessed = processFunctionArguments(visitor, lastAccessed, accessor);
@@ -237,17 +231,12 @@ function processFunctionArguments(
 
   // If this is a mixin call, then we need to ensure that the context
   // includes the variables created by the mixin function.
-  if (
-    (lastAccessed.signifier?.mixin || functionType?.signifier?.mixin) &&
-    functionType?.self
-  ) {
+  if ((lastAccessed.signifier?.mixin || functionType?.signifier?.mixin) && functionType?.self) {
     const variables = functionType.self;
     for (const member of variables.listMembers()) {
       if (!member.def) continue;
       member.override = true; // Ensure it's set as an override variable
-      const currentMember = visitor.PROCESSOR.currentSelf.getMember(
-        member.name,
-      );
+      const currentMember = visitor.PROCESSOR.currentSelf.getMember(member.name);
       if (currentMember?.native) continue;
       visitor.PROCESSOR.currentSelf.addMember(member);
     }
@@ -259,8 +248,7 @@ function processFunctionArguments(
    * for the second argument.
    */
   const isMethodCall =
-    functionType?.signifier ===
-    visitor.PROCESSOR.project.self.getMember('method');
+    functionType?.signifier === visitor.PROCESSOR.project.self.getMember('method');
   let methodSelf: Type | undefined;
   /** If this is a `method()` call, the 2nd argument is the return type */
   let methodReturns: Type | undefined;
@@ -289,18 +277,10 @@ function processFunctionArguments(
       // Start on the RIGHT side of the first delimiter
 
       if (functionType) {
-        const start = Position.fromCstEnd(
-          visitor.PROCESSOR.file,
-          lastDelimiter!,
-        );
+        const start = Position.fromCstEnd(visitor.PROCESSOR.file, lastDelimiter!);
         // end on the LEFT side of the second delimiter
         const end = Position.fromCstStart(visitor.PROCESSOR.file, token);
-        const funcRange = new FunctionArgRange(
-          functionType,
-          argIdx,
-          start,
-          end,
-        );
+        const funcRange = new FunctionArgRange(functionType, argIdx, start, end);
         if (!lastTokenWasDelimiter) {
           funcRange.hasExpression = true;
         }
@@ -337,19 +317,10 @@ function processFunctionArguments(
         methodReturns = getTypeOfKind(inferredType, ['Function']);
       }
       if (expectedType) {
-        updateGenericsMap(
-          expectedType,
-          inferredType,
-          visitor.PROCESSOR.project.types,
-          generics,
-        );
+        updateGenericsMap(expectedType, inferredType, visitor.PROCESSOR.project.types, generics);
       }
       if (isMethodCall && argIdx === 0) {
-        methodSelf = getTypeOfKind(inferredType, [
-          'Id.Instance',
-          'Struct',
-          'Asset.GMObject',
-        ]);
+        methodSelf = getTypeOfKind(inferredType, ['Id.Instance', 'Struct', 'Asset.GMObject']);
       }
     }
   }
@@ -388,10 +359,7 @@ function processDotAccessor(
 
   // Reduce the available types from lastAccessed to those that
   // are dot-accessible
-  const dottableTypes = getTypesOfKind(lastAccessed.types, [
-    ...withableTypes,
-    'Enum',
-  ]);
+  const dottableTypes = getTypesOfKind(lastAccessed.types, [...withableTypes, 'Enum']);
 
   if (!dottableTypes.length) {
     // Early return. Just set the type to ANY and move along.
@@ -406,8 +374,7 @@ function processDotAccessor(
         `Type does not allow dot accessors.`,
       );
     }
-    lastAccessed.rhs &&
-      visitor.assignmentRightHandSide(lastAccessed.rhs, lastAccessed.ctx);
+    lastAccessed.rhs && visitor.assignmentRightHandSide(lastAccessed.rhs, lastAccessed.ctx);
     return nextAccessed;
   }
 
@@ -421,9 +388,7 @@ function processDotAccessor(
         ? identifierFrom(nextAccessor.children.identifier)?.name
         : undefined;
     if (nextAccessorName) {
-      dottableType =
-        dottableTypes.find((t) => t.getMember(nextAccessorName)) ||
-        dottableType;
+      dottableType = dottableTypes.find((t) => t.getMember(nextAccessorName)) || dottableType;
     }
   }
 
@@ -530,11 +495,7 @@ function processDotAccessor(
       property.instance = true;
       property.addRef(propertyNameRange);
     } else {
-      visitor.PROCESSOR.addDiagnostic(
-        'INVALID_OPERATION',
-        accessor.location!,
-        `Unknown property.`,
-      );
+      visitor.PROCESSOR.addDiagnostic('INVALID_OPERATION', accessor.location!, `Unknown property.`);
     }
   }
   popSelfScope();

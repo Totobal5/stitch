@@ -1,9 +1,4 @@
-import {
-  OnDiagnostics,
-  Project,
-  ProjectOptions,
-  setLogger,
-} from '@bscotch/gml-parser';
+import { OnDiagnostics, Project, ProjectOptions, setLogger } from '@bscotch/gml-parser';
 import { pathy } from '@bscotch/pathy';
 import {
   GameMakerIde,
@@ -61,13 +56,10 @@ export class GameMakerProject extends Project {
           increment: 90,
           message: `Opening project...`,
         });
-        const runner = await GameMakerLauncher.openProject(
-          this.yypPath.absolute,
-          {
-            ideVersion: this.yyp.MetaData.IDEVersion,
-            disableUpdatePrompt: stitchConfig.disableGameMakerUpdatePrompt,
-          },
-        );
+        const runner = await GameMakerLauncher.openProject(this.yypPath.absolute, {
+          ideVersion: this.yyp.MetaData.IDEVersion,
+          disableUpdatePrompt: stitchConfig.disableGameMakerUpdatePrompt,
+        });
         progress.report({
           increment: 100,
           message: `Project opened!`,
@@ -90,19 +82,12 @@ export class GameMakerProject extends Project {
     stitchEvents.emit('request-kill-project-in-webview');
   }
 
-  async run(options?: {
-    config?: string | null;
-    compiler?: 'yyc' | 'vm';
-    clean?: boolean;
-  }) {
+  async run(options?: { config?: string | null; compiler?: 'yyc' | 'vm'; clean?: boolean }) {
     if (stitchConfig.killOthersOnRun && !options?.clean) {
       await this.kill();
     }
 
-    stitchEvents.emit(
-      options?.clean ? 'clean-project-start' : 'run-project-start',
-      this,
-    );
+    stitchEvents.emit(options?.clean ? 'clean-project-start' : 'run-project-start', this);
     const config = options?.config ?? stitchConfig.runConfigDefault;
     let compiler = options?.compiler ?? stitchConfig.runCompilerDefault;
     if (['yyc', 'vm'].indexOf(compiler) === -1) {
@@ -147,17 +132,16 @@ export class GameMakerProject extends Project {
 
       const cmd = await loudlyLogThrownAsync(
         async () =>
-          await (
-            options?.clean
-              ? stringifyGameMakerCleanCommand
-              : stringifyGameMakerBuildCommand
-          )(runtime, {
-            project: this.yypPath.absolute,
-            config: config || undefined,
-            yyc: compiler === 'yyc',
-            noCache: false,
-            quiet: true,
-          }),
+          await (options?.clean ? stringifyGameMakerCleanCommand : stringifyGameMakerBuildCommand)(
+            runtime,
+            {
+              project: this.yypPath.absolute,
+              config: config || undefined,
+              yyc: compiler === 'yyc',
+              noCache: false,
+              quiet: true,
+            },
+          ),
       );
 
       logger.info(`Igor command:`, JSON.stringify(cmd));
@@ -179,17 +163,16 @@ export class GameMakerProject extends Project {
       logger.info('Computing Igor command...');
       let { cmd, args } = await loudlyLogThrownAsync(
         async () =>
-          await (
-            options?.clean
-              ? computeGameMakerCleanCommand
-              : computeGameMakerBuildCommand
-          )(runtime, {
-            project: this.yypPath.absolute,
-            config: config || undefined,
-            yyc: compiler === 'yyc',
-            noCache: false,
-            quiet: true,
-          }),
+          await (options?.clean ? computeGameMakerCleanCommand : computeGameMakerBuildCommand)(
+            runtime,
+            {
+              project: this.yypPath.absolute,
+              config: config || undefined,
+              yyc: compiler === 'yyc',
+              noCache: false,
+              quiet: true,
+            },
+          ),
       );
       cmd = cmd.replace(/[/\\]/g, '/').replace(/ /g, '\\ ');
       logger.info('Running command:');

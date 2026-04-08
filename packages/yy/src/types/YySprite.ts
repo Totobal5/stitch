@@ -153,9 +153,7 @@ const spriteImageLayerSchema = unstable({
   visible: z.boolean().default(true),
   isLocked: z.boolean().default(false),
   blendMode: spriteLayerBlendModeSchema.default(0),
-  opacity: fixedNumber(z.number().min(0).max(100)).default(
-    new FixedNumber(100),
-  ),
+  opacity: fixedNumber(z.number().min(0).max(100)).default(new FixedNumber(100)),
   displayName: z.string().default('default'),
   resourceVersion: z.string().default('1.0'),
   /**
@@ -175,9 +173,7 @@ const spriteFolderLayerSchema = unstable({
   blendMode: spriteLayerBlendModeSchema.default(0),
   displayName: z.string().default('Layer Group'),
   isLocked: z.boolean().default(false),
-  opacity: fixedNumber(z.number().min(0).max(100)).default(
-    new FixedNumber(100),
-  ),
+  opacity: fixedNumber(z.number().min(0).max(100)).default(new FixedNumber(100)),
   visible: z.boolean().default(true),
   layers: z.array(spriteImageLayerSchema).default([]),
 });
@@ -190,10 +186,7 @@ const spriteLayerSchema = z.preprocess(
     }
     return arg;
   },
-  z.discriminatedUnion('resourceType', [
-    spriteImageLayerSchema,
-    spriteFolderLayerSchema,
-  ]),
+  z.discriminatedUnion('resourceType', [spriteImageLayerSchema, spriteFolderLayerSchema]),
 );
 
 const spriteSequenceTrackKeyframeBaseSchema = z.object({
@@ -223,9 +216,7 @@ const spriteSequenceTrackKeyframeBaseSchema = z.object({
           })
           .default({ name: '', path: '' }),
         resourceVersion: z.string().default('1.0'),
-        resourceType: z
-          .literal('SpriteFrameKeyframe')
-          .default('SpriteFrameKeyframe'),
+        resourceType: z.literal('SpriteFrameKeyframe').default('SpriteFrameKeyframe'),
       }),
     )
     .default({
@@ -238,26 +229,20 @@ const spriteSequenceTrackKeyframeBaseSchema = z.object({
   resourceVersion: z.string().default('1.0'),
 });
 
-const spriteSequenceTrackKeyframeTypeSchema = z.discriminatedUnion(
-  'resourceType',
-  [
-    z.object({
-      resourceType: z.literal('Keyframe`1'),
-      elementType: z.literal('SpriteFrameKeyframe'),
-    }),
-    z.object({
-      resourceType: z.literal('Keyframe<SpriteFrameKeyframe>'),
-    }),
-  ],
-);
+const spriteSequenceTrackKeyframeTypeSchema = z.discriminatedUnion('resourceType', [
+  z.object({
+    resourceType: z.literal('Keyframe`1'),
+    elementType: z.literal('SpriteFrameKeyframe'),
+  }),
+  z.object({
+    resourceType: z.literal('Keyframe<SpriteFrameKeyframe>'),
+  }),
+]);
 
-export type SpriteSequenceTrackKeyframe = z.input<
-  typeof spriteSequenceTrackKeyframeSchema
->;
-const spriteSequenceTrackKeyframeSchema =
-  spriteSequenceTrackKeyframeBaseSchema.and(
-    spriteSequenceTrackKeyframeTypeSchema,
-  );
+export type SpriteSequenceTrackKeyframe = z.input<typeof spriteSequenceTrackKeyframeSchema>;
+const spriteSequenceTrackKeyframeSchema = spriteSequenceTrackKeyframeBaseSchema.and(
+  spriteSequenceTrackKeyframeTypeSchema,
+);
 
 const spriteSequenceTrackKeyframesTypeSchema = z
   .discriminatedUnion('resourceType', [
@@ -281,9 +266,7 @@ const spriteSequenceMomentTypeSchema = z.discriminatedUnion('resourceType', [
   }),
 ]);
 
-export type SpriteSequenceEventType = z.infer<
-  typeof spriteSequenceEventTypeSchema
->;
+export type SpriteSequenceEventType = z.infer<typeof spriteSequenceEventTypeSchema>;
 const spriteSequenceEventTypeSchema = z.discriminatedUnion('resourceType', [
   z.object({
     resourceType: z.literal('KeyframeStore<MessageEventKeyframe>'),
@@ -507,10 +490,7 @@ const yySpriteSchemaStrict = yyBaseSchema
     sprite.sequence.length = new FixedNumber(frameCount);
 
     // Ensure keyframes map onto frames
-    for (const [
-      i,
-      keyframe,
-    ] of sprite.sequence.tracks[0].keyframes.Keyframes.entries()) {
+    for (const [i, keyframe] of sprite.sequence.tracks[0].keyframes.Keyframes.entries()) {
       keyframe.Channels['0'].Id.name = sprite.frames[i].name;
     }
 

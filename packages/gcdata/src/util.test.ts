@@ -1,10 +1,6 @@
 import { expect } from 'chai';
 import { assertThrows } from './assert.js';
-import {
-  computeTerminalPointers,
-  debugOnError,
-  setValueAtPointer,
-} from './util.js';
+import { computeTerminalPointers, debugOnError, setValueAtPointer } from './util.js';
 
 describe('Utilities', function () {
   it('can get all pointers in an object', function () {
@@ -23,9 +19,7 @@ describe('Utilities', function () {
     expect(pointers).to.deep.equal(new Set(['a/b/c', 'a/b/d', 'e/f']));
 
     const pointers2 = computeTerminalPointers(data, 'prefix');
-    expect(pointers2).to.deep.equal(
-      new Set(['prefix/a/b/c', 'prefix/a/b/d', 'prefix/e/f']),
-    );
+    expect(pointers2).to.deep.equal(new Set(['prefix/a/b/c', 'prefix/a/b/d', 'prefix/e/f']));
   });
 
   it('can get debugOnFail results when there is no error', function () {

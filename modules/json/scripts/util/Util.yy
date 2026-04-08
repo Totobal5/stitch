@@ -6,6 +6,6 @@
   "isDnD": false,
   "parent": {
     "name": "json",
-    "path": "json.yyp",
-  },
+    "path": "json.yyp"
+  }
 }

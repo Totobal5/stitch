@@ -2,12 +2,7 @@ import { z } from 'zod';
 import { assert } from './assert.js';
 import type { Crashlands2 } from './cl2.types.auto.js';
 import type { Gcdata } from './GameChanger.js';
-import type {
-  ParsedLineItem,
-  ParsedWord,
-  Position,
-  Range,
-} from './types.editor.js';
+import type { ParsedLineItem, ParsedWord, Position, Range } from './types.editor.js';
 import type { BschemaEnum, Mote } from './types.js';
 import { resolvePointerInSchema } from './util.js';
 
@@ -106,8 +101,7 @@ export type ParsedLine = {
 };
 
 export const arrayTagPattern = '(?:#(?<arrayTag>[a-z0-9]+))';
-export const emojiGroupPattern =
-  '(?<emojiGroup>\\(\\s*(?<emojiName>[^)]*?)\\s*\\))';
+export const emojiGroupPattern = '(?<emojiGroup>\\(\\s*(?<emojiName>[^)]*?)\\s*\\))';
 export const moteTagPattern = '(?:@(?<moteTag>[a-z0-9_]+))';
 export const moteNamePattern = "(?<moteName>[A-Za-z0-9:&?! ',()/-]+)";
 export const dialogPattern = `^(?<indicator>>)\\s*?${arrayTagPattern}?(\\s+${emojiGroupPattern}?(\\s*(?<text>.*)))?\\s*$`;
@@ -121,9 +115,7 @@ export const linePartsSchema = z.object({
   indicator: z
     .string()
     .optional()
-    .describe(
-      'The symbol prefixing the line to indicate what the line type is',
-    ),
+    .describe('The symbol prefixing the line to indicate what the line type is'),
   arrayTag: z
     .string()
     .regex(/^[a-z0-9]+$/)
@@ -142,31 +134,19 @@ export const linePartsSchema = z.object({
     .optional()
     .describe("MoteId (without the '@' prefix)"),
   moteName: z.string().optional().describe('Mote Name'),
-  emojiGroup: z
-    .string()
-    .optional()
-    .describe('The emoji name, including the outer `()`'),
+  emojiGroup: z.string().optional().describe('The emoji name, including the outer `()`'),
   emojiName: z.string().optional().describe("The emoji's mote name"),
   labelGroup: z.string().optional().describe('The label, including the `:`'),
   label: z.string().optional().describe('For `Label:Value` elements'),
-  sep: z
-    .string()
-    .optional()
-    .describe('Separator between the line prefix and content.'),
-  text: z
-    .string()
-    .optional()
-    .describe('For dialog and similar, the text content'),
+  sep: z.string().optional().describe('Separator between the line prefix and content.'),
+  text: z.string().optional().describe('For dialog and similar, the text content'),
   style: z
     .string()
     .optional()
     .describe(
       'For array elements whose values come in distinct flavors, the identifier indicating which flavor it is',
     ),
-  status: z
-    .string()
-    .optional()
-    .describe('For entries that have some kind of "status" concept'),
+  status: z.string().optional().describe('For entries that have some kind of "status" concept'),
 });
 
 export function parseIfMatch(
@@ -248,11 +228,8 @@ export function getStagingOptions(packed: Gcdata): Crashlands2.Staging[] {
   return stagingSubchema.enum;
 }
 
-export function getEmojis(
-  packed: Gcdata,
-): Mote<Crashlands2.Schemas['cl2_emoji']>[] {
-  const emojis =
-    packed.listMotesBySchema<Crashlands2.Schemas['cl2_emoji']>('cl2_emoji');
+export function getEmojis(packed: Gcdata): Mote<Crashlands2.Schemas['cl2_emoji']>[] {
+  const emojis = packed.listMotesBySchema<Crashlands2.Schemas['cl2_emoji']>('cl2_emoji');
   assert(emojis.length > 0, 'Should have at least one emoji mote');
   return emojis;
 }
@@ -260,13 +237,6 @@ export function getEmojis(
 /**
  * List all character motes in the game, including Flux and Juicebox.
  */
-export function listAllCharacters(
-  gcData: Gcdata,
-): (CharacterMote | FluxMote | JuiceboxMote)[] {
-  return gcData.listMotesBySchema(
-    npcSchemaId,
-    buddySchemaId,
-    'cl2_player',
-    'cl2_juicebox',
-  ) as any;
+export function listAllCharacters(gcData: Gcdata): (CharacterMote | FluxMote | JuiceboxMote)[] {
+  return gcData.listMotesBySchema(npcSchemaId, buddySchemaId, 'cl2_player', 'cl2_juicebox') as any;
 }

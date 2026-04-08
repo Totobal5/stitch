@@ -27,9 +27,7 @@ export async function handleDroppedFiles(
     assertLoudly(target instanceof GameMakerFolder, 'Cannot drop sounds here.');
     await tree.upsertSounds(target, soundFiles);
   }
-  const imageFiles = uris
-    .filter((u) => u.fsPath.match(/\.png$/))
-    .map((u) => pathyFromUri(u));
+  const imageFiles = uris.filter((u) => u.fsPath.match(/\.png$/)).map((u) => pathyFromUri(u));
   if (imageFiles.length) {
     await project.reloadConfig();
     const targetSprite =
@@ -65,9 +63,7 @@ export async function handleDrop(
   if (!target) return;
 
   // Handle dropped external files
-  const droppingFiles = dataTransfer
-    .get('text/uri-list')
-    ?.value?.split?.(/\r?\n/g);
+  const droppingFiles = dataTransfer.get('text/uri-list')?.value?.split?.(/\r?\n/g);
   if (Array.isArray(droppingFiles) && droppingFiles.length) {
     await handleDroppedFiles(
       tree,
@@ -85,22 +81,17 @@ export async function handleDrop(
   if (!dropping?.length) return;
 
   // Handle room instance re-organization
-  const onlyDroppingTreeRoomInstances = dropping.every(
-    (d) => d instanceof TreeRoomInstance,
-  );
+  const onlyDroppingTreeRoomInstances = dropping.every((d) => d instanceof TreeRoomInstance);
   if (onlyDroppingTreeRoomInstances) {
     const sequentialDropInstances = dropping.filter(
       (d) => d instanceof TreeRoomInstance,
     ) as TreeRoomInstance[];
-    const sequentialDropInstanceIds = sequentialDropInstances.map(
-      (i) => i.instanceId,
-    );
+    const sequentialDropInstanceIds = sequentialDropInstances.map((i) => i.instanceId);
     assertLoudly(
       target instanceof TreeAsset || target instanceof TreeRoomInstance,
       'Invalid drop target for a room instance.',
     );
-    const targetRoom =
-      target instanceof TreeAsset ? target.asset : target.parent.asset;
+    const targetRoom = target instanceof TreeAsset ? target.asset : target.parent.asset;
     assertLoudly(isAssetOfKind(targetRoom, 'rooms'), `Target must be a Room!`);
     // Every instance must be a member of of the same room
     assertLoudly(
@@ -109,31 +100,21 @@ export async function handleDrop(
     );
     let currentInstanceIds = targetRoom.roomInstances.map((x) => x.instanceId);
     // Delete the dropping instances from that array so they don't get duped
-    currentInstanceIds = currentInstanceIds.filter(
-      (i) => !sequentialDropInstanceIds.includes(i),
-    );
+    currentInstanceIds = currentInstanceIds.filter((i) => !sequentialDropInstanceIds.includes(i));
     // Find the position of the drop target in what's left. If the target is the parent room, put first in the instances
     const dropPosition =
       target instanceof TreeRoomInstance
-        ? currentInstanceIds.findIndex(
-            (i) => i === (target as TreeRoomInstance).instanceId,
-          )
+        ? currentInstanceIds.findIndex((i) => i === (target as TreeRoomInstance).instanceId)
         : -1;
     // Splice in the moved instances
-    currentInstanceIds.splice(
-      dropPosition + 1,
-      0,
-      ...sequentialDropInstanceIds,
-    );
+    currentInstanceIds.splice(dropPosition + 1, 0, ...sequentialDropInstanceIds);
     await targetRoom.reorganizeRoomInstances(currentInstanceIds);
     tree.changed(target instanceof TreeRoomInstance ? target.parent : target);
     return;
   }
 
   // Handle sprite subimage re-organization
-  const onlyDroppingTreeSpriteFrames = dropping.every(
-    (d) => d instanceof TreeSpriteFrame,
-  );
+  const onlyDroppingTreeSpriteFrames = dropping.every((d) => d instanceof TreeSpriteFrame);
   if (onlyDroppingTreeSpriteFrames) {
     const sequentialDropFrames = dropping.filter(
       (d) => d instanceof TreeSpriteFrame,
@@ -143,12 +124,8 @@ export async function handleDrop(
       target instanceof TreeAsset || target instanceof TreeSpriteFrame,
       'Invalid drop target for a sprite frame.',
     );
-    const targetSprite =
-      target instanceof TreeAsset ? target.asset : target.parent.asset;
-    assertLoudly(
-      isAssetOfKind(targetSprite, 'sprites'),
-      `Target must be a Sprite!`,
-    );
+    const targetSprite = target instanceof TreeAsset ? target.asset : target.parent.asset;
+    assertLoudly(isAssetOfKind(targetSprite, 'sprites'), `Target must be a Sprite!`);
     // Every frame must be a member of of the same sprite
     assertLoudly(
       sequentialDropFrames.every((f) => f.parent.asset === targetSprite),
@@ -156,15 +133,11 @@ export async function handleDrop(
     );
     let currentFrames = targetSprite.frameIds;
     // Delete the dropping frames from that array so they don't get duped
-    currentFrames = currentFrames.filter(
-      (f) => !sequentialDropFrameIds.includes(f),
-    );
+    currentFrames = currentFrames.filter((f) => !sequentialDropFrameIds.includes(f));
     // Find the position of the drop target in what's left. If the target is the parent sprite, put first in the frames
     const dropPosition =
       target instanceof TreeSpriteFrame
-        ? currentFrames.findIndex(
-            (f) => f === (target as TreeSpriteFrame).frameId,
-          )
+        ? currentFrames.findIndex((f) => f === (target as TreeSpriteFrame).frameId)
         : -1;
     // Splice in the moved frames
     currentFrames.splice(dropPosition + 1, 0, ...sequentialDropFrameIds);
@@ -174,16 +147,12 @@ export async function handleDrop(
   }
 
   // Handle dropping objects onto a room to add as room instances
-  const onlyDroppingObjects = dropping.every((d) =>
-    isTreeAssetOfKind(d, 'objects'),
-  );
+  const onlyDroppingObjects = dropping.every((d) => isTreeAssetOfKind(d, 'objects'));
   if (
     onlyDroppingObjects &&
     (isTreeAssetOfKind(target, 'rooms') || target instanceof TreeRoomInstance)
   ) {
-    const targetRoom = isTreeAssetOfKind(target, 'rooms')
-      ? target.asset
-      : target.parent.asset;
+    const targetRoom = isTreeAssetOfKind(target, 'rooms') ? target.asset : target.parent.asset;
     for (const obj of dropping) {
       await targetRoom.addRoomInstance((obj as TreeAsset<'objects'>).asset);
     }
@@ -196,11 +165,7 @@ export async function handleDrop(
     // Then change the target to the parent folder
     target = target.parent;
   }
-  if (
-    !target ||
-    !(target instanceof GameMakerFolder) ||
-    target.isProjectFolder
-  ) {
+  if (!target || !(target instanceof GameMakerFolder) || target.isProjectFolder) {
     return;
   }
 

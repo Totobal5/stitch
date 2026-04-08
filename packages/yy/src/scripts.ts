@@ -14,10 +14,7 @@ export async function addScript(
   content?: string,
 ): Promise<{ result: 'updated' | 'created' | 'noop' }> {
   let result: 'updated' | 'created' | 'noop' = 'noop';
-  assert(
-    yypPath.endsWith('.yyp'),
-    'First argument must be a path to a .yyp file',
-  );
+  assert(yypPath.endsWith('.yyp'), 'First argument must be a path to a .yyp file');
   assert(
     scriptName.match(/^[a-zA-Z_][a-zA-Z_0-9]*$/),
     'Invalid script name. Must be a GameMaker-compatible name.',
@@ -31,9 +28,7 @@ export async function addScript(
   // but are not listed in the yyp that won't break the project.
   // Don't allow same-name-different-case scenarios
   const scripts = await listYyFiles(scriptsDir);
-  const matching = scripts.find(
-    (script) => script.name.toLowerCase() === scriptName.toLowerCase(),
-  );
+  const matching = scripts.find((script) => script.name.toLowerCase() === scriptName.toLowerCase());
   const scriptDir = joinPaths(scriptsDir, scriptName);
   const scriptYyPath = joinPaths(scriptDir, `${scriptName}.yy`);
   const scriptGmlPath = joinPaths(scriptDir, `${scriptName}.gml`);
@@ -72,9 +67,7 @@ export async function addScript(
   }
   // At this point the target files exist, so we just need to
   // register it in the list of resources in the YYP if it's not already there.
-  const inYyp = yyp.resources.find(
-    (r) => r.id.name.toLowerCase() === scriptName.toLowerCase(),
-  );
+  const inYyp = yyp.resources.find((r) => r.id.name.toLowerCase() === scriptName.toLowerCase());
   if (!inYyp) {
     // Add it!
     const resourceEntry: YypResource = {
@@ -95,9 +88,7 @@ export async function addScript(
  * List all yy files with the target folder that are nested one folder deep.
  * E.g. in `scripts` find `scripts/my_script/my_script.yy` etc.
  */
-export async function listYyFiles(
-  inFolder: string,
-): Promise<{ path: string; name: string }[]> {
+export async function listYyFiles(inFolder: string): Promise<{ path: string; name: string }[]> {
   const folders = await fsp.readdir(inFolder, { withFileTypes: true });
   const yyFiles: { path: string; name: string }[] = [];
   for (const folder of folders) {
