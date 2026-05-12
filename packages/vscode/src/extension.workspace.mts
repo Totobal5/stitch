@@ -37,6 +37,8 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
   projects: GameMakerProject[] = [];
 
   readonly processingFiles = new Map<string, Promise<any>>();
+  readonly pendingReprocessFiles = new Set<string>();
+  readonly pendingSuggestAfterProcessing = new Set<string>();
   readonly debouncingOnChange = new Map<string, NodeJS.Timeout>();
 
   protected constructor(readonly ctx: vscode.ExtensionContext) {
@@ -328,6 +330,12 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
       event.contentChanges.length === 1 &&
       event.contentChanges[0].text.length
     ) {
+      const insertedText = event.contentChanges[0].text;
+      const shouldSuggestAfterProcessing = /^[a-zA-Z0-9_]$/.test(insertedText);
+      if (shouldSuggestAfterProcessing) {
+        this.pendingSuggestAfterProcessing.add(doc.uri.fsPath);
+      }
+
       const isTriggerCharacter = [
         ...completionTriggerCharacters,
         ' ',
@@ -335,7 +343,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
         '\n',
         ';',
         ',',
-      ].includes(event.contentChanges[0].text as any);
+      ].includes(insertedText as any);
       if (!isTriggerCharacter) {
         // TODO: Debounce this so that we still get reprocessing
         // while editing, but only when not actively typing.
@@ -352,6 +360,7 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
 
     if (this.processingFiles.has(doc.uri.fsPath)) {
       logger.info('Already processing file', doc.uri.fsPath);
+      this.pendingReprocessFiles.add(doc.uri.fsPath);
       return;
     }
 
@@ -359,15 +368,40 @@ export class StitchWorkspace implements vscode.SignatureHelpProvider {
     // Add the processing promise to a map so
     // that other functionality can wait for it
     // to complete.
-    const updateWait = StitchWorkspace.provider.updateFile(doc).finally(() => {
-      // Semantic highlighting is normally updated by VSCode
-      // upon change. But since we're delaying processing of the
-      // file, we need to manually trigger a refresh.
-      this.semanticHighlightProvider.refresh();
-    });
+    const updateWait = StitchWorkspace.provider
+      .updateFile(doc)
+      .catch((err) => {
+        logger.error(err);
+      })
+      .finally(() => {
+        // Semantic highlighting is normally updated by VSCode
+        // upon change. But since we're delaying processing of the
+        // file, we need to manually trigger a refresh.
+        this.semanticHighlightProvider.refresh();
+        this.processingFiles.delete(doc.uri.fsPath);
+
+        // If the user typed an identifier character while we were processing,
+        // trigger suggestions once parsing catches up so completion doesn't
+        // get lost during rapid typing.
+        if (this.pendingSuggestAfterProcessing.delete(doc.uri.fsPath)) {
+          const activeDoc = vscode.window.activeTextEditor?.document;
+          if (
+            activeDoc &&
+            activeDoc.languageId === 'gml' &&
+            activeDoc.uri.fsPath === doc.uri.fsPath
+          ) {
+            void vscode.commands.executeCommand('editor.action.triggerSuggest');
+          }
+        }
+
+        // If changes happened while this file was processing, re-run once
+        // to synchronize parser state with the latest document content.
+        if (this.pendingReprocessFiles.delete(doc.uri.fsPath)) {
+          void this.onChangeDoc(doc);
+        }
+      });
     this.processingFiles.set(doc.uri.fsPath, updateWait);
     await updateWait;
-    this.processingFiles.delete(doc.uri.fsPath);
   }
 
   async createNewProject() {

@@ -50,6 +50,36 @@ describe('Types', function () {
     expect(parsed[0].name).to.equal('__scribble_class_element');
   });
 
+  it('can resolve extended name-expression identifiers', function () {
+    const knownTypes: KnownTypesMap = new Map();
+    const parsed = typeFromFeatherString('module:service/Type#member~inner', knownTypes, false);
+    expect(parsed).to.have.lengthOf(1);
+    expect(parsed[0].kind).to.equal('Struct');
+    expect(parsed[0].name).to.equal('module:service/Type#member~inner');
+  });
+
+  it('maps record types to struct members with typed properties', function () {
+    const knownTypes: KnownTypesMap = new Map();
+    const parsed = typeFromFeatherString(
+      '{persistent: Bool, cleared: Bool, tags: Array<String>}',
+      knownTypes,
+      false,
+    );
+    expect(parsed).to.have.lengthOf(1);
+    expect(parsed[0].kind).to.equal('Struct');
+
+    const persistent = parsed[0].getMember('persistent', true);
+    const cleared = parsed[0].getMember('cleared', true);
+    const tags = parsed[0].getMember('tags', true);
+
+    expect(persistent?.type.toFeatherString()).to.equal('Bool');
+    expect(cleared?.type.toFeatherString()).to.equal('Bool');
+    expect(tags?.type.toFeatherString()).to.equal('Array<String>');
+    expect(persistent?.def).to.exist;
+    expect(cleared?.def).to.exist;
+    expect(tags?.def).to.exist;
+  });
+
   it('can resursively resolve generic types', function () {
     const genericType = new Type('Any').named('T').genericize();
     const generics = [{ T: [genericType] }];
@@ -125,5 +155,82 @@ describe('Types', function () {
     narrowStruct.addMember('specialty', { type: new Type('String') });
     expect(narrowStruct.narrows(broadStruct)).to.be.true;
     expect(broadStruct.narrows(narrowStruct)).to.be.false;
+  });
+
+  it('renders anonymous struct return shapes in function hover text', function () {
+    const fn = new Type('Function').named('enemy_list_room_effective_config');
+    const returnStruct = new Type('Struct');
+    returnStruct.addMember('persistent', { type: new Type('Bool') });
+    returnStruct.addMember('cleared', { type: new Type('Bool') });
+    fn.setReturnType(returnStruct);
+
+    expect(fn.code).to.equal(
+      'function enemy_list_room_effective_config(): { cleared: Bool, persistent: Bool }',
+    );
+    expect(fn.details).to.include('*@returns* `Struct`');
+    expect(fn.details).to.include('persistent: Bool');
+    expect(fn.details).to.include('cleared: Bool');
+  });
+
+  it('prioritizes struct hover rendering for Struct|Undefined function returns', function () {
+    const fn = new Type('Function').named('runner_next');
+    const returnStruct = new Type('Struct');
+    returnStruct.addMember('commands', { type: new Type('Array') });
+    returnStruct.addMember('labels', { type: new Type('Struct') });
+    fn.setReturnType([returnStruct, new Type('Undefined')]);
+
+    expect(fn.code).to.equal('function runner_next(): { commands: Array, labels: Struct }');
+    expect(fn.details).to.include('*@returns* `Struct`');
+    expect(fn.details).to.include('commands: Array');
+    expect(fn.details).to.include('labels: Struct');
+  });
+
+  it('keeps named struct return rendering compact in function hover text', function () {
+    const fn = new Type('Function').named('factory');
+    const namedStruct = new Type('Struct').named('EnemyConfig');
+    namedStruct.addMember('persistent', { type: new Type('Bool') });
+    fn.setReturnType(namedStruct);
+
+    expect(fn.code).to.equal('function factory(): Struct.EnemyConfig');
+    expect(fn.details).to.include('*@returns* `Struct.EnemyConfig`');
+    expect(fn.details).to.not.include('persistent: Bool');
+  });
+
+  it('keeps derived named struct return rendering compact in function hover text', function () {
+    const fn = new Type('Function').named('factory2');
+    const namedStruct = new Type('Struct').named('VSRunner');
+    namedStruct.addMember('Break', { type: new Type('Function') });
+    const derived = namedStruct.derive();
+    fn.setReturnType(derived);
+
+    expect(fn.code).to.equal('function factory2(): Struct.VSRunner');
+    expect(fn.details).to.include('*@returns* `Struct.VSRunner`');
+    expect(fn.details).to.not.include('Break: Function');
+  });
+
+  it('renders inherited struct members in hover details', function () {
+    const baseStruct = new Type('Struct').named('BaseStruct');
+    const persistent = baseStruct.addMember('persistent', { type: new Type('Bool') });
+    const cleared = baseStruct.addMember('cleared', { type: new Type('Bool') });
+    persistent!.def = {};
+    cleared!.def = {};
+
+    const derivedStruct = baseStruct.derive();
+    const details = derivedStruct.details;
+
+    expect(details).to.include('persistent: Bool');
+    expect(details).to.include('cleared: Bool');
+  });
+
+  it('uses signifier name in function hover text when function type name is missing', function () {
+    const container = new Type('Struct').named('Container');
+    const member = container.addMember('Runner', { type: new Type('Function') });
+    expect(member).to.exist;
+    const fn = member!.getTypeByKind('Function');
+    expect(fn).to.exist;
+    fn!.signifier = member!;
+    fn!.setReturnType(new Type('Bool'));
+
+    expect(fn!.code).to.equal('function Runner(): Bool');
   });
 });

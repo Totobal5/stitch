@@ -1,9 +1,11 @@
 import { arrayWrapped } from '@bscotch/utility';
 import {
+  featherTypeIdentifierPattern,
   parseFeatherTypeString,
   type FeatherType,
   type FeatherTypeUnion,
 } from './jsdoc.feather.js';
+import { findTopLevelSeparator, splitTopLevel } from './types.feather.util.js';
 import type { JsdocSummary } from './jsdoc.js';
 import { Type } from './types.js';
 import { primitiveNames } from './types.primitives.js';
@@ -12,53 +14,6 @@ import { ok } from './util.js';
 export type KnownTypesMap = Map<string, Type>;
 export type GenericsMap = Record<string, Type[]>;
 export type KnownOrGenerics = KnownTypesMap | GenericsMap;
-
-function splitTopLevel(input: string, separator: string): string[] {
-  const parts: string[] = [];
-  let current = '';
-  let parenDepth = 0;
-  let angleDepth = 0;
-  let squareDepth = 0;
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i];
-    if (char === '(') parenDepth++;
-    if (char === ')') parenDepth = Math.max(0, parenDepth - 1);
-    if (char === '<') angleDepth++;
-    if (char === '>') angleDepth = Math.max(0, angleDepth - 1);
-    if (char === '[') squareDepth++;
-    if (char === ']') squareDepth = Math.max(0, squareDepth - 1);
-
-    if (char === separator && parenDepth === 0 && angleDepth === 0 && squareDepth === 0) {
-      parts.push(current.trim());
-      current = '';
-      continue;
-    }
-    current += char;
-  }
-  if (current.trim()) {
-    parts.push(current.trim());
-  }
-  return parts;
-}
-
-function findTopLevelColon(input: string): number {
-  let parenDepth = 0;
-  let angleDepth = 0;
-  let squareDepth = 0;
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i];
-    if (char === '(') parenDepth++;
-    if (char === ')') parenDepth = Math.max(0, parenDepth - 1);
-    if (char === '<') angleDepth++;
-    if (char === '>') angleDepth = Math.max(0, angleDepth - 1);
-    if (char === '[') squareDepth++;
-    if (char === ']') squareDepth = Math.max(0, squareDepth - 1);
-    if (char === ':' && parenDepth === 0 && angleDepth === 0 && squareDepth === 0) {
-      return i;
-    }
-  }
-  return -1;
-}
 
 function typeFromFunctionSignatureString(
   typeString: string,
@@ -112,7 +67,7 @@ function typeFromFunctionSignatureString(
     const paramSpec = paramSpecs[i];
     if (!paramSpec) continue;
 
-    const colonIndex = findTopLevelColon(paramSpec);
+    const colonIndex = findTopLevelSeparator(paramSpec, ':');
     let paramName = `arg${i}`;
     let paramTypeSpec = paramSpec;
     if (colonIndex >= 0) {
@@ -183,7 +138,7 @@ export function typeFromIdentifier(
   addMissing: boolean,
   __isRootRequest = true,
 ): Type {
-  ok(identifier.match(/^[A-Z_][A-Z0-9._]*$/i), `Invalid type name ${identifier}`);
+  ok(featherTypeIdentifierPattern.test(identifier), `Invalid type name ${identifier}`);
   const normalizedName = identifier?.toLocaleLowerCase?.();
   const isObjectType = ['asset.gmobject', 'id.instance'].includes(normalizedName as any);
 
@@ -218,7 +173,7 @@ export function typeFromIdentifier(
     }
     return type;
   }
-  if (identifier.match(/^[a-z_][a-z0-9_]*$/i)) {
+  if (featherTypeIdentifierPattern.test(identifier)) {
     // Bare user-defined identifiers (e.g. __scribble_class_element)
     // are most commonly struct-like custom types in project docs.
     return new Type('Struct').named(identifier);
@@ -314,6 +269,18 @@ export function typeFromParsedFeatherString(
         type.addItemType(subtype);
       }
       // TODO: Else create a diagnostic?
+    }
+    if (node.properties?.length && type.kind === 'Struct') {
+      type = type.derive();
+      for (const property of node.properties) {
+        const propertyType = typeFromParsedFeatherString(property.type, knownTypes, addMissing);
+        const member = type.addMember(property.name.content, { type: propertyType });
+        // JSDoc record properties are synthetic but should behave as declared
+        // members for dot-access autocomplete and undeclared-symbol diagnostics.
+        if (member && !member.def) {
+          member.def = {};
+        }
+      }
     }
     return [type];
   } else if (node.kind === 'union') {

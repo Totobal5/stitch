@@ -81,6 +81,265 @@ describe('Project', function () {
     );
   });
 
+  it('can find room and instance creation code by absolute path', async function () {
+    const project = await Project.initialize('samples/gm-ghost-seed');
+
+    const roomCreationCodePath = pathy(
+      project.dir.join('rooms/r_CH1_colegio_1/RoomCreationCode.gml').absolute,
+    );
+    const roomCreationCode = project.getGmlFile(roomCreationCodePath);
+    ok(roomCreationCode, 'Expected RoomCreationCode to be indexed');
+
+    const instanceCreationCodePath = pathy(
+      project.dir.join('rooms/r_CH1_colegio_1/InstanceCreationCode_inst_59621245.gml').absolute,
+    );
+    const instanceCreationCode = project.getGmlFile(instanceCreationCodePath);
+    ok(instanceCreationCode, 'Expected InstanceCreationCode to be indexed');
+  });
+
+  it('resolves instance creation code variables against the instance object scope', async function () {
+    const project = await Project.initialize('samples/gm-ghost-seed');
+    const room = project.getAssetByName('r_CH1_colegio_1');
+    ok(room && room.assetKind === 'rooms');
+
+    const instanceId = 'inst_59621245';
+
+    const instanceCreationCodePath = pathy(
+      project.dir.join(`rooms/r_CH1_colegio_1/InstanceCreationCode_${instanceId}.gml`).absolute,
+    );
+    const instanceCreationCode = project.getGmlFile(instanceCreationCodePath);
+    ok(instanceCreationCode, 'Expected InstanceCreationCode to be indexed');
+    const expectedSelf = room.getSelfForGmlFile(instanceCreationCodePath);
+    ok(expectedSelf, `Expected room instance ${instanceId} to resolve an object scope`);
+    ok(
+      instanceCreationCode.scopes[0]?.self === expectedSelf,
+      'Expected InstanceCreationCode root scope to use the instance object scope',
+    );
+
+    const xOffset = instanceCreationCode.content.indexOf('x = 140;');
+    ok(xOffset >= 0, 'Expected sample assignment to x in InstanceCreationCode');
+    const inScope = instanceCreationCode.getInScopeSymbolsAt(1, 1);
+    ok(
+      inScope.find((symbol) => symbol.name === 'x'),
+      'Expected x to be in scope in InstanceCreationCode',
+    );
+  });
+
+  it('implicitly inherits parent Create variables when child has no Create event', async function () {
+    const project = await Project.initialize('samples/gm-ghost-seed');
+    const child = project.getAssetByName('o_fx_fade_gui_begin');
+    const parent = project.getAssetByName('o_fx_fade_gui');
+    ok(child && child.assetKind === 'objects');
+    ok(parent && parent.assetKind === 'objects');
+
+    const childAsset = child as Asset<'objects'>;
+    expect(childAsset.gmlFilesArray.some((f) => f.name === 'Create_0')).to.equal(false);
+
+    const draw = childAsset.gmlFilesArray.find((f) => f.name === 'Draw_74');
+    ok(draw, 'Expected Draw_74 event to exist for o_fx_fade_gui_begin');
+
+    const spriteOffset = draw!.content.indexOf('sprite != noone');
+    ok(spriteOffset >= 0, 'Could not find sprite usage in Draw_74');
+    const spriteRef = draw!.getReferenceAt(spriteOffset + 1);
+    ok(spriteRef, 'Expected sprite reference in Draw_74 to resolve');
+    expect(spriteRef!.item.name).to.equal('sprite');
+
+    const alphaOffset = draw!.content.indexOf('alpha);');
+    ok(alphaOffset >= 0, 'Could not find alpha usage in Draw_74');
+    const alphaRef = draw!.getReferenceAt(alphaOffset + 1);
+    ok(alphaRef, 'Expected alpha reference in Draw_74 to resolve');
+    expect(alphaRef!.item.name).to.equal('alpha');
+
+    const parentVariables = (parent as Asset<'objects'>).variables;
+    ok(parentVariables, 'Expected parent object variables to exist');
+    expect(spriteRef!.item).to.equal(parentVariables!.getMember('sprite'));
+    expect(alphaRef!.item).to.equal(parentVariables!.getMember('alpha'));
+
+    const undeclaredDiagnostics = draw!.getDiagnostics().UNDECLARED_VARIABLE_REFERENCE;
+    expect(undeclaredDiagnostics).to.have.lengthOf(0);
+  });
+
+  it('resolves @returns {self} to the constructor self type', async function () {
+    const project = await Project.initialize('samples/gm-ghost-seed');
+    const runner = project.getAssetByName('crispy_Runner');
+    ok(runner && runner.assetKind === 'scripts');
+
+    const runnerFile = (runner as Asset<'scripts'>).gmlFile;
+    const discoverDecl = 'static Discover = function';
+    const discoverDeclOffset = runnerFile.content.indexOf(discoverDecl);
+    ok(discoverDeclOffset >= 0, 'Could not find Discover declaration in crispy_Runner');
+
+    const discoverRef = runnerFile.getReferenceAt(discoverDeclOffset + 'static '.length);
+    ok(discoverRef, 'Could not resolve Discover declaration reference');
+    expect(discoverRef!.item.name).to.equal('Discover');
+
+    const discoverType = discoverRef!.item.getTypeByKind('Function');
+    ok(discoverType, 'Discover should resolve to a function type');
+    expect(discoverType!.returns?.toFeatherString()).to.equal('Struct.CrispyRunner');
+  });
+
+  it('resolves constructor static sugar access Function.member as static_get(Function).member', async function () {
+    const project = await Project.initialize('samples/gm-ghost-seed');
+    const functionsAsset = project.getAssetByName('crispy_Functions');
+    const testAsset = project.getAssetByName('crispy_Test');
+    ok(functionsAsset && functionsAsset.assetKind === 'scripts');
+    ok(testAsset && testAsset.assetKind === 'scripts');
+
+    const functionsFile = (functionsAsset as Asset<'scripts'>).gmlFile;
+    const testFile = (testAsset as Asset<'scripts'>).gmlFile;
+
+    const returnExprOffset = functionsFile.content.indexOf('CrispyTest.vars');
+    ok(returnExprOffset >= 0, 'Could not find CrispyTest.vars in crispy_Functions');
+
+    const constructorRef = functionsFile.getReferenceAt(returnExprOffset + 1);
+    ok(constructorRef, 'Expected CrispyTest reference to resolve');
+    expect(constructorRef!.item.name).to.equal('CrispyTest');
+
+    const varsRef = functionsFile.getReferenceAt(returnExprOffset + 'CrispyTest.'.length + 1);
+    ok(varsRef, 'Expected vars reference to resolve through constructor static sugar');
+    expect(varsRef!.item.name).to.equal('vars');
+
+    const varsDefOffset = testFile.content.indexOf('static vars = {}');
+    ok(varsDefOffset >= 0, 'Could not find static vars definition in crispy_Test');
+    const varsDefRef = testFile.getReferenceAt(varsDefOffset + 'static '.length + 1);
+    ok(varsDefRef, 'Expected vars definition reference to resolve in crispy_Test');
+    expect(varsRef!.item).to.equal(varsDefRef!.item);
+
+    const diagnostics = functionsFile.getDiagnostics().INVALID_OPERATION;
+    expect(diagnostics).to.have.lengthOf(0);
+  });
+
+  it('keeps method statics function-owned and out of instance scope', async function () {
+    const project = await Project.initialize('samples/gm-ghost-seed');
+    const npcAsset = project.getAssetByName('o_npc');
+    ok(npcAsset && npcAsset.assetKind === 'objects');
+
+    const createFile = (npcAsset as Asset<'objects'>).gmlFile;
+    const methodDeclOffset = createFile.content.indexOf('PatrolAddPoint = function');
+    ok(methodDeclOffset >= 0, 'Could not find PatrolAddPoint method declaration');
+
+    const methodRef = createFile.getReferenceAt(methodDeclOffset + 1);
+    ok(methodRef, 'Could not resolve PatrolAddPoint declaration reference');
+    expect(methodRef!.item.name).to.equal('PatrolAddPoint');
+
+    const methodType = methodRef!.item.getTypeByKind('Function');
+    ok(methodType, 'PatrolAddPoint should resolve to a function type');
+
+    const staticDeclOffset = createFile.content.indexOf('static FDef = function() {}');
+    ok(staticDeclOffset >= 0, 'Could not find FDef static declaration in PatrolAddPoint');
+
+    const staticRef = createFile.getReferenceAt(staticDeclOffset + 'static '.length + 1);
+    ok(staticRef, 'Could not resolve FDef static declaration reference');
+    expect(staticRef!.item.name).to.equal('FDef');
+    expect(staticRef!.item.static).to.equal(true);
+
+    const npc = npcAsset as Asset<'objects'>;
+    expect(npc.instanceType?.getMember('FDef')).to.equal(undefined);
+    expect(npc.variables?.getMember('FDef')).to.equal(undefined);
+
+    const localStatic = methodType!.local?.getMember('FDef', true);
+    ok(localStatic, 'Expected method-local static member FDef to exist');
+    expect(staticRef!.item).to.equal(localStatic);
+  });
+
+  it('resolves global function statics via Function.member and static_get(Function)', async function () {
+    const project = await Project.initialize('samples/gm-ghost-seed');
+    const gameFunctionsAsset = project.getAssetByName('__Game_Functions');
+    ok(gameFunctionsAsset && gameFunctionsAsset.assetKind === 'scripts');
+
+    const gameFunctionsFile = (gameFunctionsAsset as Asset<'scripts'>).gmlFile;
+    const initialInvalidOps = gameFunctionsFile.getDiagnostics().INVALID_OPERATION.length;
+    const originalContent = gameFunctionsFile.content;
+    const probeCode =
+      '\nvar __test_func_static_hash = gos_trace.__hash;\n' +
+      'var __test_static_get_hash = static_get(gos_trace).__hash;\n';
+
+    try {
+      await gameFunctionsFile.reload(originalContent + probeCode, { reloadDirty: true });
+
+      const expectedStatic = project.self
+        .getMember('gos_trace')
+        ?.getTypeByKind('Function')
+        ?.local?.getMember('__hash', true);
+      ok(expectedStatic, 'Could not resolve expected gos_trace static member __hash');
+      expect(expectedStatic!.static).to.equal(true);
+
+      const directAccessOffset = gameFunctionsFile.content.indexOf('gos_trace.__hash');
+      ok(directAccessOffset >= 0, 'Could not find direct function static access probe');
+      const directAccessRef = gameFunctionsFile.getReferenceAt(
+        directAccessOffset + 'gos_trace.'.length + 1,
+      );
+      ok(directAccessRef, 'Could not resolve gos_trace.__hash reference');
+      expect(directAccessRef!.item).to.equal(expectedStatic);
+
+      const staticGetAccessOffset = gameFunctionsFile.content.indexOf(
+        'static_get(gos_trace).__hash',
+      );
+      ok(staticGetAccessOffset >= 0, 'Could not find static_get function static access probe');
+      const staticGetAccessRef = gameFunctionsFile.getReferenceAt(
+        staticGetAccessOffset + 'static_get(gos_trace).'.length + 1,
+      );
+      ok(staticGetAccessRef, 'Could not resolve static_get(gos_trace).__hash reference');
+      expect(staticGetAccessRef!.item).to.equal(expectedStatic);
+
+      const updatedInvalidOps = gameFunctionsFile.getDiagnostics().INVALID_OPERATION.length;
+      expect(updatedInvalidOps).to.equal(initialInvalidOps);
+    } finally {
+      await gameFunctionsFile.reload(originalContent, { reloadDirty: true });
+    }
+  });
+
+  it('resolves typed JSDoc record return members via dot access without undeclared diagnostics', async function () {
+    const project = await Project.initialize('samples/gm-ghost-seed');
+    const gameFunctionsAsset = project.getAssetByName('__Game_Functions');
+    ok(gameFunctionsAsset && gameFunctionsAsset.assetKind === 'scripts');
+
+    const gameFunctionsFile = (gameFunctionsAsset as Asset<'scripts'>).gmlFile;
+    const originalContent = gameFunctionsFile.content;
+    const initialUndeclared =
+      gameFunctionsFile.getDiagnostics().UNDECLARED_VARIABLE_REFERENCE.length;
+    const probeCode =
+      '\nvar __test_effective = enemy_list_room_effective_config();\n' +
+      'var __test_effective_persistent = __test_effective.persistent;\n';
+
+    try {
+      await gameFunctionsFile.reload(originalContent + probeCode, { reloadDirty: true });
+
+      const effectiveDeclOffset = gameFunctionsFile.content.indexOf(
+        '__test_effective = enemy_list_room_effective_config()',
+      );
+      ok(effectiveDeclOffset >= 0, 'Could not find typed-return local assignment probe');
+      const effectiveRef = gameFunctionsFile.getReferenceAt(effectiveDeclOffset + 1);
+      ok(effectiveRef, 'Could not resolve typed-return local variable reference');
+      const effectiveStruct = effectiveRef!.item.getTypeByKind('Struct');
+      ok(effectiveStruct, 'Typed-return local variable should keep a Struct type');
+      expect(effectiveStruct!.getMember('persistent')).to.exist;
+      expect(effectiveStruct!.getMember('cleared')).to.exist;
+
+      const persistentOffset = gameFunctionsFile.content.indexOf('__test_effective.persistent');
+      ok(persistentOffset >= 0, 'Could not find typed-return dot-access probe');
+
+      const dotScopeSymbols = gameFunctionsFile.getInScopeSymbolsAt(
+        persistentOffset + '__test_effective.'.length,
+      );
+      expect(dotScopeSymbols.some((symbol) => symbol.name === 'persistent')).to.equal(true);
+      expect(dotScopeSymbols.some((symbol) => symbol.name === 'cleared')).to.equal(true);
+
+      const persistentRef = gameFunctionsFile.getReferenceAt(
+        persistentOffset + '__test_effective.'.length + 1,
+      );
+      ok(persistentRef, 'Could not resolve persistent member from typed return struct');
+      expect(persistentRef!.item.name).to.equal('persistent');
+      expect(persistentRef!.item.def).to.exist;
+
+      const updatedUndeclared =
+        gameFunctionsFile.getDiagnostics().UNDECLARED_VARIABLE_REFERENCE.length;
+      expect(updatedUndeclared).to.equal(initialUndeclared);
+    } finally {
+      await gameFunctionsFile.reload(originalContent, { reloadDirty: true });
+    }
+  });
+
   it('can resolve object yy properties as typed references in code', async function () {
     const project = await Project.initialize('samples/gm-ghost-seed');
     const asset = project.getAssetByName('o_change_room');
@@ -525,6 +784,102 @@ describe('Project', function () {
     );
   });
 
+  it('applies @ignore metadata to signifiers', async function () {
+    const project = await Project.initialize('samples/project');
+    const futures = project.getAssetByName('Futures');
+    ok(futures);
+    const futuresFile = futures.gmlFile;
+    ok(futuresFile);
+
+    const ignoredSymbolOffset = futuresFile.content.indexOf('__resolve = function');
+    ok(ignoredSymbolOffset >= 0, 'Could not find __resolve declaration in Futures.gml');
+    const ignoredRef = futuresFile.getReferenceAt(ignoredSymbolOffset + 1);
+    ok(ignoredRef, 'Could not resolve __resolve declaration reference');
+    expect(ignoredRef.item.name).to.equal('__resolve');
+    expect(ignoredRef.item.ignored).to.equal(true);
+  });
+
+  it('updates @ignore metadata when the annotation is removed', async function () {
+    const project = await Project.initialize('samples/project');
+    const futures = project.getAssetByName('Futures');
+    ok(futures);
+    const futuresFile = futures.gmlFile;
+    ok(futuresFile);
+
+    const originalContent = futuresFile.content;
+    const withoutIgnore = originalContent.replace(
+      /\/\/\/\s*@ignore\s*\r?\n(\s*(?:static\s+)?__resolve\s*=\s*function)/,
+      '$1',
+    );
+    ok(withoutIgnore !== originalContent, 'Could not remove @ignore annotation for __resolve');
+
+    try {
+      await futuresFile.reload(withoutIgnore, { reloadDirty: true });
+
+      const updatedOffset = futuresFile.content.indexOf('__resolve = function');
+      ok(updatedOffset >= 0, 'Could not find __resolve declaration in updated Futures.gml');
+      const updatedRef = futuresFile.getReferenceAt(updatedOffset + 1);
+      ok(updatedRef, 'Could not resolve __resolve declaration reference after removing @ignore');
+      expect(updatedRef.item.ignored).to.equal(false);
+    } finally {
+      await futuresFile.reload(originalContent, { reloadDirty: true });
+    }
+  });
+
+  it('does not apply @ignore from child assignments to inherited symbols', async function () {
+    const project = await Project.initialize('samples/project');
+    const parent = project.getAssetByName('o_parent');
+    const child = project.getAssetByName('o_child1');
+    ok(parent && parent.assetKind === 'objects');
+    ok(child && child.assetKind === 'objects');
+
+    const parentVarBefore = (parent as Asset<'objects'>).instanceType?.getMember(
+      'parent_var',
+      true,
+    );
+    ok(parentVarBefore, 'Could not resolve parent_var on parent object');
+    expect(parentVarBefore.ignored).to.equal(false);
+
+    const childCreate = (child as Asset<'objects'>).gmlFile;
+    const originalContent = childCreate.content;
+    const withIgnoredInheritedAssignment = `${originalContent}\n\n/// @ignore\nparent_var = parent_var;\n`;
+
+    try {
+      await childCreate.reload(withIgnoredInheritedAssignment, { reloadDirty: true });
+      const parentVarAfter = (parent as Asset<'objects'>).instanceType?.getMember(
+        'parent_var',
+        true,
+      );
+      ok(parentVarAfter, 'Could not resolve parent_var after child reload');
+      expect(parentVarAfter.ignored).to.equal(false);
+    } finally {
+      await childCreate.reload(originalContent, { reloadDirty: true });
+    }
+  });
+
+  it('updates inheritance when event_inherited is toggled on reload', async function () {
+    const project = await Project.initialize('samples/project');
+    const child2 = project.getAssetByName('o_child2');
+    ok(child2 && child2.assetKind === 'objects');
+    const create = (child2 as Asset<'objects'>).gmlFile;
+
+    const hasParentVar = () => !!(child2 as Asset<'objects'>).instanceType?.getMember('parent_var');
+
+    expect(hasParentVar()).to.equal(false);
+
+    const withSuper = create.content.replace('//event_inherited()', 'event_inherited()');
+    await create.reload(withSuper, { reloadDirty: true });
+    expect(hasParentVar()).to.equal(true);
+
+    const withoutSuper = withSuper.replace('event_inherited()', '//event_inherited()');
+    await create.reload(withoutSuper, { reloadDirty: true });
+    expect(hasParentVar()).to.equal(false);
+
+    const emptyCreate = `/// @description empty create`;
+    await create.reload(emptyCreate, { reloadDirty: true });
+    expect(hasParentVar()).to.equal(true);
+  });
+
   it('can sync datafiles', async function () {
     const project = await resetSandbox();
     await project.dir.join('datafiles/test-folder/test-file.txt').write('hello');
@@ -534,7 +889,7 @@ describe('Project', function () {
     );
     assert(synced);
     // Included file masks must remain numeric to avoid GameMaker schema corruption.
-    expect(synced.CopyToMask).to.equal(-1n);
+    expect(synced.CopyToMask).to.equal(-1);
   });
 
   xit('can parse sample project', async function () {
