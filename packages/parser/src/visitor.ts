@@ -44,6 +44,7 @@ import { getTypeOfKind, getTypes, normalizeType } from './types.checks.js';
 import { typeFromParsedJsdocs } from './types.feather.js';
 import { EnumType, Type, TypeStore, WithableType, type StructType } from './types.js';
 import { withableTypes } from './types.primitives.js';
+import { getStaticDeclarationContainer } from './types.static.js';
 import { StitchParserError, assert } from './util.js';
 import { assignVariable, ensureDefinitive } from './visitor.assign.js';
 import { visitFunctionExpression } from './visitor.functionExpression.js';
@@ -257,10 +258,15 @@ export class GmlSignifierVisitor extends GmlVisitorBase {
       );
       return;
     }
-    let signifier = container.getMember(jsdoc.name!.content);
+    const symbolName = jsdoc.name!.content;
+    const inheritedSignifier = container.getMember(symbolName);
+    let signifier = container.getMember(symbolName, true);
     const nameRange = Range.from(this.PROCESSOR.file, jsdoc.name!);
     if (!signifier) {
-      signifier = new Signifier(container, jsdoc.name!.content);
+      signifier = new Signifier(container, symbolName);
+      if (inheritedSignifier && inheritedSignifier.parent !== container) {
+        signifier.override = true;
+      }
       container.addMember(signifier);
       if (container === this.PROCESSOR.currentDefinitiveSelf) {
         signifier.definitive = true;
@@ -277,6 +283,7 @@ export class GmlSignifierVisitor extends GmlVisitorBase {
     }
     signifier.describe(jsdoc.description);
     signifier.setType(info.type);
+    signifier.ignored = !!jsdoc.ignore;
     signifier.definedAt(nameRange);
     if (jsdoc.kind === 'localvar') {
       signifier.local = true;
@@ -427,6 +434,9 @@ export class GmlSignifierVisitor extends GmlVisitorBase {
     if (docs?.jsdoc.kind && ['type', 'description'].includes(docs.jsdoc.kind)) {
       signifier.describe(docs.jsdoc.description);
       signifier.setType(docs.type);
+      signifier.ignored = !!docs.jsdoc.ignore;
+    } else if (!docs) {
+      signifier.ignored = false;
     }
     return {
       item: signifier,
@@ -467,18 +477,11 @@ export class GmlSignifierVisitor extends GmlVisitorBase {
       })?.item as Signifier | undefined
     )?.parent as WithableType | undefined;
     const fullScope = this.PROCESSOR.fullScope;
-    if (isStatic && !fullScope.selfIsGlobal) {
-      // Static declarations inside constructors should always attach to
-      // the current constructor self, not an inherited parent symbol.
+    if (isStatic) {
+      const ownerFunction = fullScope.self.signifier?.getTypeByKind('Function');
+      container = getStaticDeclarationContainer(ownerFunction, fullScope.local);
+    } else if (!container) {
       container = fullScope.self as WithableType;
-    }
-    if (!container) {
-      // Add to the self-scope unless it's a static inside a non-constructor function, and if that scope is not global.
-      const outerFunction = fullScope.self.signifier?.getTypeByKind('Function');
-      container =
-        isStatic && !outerFunction?.isConstructor
-          ? fullScope.local
-          : (fullScope.self as WithableType);
     }
 
     return assignVariable(this, { name, range, container }, rhs, {

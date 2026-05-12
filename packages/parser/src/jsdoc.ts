@@ -50,7 +50,9 @@ const patterns = {
   template: `@template\\b`,
   unknown: `@\\w+\\b`,
 };
-const typeGroupPattern = `(?<typeGroup>{\\s*(?<typeUnion>[^}]*?)?\\s*})`;
+// Allow one-level nested braces so JSDoc record types can be expressed
+// as `@return {{field: Type}}` while still capturing the full inner type.
+const typeGroupPattern = `(?<typeGroup>{\\s*(?<typeUnion>(?:[^{}]|{[^{}]*})*?)?\\s*})`;
 const linePrefixPattern = `^(\\s*(?<delim>///|\\*)\\s*)?`;
 const descriptionPattern = `(?:\\s*-\\s*)?(?<info>.*)`;
 const paramNamePattern = `(?<name>[a-zA-Z_][a-zA-Z_0-9]*)`;

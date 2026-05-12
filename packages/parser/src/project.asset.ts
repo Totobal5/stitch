@@ -621,6 +621,60 @@ export class Asset<T extends YyResourceType = YyResourceType> {
     return this.gmlFiles.get(path.absolute.toLocaleLowerCase());
   }
 
+  /**
+   * Determine the initial `self` scope for a specific GML file in this asset.
+   * For room instance creation code, this is the corresponding instance object's variables.
+   */
+  getSelfForGmlFile(path: Pathy): StructType | undefined {
+    if (this.assetKind === 'objects') {
+      return this.variables;
+    }
+    if (this.assetKind !== 'rooms') {
+      return;
+    }
+
+    const instanceId = path.basename.match(/^InstanceCreationCode_(.+)\.gml$/i)?.[1];
+    if (!instanceId) {
+      return;
+    }
+
+    const instanceObject = this.findRoomInstanceObjectById(instanceId);
+    return instanceObject?.variables;
+  }
+
+  private findRoomInstanceObjectById(instanceId: string): Asset<'objects'> | undefined {
+    if (this.assetKind !== 'rooms') {
+      return;
+    }
+    const yy = this.yy as YyRoom;
+    const stack: any[] = [...yy.layers];
+    while (stack.length) {
+      const layer = stack.shift();
+      if (!layer || typeof layer !== 'object') {
+        continue;
+      }
+      for (const child of layer.layers || []) {
+        stack.push(child);
+      }
+      if (layer.resourceType !== 'GMRInstanceLayer') {
+        continue;
+      }
+      for (const instance of (layer as YyRoomInstanceLayer).instances || []) {
+        if (instance.name !== instanceId) {
+          continue;
+        }
+        const object = this.project.getAssetByName(instance.objectId.name, {
+          assertExists: false,
+          kind: 'objects',
+        });
+        if (isAssetOfKind(object, 'objects')) {
+          return object;
+        }
+      }
+    }
+    return;
+  }
+
   protected updateParent() {
     if (this.assetKind !== 'objects') {
       return;
@@ -674,7 +728,8 @@ export class Asset<T extends YyResourceType = YyResourceType> {
   }
 
   protected addGmlFile(path: Pathy<string>): Code {
-    const gml = this.getGmlFile(path) || new Code(this as Asset<'scripts' | 'objects'>, path);
+    const gml =
+      this.getGmlFile(path) || new Code(this as Asset<'scripts' | 'objects' | 'rooms'>, path);
     assert(path, 'Cannot add GML file, path does not exist');
     this.gmlFiles.set(path.absolute.toLocaleLowerCase(), gml);
     return gml;
@@ -690,6 +745,9 @@ export class Asset<T extends YyResourceType = YyResourceType> {
       this.gmlFiles.clear();
       this.addObjectFile(children as Pathy<string>[]);
       this.registerObjectYyProperties();
+    } else if (this.assetKind === 'rooms') {
+      this.gmlFiles.clear();
+      this.addRoomFile(children as Pathy<string>[]);
     } else if (this.assetKind === 'extensions') {
       const diagnostics: Diagnostic[] = [];
 
@@ -873,6 +931,11 @@ export class Asset<T extends YyResourceType = YyResourceType> {
     } else {
       this.addGmlFile(matches[0]);
     }
+  }
+
+  protected addRoomFile(children: Pathy<string>[]) {
+    // Room-level and instance-level creation code are plain .gml files in the room folder.
+    children.filter((p) => p.hasExtension('gml')).forEach((p) => this.addGmlFile(p));
   }
 
   protected async initiallyReadAndParseGml() {

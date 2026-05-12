@@ -263,8 +263,9 @@ export class Code {
     // non-uniques by just keeping the first one we find.
     const uniqueSignifiers = new Map<string, Signifier>();
     for (const signifier of allSignifiers) {
-      if (!uniqueSignifiers.has(signifier.name) && (signifier.def || signifier.native)) {
-        uniqueSignifiers.set(signifier.name, signifier);
+      const normalizedName = signifier.name.toLocaleLowerCase();
+      if (!uniqueSignifiers.has(normalizedName) && (signifier.def || signifier.native)) {
+        uniqueSignifiers.set(normalizedName, signifier);
       }
     }
 
@@ -404,7 +405,7 @@ export class Code {
   }
 
   protected initializeScopeRanges() {
-    const self = this.asset.variables || this.project.self;
+    const self = this.asset.getSelfForGmlFile(this.path) || this.project.self;
     // Re-use the root local scope if it exists
     const local = this.scopes[0]?.local || new Type('Struct');
     this.scopes.length = 0;
@@ -414,6 +415,7 @@ export class Code {
   }
 
   protected reset() {
+    this.callsSuper = false;
     this.initializeScopeRanges();
     // Remove each reference in *this file* from its symbol. If that was the only reference to its signifier, and it was a defining reference, also remove the signifier
     const cleared = new Set<ReferenceableType>();
@@ -475,6 +477,11 @@ export class Code {
     await this.removeFromYy();
     // remove from asset's list of files
     this.asset.gmlFiles.delete(this.path.absolute.toLocaleLowerCase());
+    if (this.isCreateEvent && this.asset.isObject) {
+      // If the Create event no longer exists, GameMaker implicitly runs the parent Create.
+      this.asset.variables!.extends =
+        this.asset.parent?.variables || this.project.native.objectInstanceBase;
+    }
     // remove file
     await this.path.delete();
     // reset to clear refs and diagnostics
@@ -501,10 +508,21 @@ export class Code {
     if (this.asset.assetKind !== 'objects' || !this.asset.parent) {
       return;
     }
+    if (!this.isCreateEvent) {
+      return;
+    }
+
+    const hasExecutableCreateCode = this._parsed.lexed.tokens.some(
+      (token) => !['JsdocGmlLine', 'JsdocJs'].includes(token.tokenType.name),
+    );
+
+    // Missing/empty Create is treated by GameMaker as implicit inheritance from parent Create.
+    const shouldInheritCreate = this.callsSuper || !hasExecutableCreateCode;
+
     // Then the type will have been set up to inherit from the parent.
     // BUT. If this event does not call `event_inherited()`, then we
     // need to unlink the type.
-    if (!this.callsSuper) {
+    if (!shouldInheritCreate) {
       // TODO: Provide this as an option?
       // this.diagnostics.MISSING_EVENT_INHERITED.push({
       //   $tag: 'diagnostic',
@@ -512,15 +530,11 @@ export class Code {
       //   severity: 'warning',
       //   location: this.startRange,
       // });
-      if (this.isCreateEvent) {
-        // Unlink the type from the parent.
-        // (If there is no create event, then event_inherited is implicit)
-        this.asset.variables!.extends = this.project.native.objectInstanceBase;
-      }
-    } else if (this.isCreateEvent) {
-      // Ensure that the type is set as the parent by re-assigning it.
-      // eslint-disable-next-line no-self-assign
-      this.asset.parent = this.asset.parent;
+      this.asset.variables!.extends = this.project.native.objectInstanceBase;
+    } else {
+      // Restore inheritance links for this object's variable container.
+      this.asset.variables!.extends =
+        this.asset.parent?.variables || this.project.native.objectInstanceBase;
     }
   }
 

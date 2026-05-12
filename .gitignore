@@ -74,3 +74,10 @@ packages/vscode/.npmrc
 
 sprites.import.json
 sprites.info.json
+
+# local copilot/workflow artifacts
+.github/git-log/
+.github/skills/
+
+# packaged VS Code extensions
+*.vsix

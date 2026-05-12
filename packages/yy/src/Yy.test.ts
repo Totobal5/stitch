@@ -352,9 +352,9 @@ describe('Yy Files', function () {
     // Parse the corrupted file
     const project = Yy.parse(corruptedProjectJson, 'project');
 
-    // Verify the internal representation is correct (BigInt)
+    // Verify the internal representation is correct (number)
     const includedFile = project.IncludedFiles?.[0];
-    expect(includedFile?.ConfigValues?.['dev']?.['CopyToMask']).to.equal(-1n);
+    expect(includedFile?.ConfigValues?.['dev']?.['CopyToMask']).to.equal(-1);
 
     // Stringify and verify it's corrected
     const stringified = Yy.stringify(project, 'project');

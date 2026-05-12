@@ -51,15 +51,19 @@ export function assignVariable(
     // For override declarations we must ignore those and create a true child-owned member.
     signifier = undefined;
   }
-  const isSelfOwned = !!signifier && !!variable.container.getMember(variable.name, true);
+  const signifierIsOwnedByContainer = () =>
+    !!signifier && variable.container.getMember(variable.name, true) === signifier;
   let ref: Reference | undefined;
 
   // Add the variable if missing
   let wasUndeclared = false;
   if (!signifier) {
     wasUndeclared = true;
+    // Function bodies may run with an instance-bound `self` at runtime,
+    // so avoid treating these assignments as guaranteed global writes.
+    const inFunctionBody = info.ctx.ctxKindStack.includes('functionBody');
 
-    if (variable.container !== fullScope.global) {
+    if (variable.container !== fullScope.global || inFunctionBody) {
       // Then we can add a new member
       const newMember = info.excludeParents
         ? (() => {
@@ -120,6 +124,15 @@ export function assignVariable(
   const assignedToFunction = functionFromRhs(rhs);
   const assignedToStructLiteral = structLiteralFromRhs(rhs);
   const assignedToArrayLiteral = arrayLiteralFromRhs(rhs);
+  const signifierDefinedInCurrentFile =
+    !!signifier && signifierIsOwnedByContainer() && signifier.def?.file === visitor.PROCESSOR.file;
+  if (signifier && signifierDefinedInCurrentFile) {
+    if (info.docs) {
+      signifier.ignored = !!info.docs.jsdoc.ignore;
+    } else if (ref?.isDef) {
+      signifier.ignored = false;
+    }
+  }
   const ctx = { ...info.ctx, docs: info.docs, signifier };
   if (assignedToFunction || assignedToStructLiteral || assignedToArrayLiteral) {
     if (assignedToFunction) {

@@ -29,8 +29,9 @@ import {
   prioritizeNonUndefinedTypes,
   prioritizeNonUndefinedInTypeStore,
 } from './types.checks.js';
-import { Type, TypeStore, WithableType } from './types.js';
+import { EnumType, Type, TypeStore, WithableType } from './types.js';
 import { withableTypes } from './types.primitives.js';
+import { getFunctionStaticMembersView } from './types.static.js';
 import { Values } from './util.js';
 import { assignVariable } from './visitor.assign.js';
 import type { GmlSignifierVisitor } from './visitor.js';
@@ -380,8 +381,28 @@ function processDotAccessor(
   };
 
   // Reduce the available types from lastAccessed to those that
-  // are dot-accessible
-  const dottableTypes = getTypesOfKind(lastAccessed.types, [...withableTypes, 'Enum']);
+  // are dot-accessible. In GameMaker, `FunctionName.member` is sugar
+  // for `static_get(FunctionName).member`, so constructor/function types
+  // can expose members through their static/self struct.
+  const functionStaticViewCache = new WeakMap<
+    Type<'Function'>,
+    ReturnType<typeof getFunctionStaticMembersView>
+  >();
+  const rawDottableTypes = getTypesOfKind(lastAccessed.types, [
+    ...withableTypes,
+    'Enum',
+    'Function',
+  ]);
+  const dottableTypes = rawDottableTypes.flatMap((type): (WithableType | EnumType)[] => {
+    if (type.kind !== 'Function') {
+      return [type as WithableType | EnumType];
+    }
+    const staticStruct = getFunctionStaticMembersView(
+      type as Type<'Function'>,
+      functionStaticViewCache,
+    );
+    return staticStruct ? [staticStruct] : [];
+  });
 
   if (!dottableTypes.length) {
     // Early return. Just set the type to ANY and move along.

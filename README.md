@@ -25,6 +25,58 @@ Some of the projects listed here are available as compiled packages via [npm](ht
 - [**Stitch Core (LEGACY)**](https://github.com/bscotch/stitch-legacy/tree/develop/packages/core): The core SDK for managing and manipulating GameMaker projects. It includes a programmatic API and a CLI. Available as [`@bscotch/stitch` via npm](https://www.npmjs.com/package/@bscotch/stitch). (No longer maintained. Superseded by the GML Parser project.)
 - [**Spritely (LEGACY)**](packages/spritely): Utilities for batch-preparation of source images for import as GameMaker sprites. It includes a programmatic API and a CLI. Available as [`@bscotch/spritely` via npm](https://www.npmjs.com/package/@bscotch/spritely). (No longer maintained. Superseded by the Sprite Source project.)
 
+## Recent Parser + Extension Notes (May 2026)
+
+The following behavior updates are now available to developers using Stitch for VSCode (powered by the GML parser):
+
+### 1) Static Member Semantics Match GameMaker More Closely
+
+- `Function.member` is resolved as `static_get(Function).member`.
+- This works for global/script functions, constructor statics, and constructor-backed methods.
+- Static declarations inside function bodies are treated as function-owned static members (not instance-owned object members).
+
+Examples that now resolve correctly in parser-backed tooling (hover, references, diagnostics):
+
+```gml
+var _a = Cyg.Export;
+var _b = Cueca.__channels;
+var _c = new CuecaChannel().Play(noone);
+```
+
+### 2) Static Projections Are Unified Across Features
+
+- `StaticType<T>` now projects static members consistently.
+- Dot accessor resolution and static utility typing share the same static-member view logic.
+- Function-derived types now preserve correct static lookup by walking the function inheritance chain.
+
+### 3) Typed Struct Returns in JSDoc (Named Members)
+
+You can now describe returned struct members explicitly, not just `Struct` as a whole.
+
+```gml
+/// @return {{persistent: Bool, cleared: Bool}}
+function enemy_list_room_effective_config(_room=room)
+{
+  var _effective = {persistent: true, cleared: false};
+  return (_effective);
+}
+```
+
+This enables better completion/typing for downstream usage, such as:
+
+```gml
+var _cfg = enemy_list_room_effective_config();
+if (_cfg.persistent && !_cfg.cleared) {
+  // ...
+}
+```
+
+### 4) JSDoc Record Parsing Improvements
+
+- Nested-brace record syntax in JSDoc type groups is now parsed correctly (for example, `@return {{x: Real}}`).
+- Record-property names are preserved and mapped to real struct members in parser types.
+- This improves hover, go-to-definition context, and semantic validation quality in VSCode.
+
 ## Development
 
 ### Setup

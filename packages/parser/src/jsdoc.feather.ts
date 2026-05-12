@@ -10,11 +10,26 @@
 //  - `Array[String|Real]`
 
 import type { Type } from './types.js';
+import { findTopLevelSeparator, splitTopLevel } from './types.feather.util.js';
 import { ok } from './util.js';
+
+export const featherTypeIdentifierPatternSource = '[a-zA-Z_$][a-zA-Z0-9_.$#~:/-]*';
+export const featherTypeIdentifierPattern = new RegExp(
+  `^${featherTypeIdentifierPatternSource}$`,
+  'i',
+);
 
 export interface FeatherTypeUnion {
   kind: 'union';
   types: FeatherType[];
+}
+
+export interface FeatherRecordProperty {
+  name: {
+    content: string;
+    offset: number;
+  };
+  type: FeatherTypeUnion;
 }
 
 export interface FeatherType {
@@ -24,7 +39,10 @@ export interface FeatherType {
     offset: number;
     inferred?: boolean;
   };
+  optional?: boolean;
+  variadic?: boolean;
   of?: FeatherTypeUnion;
+  properties?: FeatherRecordProperty[];
 }
 
 /**
@@ -44,6 +62,11 @@ export function flattenFeatherTypes(
     if (type.of) {
       flattenFeatherTypes(type.of, flattened);
     }
+    if (type.properties?.length) {
+      for (const property of type.properties) {
+        flattenFeatherTypes(property.type, flattened);
+      }
+    }
   } else {
     type.types.forEach((t) => flattenFeatherTypes(t, flattened));
   }
@@ -56,7 +79,10 @@ export function parseFeatherTypeString(typeString: string): FeatherTypeUnion {
   const leftBracket = /[<[]/y;
   const rightBracket = /[>\]]/y;
   const or = /(\bOR\b|\bor\b|\||,)/y;
-  const identifier = /[a-zA-Z_][a-zA-Z0-9_.]*/y;
+  const identifier = new RegExp(featherTypeIdentifierPatternSource, 'y');
+  const nullable = /\?/y;
+  const nonNullable = /!/y;
+  const variadic = /\.\.\./y;
   let offset = 0;
   // Handle case where a type is incorrectly wrapped in brackets
   // (e.g. Array<String|Undefined> is fine, but just <String|Undefined> is not)
@@ -78,9 +104,112 @@ export function parseFeatherTypeString(typeString: string): FeatherTypeUnion {
   };
   const rootUnion: FeatherTypeUnion = { kind: 'union', types: [] };
   const typeUnionStack: FeatherTypeUnion[] = [rootUnion];
-  0;
   const currentUnion = (): FeatherTypeUnion => typeUnionStack.at(-1)!;
   let currentType: FeatherType | undefined;
+  const pendingModifiers = {
+    nullable: false,
+    nonNullable: false,
+    variadic: false,
+  };
+
+  const addUndefinedToCurrentUnion = () => {
+    if (pendingModifiers.nonNullable) {
+      return;
+    }
+    const hasUndefined = currentUnion().types.some(
+      (t) => t.name.content.toLocaleLowerCase() === 'undefined',
+    );
+    if (!hasUndefined) {
+      currentUnion().types.push({
+        kind: 'type',
+        name: { content: 'Undefined', offset, inferred: true },
+      });
+    }
+  };
+
+  const applyPendingModifiers = (type: FeatherType, isOptional: boolean) => {
+    if (pendingModifiers.variadic) {
+      type.variadic = true;
+    }
+    if (pendingModifiers.nullable || isOptional) {
+      type.optional = true;
+      addUndefinedToCurrentUnion();
+    }
+    pendingModifiers.nullable = false;
+    pendingModifiers.nonNullable = false;
+    pendingModifiers.variadic = false;
+  };
+
+  const extractRecordType = () => {
+    if (typeString[offset] !== '{') {
+      return;
+    }
+    const startOffset = offset;
+    let depth = 0;
+    let i = offset;
+    for (; i < typeString.length; i++) {
+      const ch = typeString[i];
+      if (ch === '{') depth++;
+      if (ch === '}') {
+        depth--;
+        if (depth === 0) {
+          break;
+        }
+      }
+    }
+    if (i >= typeString.length) {
+      return;
+    }
+    const body = typeString.slice(startOffset + 1, i).trim();
+    offset = i + 1;
+
+    const structType: FeatherType = {
+      kind: 'type',
+      name: { content: 'Struct', offset: startOffset, inferred: true },
+    };
+
+    if (body) {
+      const props = splitTopLevel(body, ',');
+      const propertyTypes: FeatherType[] = [];
+      const recordProperties: FeatherRecordProperty[] = [];
+      for (const prop of props) {
+        const colon = findTopLevelSeparator(prop, ':');
+        if (colon < 0) {
+          continue;
+        }
+        const namePart = prop.slice(0, colon).trim();
+        const typePart = prop.slice(colon + 1).trim();
+        if (!namePart || !typePart) {
+          continue;
+        }
+        const propertyType = parseFeatherTypeString(typePart);
+        propertyTypes.push(...propertyType.types);
+        recordProperties.push({
+          name: {
+            content: namePart,
+            offset: startOffset + 1,
+          },
+          type: propertyType,
+        });
+      }
+      if (recordProperties.length) {
+        structType.properties = recordProperties;
+      }
+      if (propertyTypes.length) {
+        structType.of = { kind: 'union', types: propertyTypes };
+      }
+    }
+    return structType;
+  };
+
+  const consumeOptionalSuffix = () => {
+    lex(whitespace);
+    if (typeString[offset] === '=') {
+      offset += 1;
+      return true;
+    }
+    return false;
+  };
 
   if (!typeString?.trim()) {
     rootUnion.types.push({
@@ -106,6 +235,26 @@ export function parseFeatherTypeString(typeString: string): FeatherTypeUnion {
       continue;
     }
 
+    match = lex(nullable);
+    if (match) {
+      pendingModifiers.nullable = true;
+      pendingModifiers.nonNullable = false;
+      continue;
+    }
+
+    match = lex(nonNullable);
+    if (match) {
+      pendingModifiers.nonNullable = true;
+      pendingModifiers.nullable = false;
+      continue;
+    }
+
+    match = lex(variadic);
+    if (match) {
+      pendingModifiers.variadic = true;
+      continue;
+    }
+
     match = lex(rightBracket);
     if (match) {
       // Pop the current union off the stack
@@ -122,14 +271,25 @@ export function parseFeatherTypeString(typeString: string): FeatherTypeUnion {
 
     match = lex(identifier);
     if (match) {
+      const isOptional = consumeOptionalSuffix();
       // Create a new type
       const type: FeatherType = {
         kind: 'type',
         name: { content: match[0], offset: match.index },
       };
+      applyPendingModifiers(type, isOptional);
       // Add it to the current union
       currentUnion().types.push(type);
       currentType = type;
+      continue;
+    }
+
+    const structType = extractRecordType();
+    if (structType) {
+      const isOptional = consumeOptionalSuffix();
+      applyPendingModifiers(structType, isOptional);
+      currentUnion().types.push(structType);
+      currentType = structType;
       continue;
     }
 

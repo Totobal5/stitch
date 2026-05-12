@@ -20,6 +20,11 @@ export const commands = {
     title: 'Stitch: New Project',
     [$showInPalette]: true,
   },
+  'stitch.project.select': {
+    command: 'stitch.project.select',
+    title: 'Stitch: Switch Project',
+    [$showInPalette]: true,
+  },
   'stitch.diagnostics.suppress': {
     command: 'stitch.diagnostics.suppress',
     title: 'Suppress Diagnostics',

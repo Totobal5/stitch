@@ -17,6 +17,18 @@ function paramNamesMatch(left: string, right: string) {
   return normalizeParamName(left) === normalizeParamName(right);
 }
 
+function isSelfReturnAlias(type: Type) {
+  return type.kind === 'Struct' && type.name?.toLocaleLowerCase() === 'self';
+}
+
+function resolveSelfReturnAliases(type: Type<'Function'>, returnTypes: Type[]) {
+  const selfType = type.self;
+  if (!selfType) {
+    return returnTypes;
+  }
+  return returnTypes.map((returnType) => (isSelfReturnAlias(returnType) ? selfType : returnType));
+}
+
 /** Visit a function's CST and update any signifiers and types */
 export function visitFunctionExpression(
   this: GmlSignifierVisitor,
@@ -96,6 +108,15 @@ export function visitFunctionExpression(
   }
   if (signifier && docs?.jsdoc.mixin) {
     signifier.mixin = true;
+  }
+  const signifierOwnedByCurrentParent =
+    !!signifier && signifier.parent.getMember(signifier.name, true) === signifier;
+  const signifierDefinedInCurrentFile =
+    signifierOwnedByCurrentParent && signifier?.def?.file === this.PROCESSOR.file;
+  if (signifier && signifierDefinedInCurrentFile && docs) {
+    signifier.ignored = !!docs.jsdoc.ignore;
+  } else if (signifier && signifierDefinedInCurrentFile && isFunctionStatement) {
+    signifier.ignored = false;
   }
   functionType.isConstructor = isConstructor;
   functionType.self = isConstructor
@@ -262,7 +283,7 @@ export function visitFunctionExpression(
 
   // Update the RETURN type based on the return statements found in the body
   if (docs?.type[0]?.returns) {
-    functionType.setReturnType(docs.type[0].returns.type);
+    functionType.setReturnType(resolveSelfReturnAliases(functionType, docs.type[0].returns.type));
     // TODO: Check against the inferred return types
   } else {
     functionType.setReturnType(ctx.returns?.length ? ctx.returns : this.UNDEFINED);

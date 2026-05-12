@@ -88,19 +88,10 @@ export function parseYy<T extends z.ZodType | undefined>(
         next();
       }
     }
-    // Store as a BigInt if
-    // 1. it's an integer, and
-    // 2. it's too big to store as a vanilla number.
-    // (BigInts can only be parsed from purely-numeric strings)
+    // Store as a number (not BigInt) to avoid serialization issues
+    // even if it's too big, we'll store it as a regular number
+    // and let the schema validation handle any type issues
     const num = +str;
-    if (!str.match(/\.|E-/i)) {
-      // Then it's not a float or a scientific notation number that will
-      // turn into one. (e.g. not `1.0` or `1E-10`)
-      const asBigInt = BigInt(str);
-      if (asBigInt > Number.MAX_SAFE_INTEGER) {
-        return asBigInt;
-      }
-    }
     return num;
   }
 

@@ -1,6 +1,7 @@
 import { arrayWrapped, isArray } from '@bscotch/utility';
 import type { Signifier } from './signifiers.js';
 import { KnownTypesMap } from './types.feather.js';
+import { createStaticMembersView, getFunctionStaticMembersView } from './types.static.js';
 import { Type, TypeStore } from './types.js';
 import { PrimitiveName } from './types.primitives.js';
 
@@ -189,22 +190,34 @@ export function normalizeType(inferred: Typeable, knownTypes: KnownTypesMap): Ty
         for (const itemType of getTypes(type.items || [])) {
           // Try to convert the type.
           const name = itemType.name ? `${defaultItemKind}.${itemType.name}` : defaultItemKind;
-          let type =
+          let resolvedType =
             knownTypes.get(name) || knownTypes.get(defaultItemKind) || new Type(defaultItemKind);
           if (itemType.isGeneric) {
             // Then extend the type to allow having a generic without mutating the original
-            type = type.derive().genericize().named(itemType.name);
+            resolvedType = resolvedType.derive().genericize().named(itemType.name);
           }
           if (utilityKind === 'StaticType') {
-            // TODO: Create a new type consisting of the type's static members
-            type = Type.Struct;
-            for (const member of itemType.listMembers()) {
-              if (member.static) {
-                type.addMember(member);
-              }
+            const functionStaticSource =
+              resolvedType.kind === 'Function'
+                ? (resolvedType as Type<'Function'>)
+                : itemType.kind === 'Function'
+                  ? (itemType as Type<'Function'>)
+                  : undefined;
+            const structStaticSource =
+              resolvedType.kind === 'Struct'
+                ? (resolvedType as Type<'Struct'>)
+                : itemType.kind === 'Struct'
+                  ? (itemType as Type<'Struct'>)
+                  : undefined;
+            if (functionStaticSource) {
+              resolvedType = getFunctionStaticMembersView(functionStaticSource) || Type.Struct;
+            } else if (structStaticSource) {
+              resolvedType = createStaticMembersView(structStaticSource) || Type.Struct;
+            } else {
+              resolvedType = Type.Struct;
             }
           }
-          normalized.addType(type);
+          normalized.addType(resolvedType);
         }
         continue type; // so that the fall-through only happens if we didn't find a match
       }

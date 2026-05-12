@@ -37,6 +37,64 @@ import { GameMakerTreeProvider } from './tree.mjs';
 import { StitchIgorView } from './webview.igor.mjs';
 import { StitchSpriteEditorProvider } from './webviews.spriteEditor.mjs';
 
+const selectedYypStateKey = 'stitch.selectedYypPath';
+
+async function findYypFilesToLoad(
+  ctx: vscode.ExtensionContext,
+  options: { forcePicker?: boolean } = {},
+) {
+  let yypFiles = await vscode.workspace.findFiles('**/*.yyp');
+  if (!yypFiles.length) {
+    warn('No .yyp files found in workspace!');
+    return yypFiles;
+  }
+
+  // Pre-filter based on allowed project config
+  const allowed = stitchConfig.allowedProjects.map((p) => p.toLowerCase());
+  let prefiltered = [...yypFiles];
+  if (allowed.length) {
+    prefiltered = prefiltered.filter((projectUri) => {
+      const path = pathyFromUri(projectUri);
+      const yypName = path.name;
+      const folderName = path.up().name;
+      return allowed.includes(yypName.toLowerCase()) || allowed.includes(folderName.toLowerCase());
+    });
+  }
+  yypFiles = prefiltered.length ? prefiltered : yypFiles;
+
+  const rememberedYypPath = ctx.workspaceState.get<string>(selectedYypStateKey);
+  if (!options.forcePicker && rememberedYypPath) {
+    const remembered = yypFiles.find((yyp) => yyp.fsPath === rememberedYypPath);
+    if (remembered) {
+      yypFiles = [remembered];
+    }
+  }
+
+  // Only allow loading one project at a time to reduce complexity
+  if (yypFiles.length > 1) {
+    const chosen = await vscode.window.showQuickPick(
+      yypFiles.map((yyp) => ({
+        label: pathyFromUri(yyp).basename,
+        description: pathyFromUri(yyp).up().absolute,
+        uri: yyp,
+      })),
+      {
+        title: 'Stitch: Multiple GameMaker projects found! Choose a project to load.',
+      },
+    );
+    if (!chosen) {
+      return [];
+    }
+    yypFiles = [chosen.uri];
+  }
+
+  if (yypFiles.length === 1) {
+    await ctx.workspaceState.update(selectedYypStateKey, yypFiles[0].fsPath);
+  }
+
+  return yypFiles;
+}
+
 export async function activateStitchExtension(
   workspace: StitchWorkspace,
   ctx: vscode.ExtensionContext,
@@ -88,39 +146,7 @@ export async function activateStitchExtension(
   info('Loading projects...');
   const toWatch: vscode.RelativePattern[] = [];
 
-  let yypFiles = await vscode.workspace.findFiles(`**/*.yyp`);
-  if (!yypFiles.length) {
-    warn('No .yyp files found in workspace!');
-  }
-
-  // Pre-filter based on allowed project config
-  const allowed = stitchConfig.allowedProjects.map((p) => p.toLowerCase());
-  let prefiltered = [...yypFiles];
-  if (allowed.length) {
-    prefiltered = prefiltered.filter((projectUri) => {
-      const path = pathyFromUri(projectUri);
-      const yypName = path.name;
-      const folderName = path.up().name;
-      return allowed.includes(yypName.toLowerCase()) || allowed.includes(folderName.toLowerCase());
-    });
-  }
-  yypFiles = prefiltered.length ? prefiltered : yypFiles;
-
-  // Only allow loading one project at a time to reduce complexity
-  if (yypFiles.length > 1) {
-    const chosen = await vscode.window.showQuickPick(
-      yypFiles.map((yyp) => ({
-        label: pathyFromUri(yyp).basename,
-        description: pathyFromUri(yyp).up().absolute,
-        uri: yyp,
-      })),
-      {
-        title: 'Stitch: Multiple GameMaker projects found! Choose a project to load.',
-      },
-    );
-    if (!chosen) yypFiles.length = 0;
-    else yypFiles = [chosen.uri];
-  }
+  const yypFiles = await findYypFilesToLoad(ctx);
 
   for (const yypFile of yypFiles) {
     info('Loading project', yypFile);
@@ -329,6 +355,14 @@ export async function activateStitchExtension(
     }),
     registerCommand('stitch.newProject', async () => {
       await workspace.createNewProject();
+    }),
+    registerCommand('stitch.project.select', async () => {
+      const yypFiles = await findYypFilesToLoad(ctx, { forcePicker: true });
+      if (!yypFiles.length) {
+        return;
+      }
+      await ctx.workspaceState.update(selectedYypStateKey, yypFiles[0].fsPath);
+      await activateStitchExtension(workspace, ctx);
     }),
     workspace.semanticHighlightProvider.register(),
     workspace.signatureHelpStatus,

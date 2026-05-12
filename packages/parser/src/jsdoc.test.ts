@@ -1,6 +1,6 @@
 import { undent } from '@bscotch/utility';
 import { expect } from 'chai';
-import { parseFeatherTypeString } from './jsdoc.feather.js';
+import { flattenFeatherTypes, parseFeatherTypeString } from './jsdoc.feather.js';
 import { parseJsdoc } from './jsdoc.js';
 
 const functionJsdoc = `
@@ -148,6 +148,12 @@ describe('JSDocs', function () {
     expect(parsed.self?.content).to.equal('Struct.Hello');
   });
 
+  it('can parse an ignore tag', function () {
+    const jsdoc = '/// @ignore';
+    const parsed = parseJsdoc(jsdoc);
+    expect(parsed.ignore).to.equal(true);
+  });
+
   it('can parse template tags', function () {
     const jsdoc = undent`
       /// @template T
@@ -200,5 +206,53 @@ describe('JSDocs', function () {
       expect(range.start.line).to.equal(1);
       expect(range.end.line).to.equal(1);
     }
+  });
+
+  it('supports optional and variadic modifiers in type expressions', function () {
+    const parsed = parseFeatherTypeString('...String=');
+    expect(parsed.types).to.have.lengthOf(2);
+    const stringType = parsed.types.find((t) => t.name.content === 'String');
+    expect(stringType).to.exist;
+    expect(stringType?.variadic).to.equal(true);
+    expect(stringType?.optional).to.equal(true);
+    expect(parsed.types.some((t) => t.name.content === 'Undefined')).to.equal(true);
+  });
+
+  it('supports nullable and non-nullable modifiers', function () {
+    const nullable = parseFeatherTypeString('?Real');
+    expect(nullable.types.some((t) => t.name.content === 'Real')).to.equal(true);
+    expect(nullable.types.some((t) => t.name.content === 'Undefined')).to.equal(true);
+
+    const nonNullable = parseFeatherTypeString('!Real');
+    expect(nonNullable.types.some((t) => t.name.content === 'Real')).to.equal(true);
+    expect(nonNullable.types.some((t) => t.name.content === 'Undefined')).to.equal(false);
+  });
+
+  it('supports record types as Struct and keeps nested property types', function () {
+    const parsed = parseFeatherTypeString('{x: Real, tags: Array<String>}');
+    expect(parsed.types).to.have.lengthOf(1);
+    expect(parsed.types[0].name.content).to.equal('Struct');
+    expect(parsed.types[0].properties?.map((property) => property.name.content)).to.deep.equal([
+      'x',
+      'tags',
+    ]);
+    expect(parsed.types[0].properties?.[0]?.type.types[0]?.name.content).to.equal('Real');
+    expect(parsed.types[0].properties?.[1]?.type.types[0]?.name.content).to.equal('Array');
+    const flattened = flattenFeatherTypes(parsed);
+    expect(flattened.some((t) => t.name.content === 'Struct')).to.equal(true);
+    expect(flattened.some((t) => t.name.content === 'Real')).to.equal(true);
+    expect(flattened.some((t) => t.name.content === 'Array')).to.equal(true);
+    expect(flattened.some((t) => t.name.content === 'String')).to.equal(true);
+  });
+
+  it('can parse nested-brace record return annotations', function () {
+    const parsed = parseJsdoc('/// @returns {{persistent: Bool, cleared: Bool}}');
+    expect(parsed.returns?.type?.content).to.equal('{persistent: Bool, cleared: Bool}');
+  });
+
+  it('supports name expressions beyond dotted identifiers', function () {
+    const parsed = parseFeatherTypeString('module:service/Type#member~inner');
+    expect(parsed.types).to.have.lengthOf(1);
+    expect(parsed.types[0].name.content).to.equal('module:service/Type#member~inner');
   });
 });

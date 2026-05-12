@@ -1442,15 +1442,15 @@ export class Project {
   );
 }
 
-function normalizeMaskValue(value: unknown): bigint {
+function normalizeMaskValue(value: unknown): number {
   if (typeof value === 'bigint') {
-    return value;
+    return Number(value);
   }
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return BigInt(Math.trunc(value));
+    return Math.trunc(value);
   }
   if (typeof value === 'string' && value.trim().match(/^-?\d+$/)) {
-    return BigInt(value.trim());
+    return parseInt(value.trim(), 10);
   }
-  return -1n;
+  return -1;
 }

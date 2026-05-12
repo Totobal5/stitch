@@ -3,6 +3,45 @@ import { z } from 'zod';
 import { bigNumber, isObjectWithField, nameField } from './utility.js';
 
 /**
+ * Preprocessor to normalize ConfigValues numeric fields from strings to their proper types.
+ * Fields like CopyToMask should be numbers/bigints, not strings.
+ */
+function normalizeConfigValuesNumericFields(input: any): any {
+  if (!input || typeof input !== 'object') return input;
+
+  if (input.ConfigValues && typeof input.ConfigValues === 'object') {
+    for (const configName of Object.keys(input.ConfigValues)) {
+      const configValues = input.ConfigValues[configName];
+      if (configValues && typeof configValues === 'object') {
+        // Known numeric fields in ConfigValues
+        const numericFields = ['CopyToMask', 'target', 'targets'];
+        for (const field of numericFields) {
+          if (field in configValues && typeof configValues[field] === 'string') {
+            const match = configValues[field].match(/^-?\d+$/);
+            if (match) {
+              configValues[field] = parseInt(configValues[field], 10);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Also normalize root-level numeric fields that might have been stringified
+  const numericFields = ['targets', 'target'];
+  for (const field of numericFields) {
+    if (field in input && typeof input[field] === 'string') {
+      const match = input[field].match(/^-?\d+$/);
+      if (match) {
+        input[field] = parseInt(input[field], 10);
+      }
+    }
+  }
+
+  return input;
+}
+
+/**
  * @file Typings for components of a freshly-parsed YYP file,
  * when it is stored as a collection of plain objects.
  * See {@link ./Gms2ProjectComponents.ts} for typings related
@@ -23,11 +62,16 @@ const yypResourceSchema = z.object({
 });
 
 export type YypOption = z.infer<typeof yypOptionSchema>;
-const yypOptionSchema = z.object({
-  ConfigValues: z.record(z.string(), z.record(z.string(), z.string())).optional(),
-  name: z.string(),
-  path: z.string(),
-});
+const yypOptionSchema = z.preprocess(
+  normalizeConfigValuesNumericFields,
+  z.object({
+    ConfigValues: z
+      .record(z.string(), z.record(z.string(), z.union([z.string(), z.number()])))
+      .optional(),
+    name: z.string(),
+    path: z.string(),
+  }),
+);
 
 export interface YypConfig {
   name: string;
@@ -82,56 +126,69 @@ export const yypFolderSchema = z.preprocess(
 
 export type YypAudioGroup = z.infer<typeof yypAudioGroupSchema>;
 export type YypAudioGroupLoose = z.input<typeof yypAudioGroupSchema>;
-export const yypAudioGroupSchema = z.object({
-  ConfigValues: z.record(z.string(), z.record(z.string(), z.string())).optional(),
-  name: z.string(),
-  targets: bigNumber().default(-1n),
-  resourceType: z.literal('GMAudioGroup').default('GMAudioGroup'),
-  resourceVersion: z.string().default('1.3'),
-});
+export const yypAudioGroupSchema = z.preprocess(
+  normalizeConfigValuesNumericFields,
+  z.object({
+    ConfigValues: z
+      .record(z.string(), z.record(z.string(), z.union([z.string(), z.number()])))
+      .optional(),
+    name: z.string(),
+    targets: z.union([z.number(), z.string().transform((s) => parseInt(s, 10))]).default(-1),
+    resourceType: z.literal('GMAudioGroup').default('GMAudioGroup'),
+    resourceVersion: z.string().default('1.3'),
+  }),
+);
 
 export type YypTextureGroup = z.infer<typeof yypTextureGroupSchema>;
-export const yypTextureGroupSchema = z.looseObject({
-  ConfigValues: z.record(z.string(), z.record(z.string(), z.string())).optional(),
-  name: z.string(),
-  groupParent: z
-    .object({
-      name: z.string(),
-      path: z.string(),
-    })
-    .nullable()
-    .default(null),
-  isScaled: z.boolean().default(true),
-  customOptions: z.string().default(''),
-  compressFormat: z.string().default('bz2'),
-  autocrop: z.boolean().default(true),
-  border: z.number().default(2),
-  mipsToGenerate: z.number().default(0),
-  targets: bigNumber().default(-1n),
-  loadType: z.enum(['default', 'dynamicpages']).default('default'),
-  directory: z.string().default(''),
-  resourceType: z.literal('GMTextureGroup').default('GMTextureGroup'),
-  resourceVersion: z.string().default('1.3'),
-});
+export const yypTextureGroupSchema = z.preprocess(
+  normalizeConfigValuesNumericFields,
+  z.looseObject({
+    ConfigValues: z
+      .record(z.string(), z.record(z.string(), z.union([z.string(), z.number()])))
+      .optional(),
+    name: z.string(),
+    groupParent: z
+      .object({
+        name: z.string(),
+        path: z.string(),
+      })
+      .nullable()
+      .default(null),
+    isScaled: z.boolean().default(true),
+    customOptions: z.string().default(''),
+    compressFormat: z.string().default('bz2'),
+    autocrop: z.boolean().default(true),
+    border: z.number().default(2),
+    mipsToGenerate: z.number().default(0),
+    targets: z.union([z.number(), z.string().transform((s) => parseInt(s, 10))]).default(-1),
+    loadType: z.enum(['default', 'dynamicpages']).default('default'),
+    directory: z.string().default(''),
+    resourceType: z.literal('GMTextureGroup').default('GMTextureGroup'),
+    resourceVersion: z.string().default('1.3'),
+  }),
+);
 
 export type YypIncludedFile = z.infer<typeof yypIncludedFileSchema>;
-const yypIncludedFileSchema = z.object({
-  ConfigValues: z
-    .record(
-      z.string(),
-      z.object({
-        CopyToMask: bigNumber(),
-      }),
-    )
-    .optional(),
-  /** The name of the file, including extension, without the path */
-  name: z.string(),
-  CopyToMask: bigNumber().default(-1n),
-  /** `datafiles/${subdir}` */
-  filePath: z.string(),
-  resourceType: z.literal('GMIncludedFile').default('GMIncludedFile'),
-  resourceVersion: z.string().default('1.0'),
-});
+const yypIncludedFileSchema = z.preprocess(
+  normalizeConfigValuesNumericFields,
+  z.object({
+    ConfigValues: z
+      .record(
+        z.string(),
+        z.object({
+          CopyToMask: z.union([z.number(), z.string().transform((s) => parseInt(s, 10))]),
+        }),
+      )
+      .optional(),
+    /** The name of the file, including extension, without the path */
+    name: z.string(),
+    CopyToMask: z.union([z.number(), z.string().transform((s) => parseInt(s, 10))]).default(-1),
+    /** `datafiles/${subdir}` */
+    filePath: z.string(),
+    resourceType: z.literal('GMIncludedFile').default('GMIncludedFile'),
+    resourceVersion: z.string().default('1.0'),
+  }),
+);
 
 /** The YYP content that has not changed across GMS2.3 subversions */
 export type Yyp = z.infer<typeof yypSchema>;

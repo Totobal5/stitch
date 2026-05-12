@@ -1,7 +1,7 @@
 {
   "name": "bscotch-stitch-vscode",
   "displayName": "Stitch",
-  "version": "1.81.0-toto-0.0.1",
+  "version": "1.81.0-toto-0.0.3",
   "private": true,
   "description": "GameMaker Language (GML) support and related tools for Visual Studio Code",
   "categories": [
@@ -51,6 +51,10 @@
       {
         "command": "stitch.newProject",
         "title": "Stitch: New Project"
+      },
+      {
+        "command": "stitch.project.select",
+        "title": "Stitch: Switch Project"
       },
       {
         "command": "stitch.diagnostics.suppress",
@@ -948,6 +952,9 @@
         },
         {
           "command": "stitch.newProject"
+        },
+        {
+          "command": "stitch.project.select"
         },
         {
           "command": "stitch.openLocation.gameMaker"

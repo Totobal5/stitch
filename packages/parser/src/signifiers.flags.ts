@@ -12,10 +12,11 @@ const signifierFlags = {
   Macro: 1 << 9, // Is a macro
   Asset: 1 << 10, // Is an asset
   Mixin: 1 << 11, // Is a mixin
-  Override: 1 << 12, // Is an override for a parent variable
-  Definitive: 1 << 13, // Is a definitive variable (defined in a definitiveSelf, such as a constructor or Create event)
-  Enum: 1 << 14, // Is an enum
-  EnumMember: 1 << 15, // Is an enum member
+  Ignored: 1 << 12, // Hidden from autocomplete by JSDoc @ignore
+  Override: 1 << 13, // Is an override for a parent variable
+  Definitive: 1 << 14, // Is a definitive variable (defined in a definitiveSelf, such as a constructor or Create event)
+  Enum: 1 << 15, // Is an enum
+  EnumMember: 1 << 16, // Is an enum member
 };
 
 export class Flags {
@@ -125,6 +126,13 @@ export class Flags {
   }
   set mixin(mixin: boolean) {
     this.setFlag(signifierFlags.Mixin, mixin);
+  }
+
+  get ignored() {
+    return this.getFlag(signifierFlags.Ignored);
+  }
+  set ignored(ignored: boolean) {
+    this.setFlag(signifierFlags.Ignored, ignored);
   }
 
   get enum() {
