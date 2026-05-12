@@ -81,3 +81,6 @@ sprites.info.json
 
 # packaged VS Code extensions
 *.vsix
+
+# embedded sample repos
+**/gm-ghost-seed/
